@@ -1,0 +1,107 @@
+import { View, Text } from "react-native";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons"
+import { COLORS } from "@/constants/theme";
+export default function TabLayout() {
+  return (
+    <Tabs
+    screenOptions={{
+      tabBarShowLabel: false,
+    }}
+    >
+      <Tabs.Screen name="index"
+        options={{
+          tabBarIcon: ({size, color}) => <Ionicons name="home" size={size} color={color}/>
+        }}
+      />
+      <Tabs.Screen name="search" 
+      options={{
+        tabBarIcon: ({size, color}) => <Ionicons name="bookmark" size={size} color={color}/>
+      }}
+      />
+      {/* <Tabs.Screen name="chat"
+        options={{
+          tabBarIcon: ({ size }) => <Ionicons name="add-circle" size={size} color={COLORS.primary}/>
+        }}
+      /> */}
+      <Tabs.Screen name="notifications"
+      options={{
+        tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color}/>
+      }}
+       />
+      <Tabs.Screen name="profile" 
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color}/>
+        }}
+      />
+    </Tabs>
+  );
+}
+
+// 🔍 Search & Navigation:
+// search 🔎 / search-outline 🔍 / filter 🎛️
+
+// 🏠 Home Page / Feed:
+// home 🏠 / home-outline 🏡 / newspaper 📰
+
+// 👤 Profile & User:
+// person 👤 / person-outline 👥 / person-circle 🧑‍🦱 / person-circle-outline 👨‍🦰
+
+// 💬 Chat & Messaging:
+// chatbubble 💬 / chatbubble-outline 💭 / chatbubbles 🗨️
+
+// ❤️ Favorites / Likes:
+// heart ❤️ / heart-outline 🤍 / star ⭐ / star-outline ☆
+
+// ⚙️ Settings & Options:
+// settings ⚙️ / cog ⚙️ / options 🔧
+
+// 📩 Notifications & Alerts:
+// notifications 🔔 / notifications-outline 🔕 / alert-circle ❗ / information-circle ℹ️
+
+// 📂 File Management & Documents:
+// document 📄 / document-text 📜 / folder 📂
+
+// 🎮 Entertainment & Media:
+// play-circle ▶️ / musical-notes 🎵 / film 🎬
+
+// 💳 Payments & Shopping:
+// card 💳 / cart 🛒 / pricetag 🏷️
+
+// notifications 🔔 / notifications-outline 🔕 / notifications-off 🚫🔔 / notifications-off-outline 🔕 / alert ⚠️ / alert-circle ❗
+// chatbubble 💬 / chatbubble-outline 💬 / mail 📩 / alert-outline ⚠️ / information-circle ℹ️ / heart ❤️ / heart-outline 🤍
+
+// Search:
+// search 🔍 / search-outline 🔎 / ios-search 🔍 / md-search 🔍 / search-circle 🔍⭕ / search-sharp 🔍
+
+// Home Page/Feed:
+// home 🏠 / home-outline 🏡 / ios-home 🏠 / md-home 🏠 / home-sharp 🏡 / home-outline-sharp 🏠
+
+// Profile:
+// person 👤 / person-outline 👥 / ios-person 👤 / md-person 👤 / person-sharp 👤 / person-circle 👤🔵
+
+// Chat:
+// chatbubbles 💬💬 / chatbubbles-outline 💬🔳 / chatbox 🗨️ / chatbox-outline 🗨️🔳 / message 📩 / ios-chatbubbles 💬
+
+
+
+
+// Todo? show user image as profile page icon
+{/* <Tabs.Screen 
+        name="profile"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Image
+              source={{ uri: 'https://url.com/profile.jpg' }} 
+              style={{
+                width: size, 
+                height: size, 
+                borderRadius: size / 2,
+                borderWidth: 1,
+                borderColor: color
+              }}
+            />
+          )
+        }}
+      />
+    </Tabs> */}
