@@ -142,7 +142,7 @@ const Signup = () => {
     };
   
     fetchCities();
-  }, []); // Run only once when component mounts
+  }, []); 
 
   // Search cities locally
   const searchCities = (query) => {
