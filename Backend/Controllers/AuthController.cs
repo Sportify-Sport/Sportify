@@ -138,7 +138,7 @@ namespace Backend.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim("sub", user.UserId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim("email", user.Email),
                 new Claim("name", $"{user.FirstName} {user.LastName}"),
                 new Claim(ClaimTypes.Role, "User")
