@@ -16,17 +16,17 @@ export default function TabLayout() {
       />
       <Tabs.Screen name="search" 
       options={{
-        tabBarIcon: ({size, color}) => <Ionicons name="bookmark" size={size} color={color}/>
+        tabBarIcon: ({size, color}) => <Ionicons name="search" size={size} color={color}/>
       }}
       />
-      {/* <Tabs.Screen name="chat"
+      <Tabs.Screen name="chat"
         options={{
-          tabBarIcon: ({ size }) => <Ionicons name="add-circle" size={size} color={COLORS.primary}/>
+          tabBarIcon: ({ size , color }) => <Ionicons name="chatbubble" size={size} color={color}/>
         }}
-      /> */}
+      />
       <Tabs.Screen name="notifications"
       options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color}/>
+        tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color}/>
       }}
        />
       <Tabs.Screen name="profile" 
