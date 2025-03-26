@@ -14,27 +14,9 @@ const Login = () => {
 
   const router = useRouter();
 
-  // Regular expressions for validations
-  const emailRegex = /^\S+@\S+\.\S+$/;
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{5,}$/;
-
   const handleLogin = async () => {
     // Reset any previous error message
     setErrorMessage('');
-
-    // Validate email format
-    if (!emailRegex.test(email)) {
-      setErrorMessage('Invalid email format. Please enter a valid email.');
-      return;
-    }
-
-    // Validate password: minimum one lowercase, one uppercase, one digit, one symbol, and at least 5 characters long
-    if (!passwordRegex.test(password)) {
-      setErrorMessage(
-        'Password must be at least 5 characters long and include one lowercase letter, one uppercase letter, one number, and one symbol.'
-      );
-      return;
-    }
 
     try {
       // Call the API
@@ -55,10 +37,10 @@ const Login = () => {
     } else {
         // If the response is not 200, get the error message
         const errorData = await response.json();
-        setErrorMessage('Login failed: ' + (errorData.message || 'Unknown error.'));
+        setErrorMessage('Login failed');
       }
     } catch (error) {
-      setErrorMessage('Login failed: ' + error.message);
+      setErrorMessage('Login failed');
     }
   };
 

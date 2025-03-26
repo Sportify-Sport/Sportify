@@ -29,9 +29,9 @@ const Signup = () => {
   }
   
     // Password validation
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,}$/;
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,12}$/;
     if (!passwordPattern.test(password)) {
-      alert('Password must be at least 5 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.');
+      alert('Password must be 5-12 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.');
       return;
     }
   
@@ -103,7 +103,7 @@ const Signup = () => {
       }
     } catch (error) {
       console.error('Error during registration:', error);
-      alert('An error occurred during registration. Please try again.');
+      alert('An error occurred during registration -', error);
     }
   };  
 
