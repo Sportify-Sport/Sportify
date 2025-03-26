@@ -383,4 +383,145 @@ public class DBservices
         return cmd;
     }
 
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves all sports from the database
+    //--------------------------------------------------------------------------------------------------
+    public List<Sport> GetAllSports()
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        List<Sport> sportsList = new List<Sport>();
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetAllSports("SP_GetAllSports", con);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                Sport sport = new Sport(
+                    Convert.ToInt32(dataReader["SportId"]),
+                    dataReader["SportName"].ToString(),
+                    dataReader["SportImage"].ToString()
+                );
+
+                sportsList.Add(sport);
+            }
+
+            return sportsList;
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting all sports 
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetAllSports(string spName, SqlConnection con)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;          // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        return cmd;
+    }
+
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves 3 Groups that the user joined to
+    //--------------------------------------------------------------------------------------------------
+    public List<object> GetTop3UserGroups(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetTop3UserGroups("SP_GetTop3UserGroups", con, userId);
+
+        List<object> groupsList = new List<object>();
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                groupsList.Add(new
+                {
+                    GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                    GroupName = dataReader["GroupName"].ToString(),
+                    GroupImage = dataReader["GroupImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"])
+                });
+            }
+
+            return groupsList;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting 3 groups for the user
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetTop3UserGroups(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
 }

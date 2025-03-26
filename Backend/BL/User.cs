@@ -60,5 +60,19 @@ namespace Backend.BL
         public bool IsCityOrganizer { get => isCityOrganizer; set => isCityOrganizer = value; }
         public List<int> AdminForGroups { get => adminForGroups; set => adminForGroups = value; }
         public List<int> OrganizerForCities { get => organizerForCities; set => organizerForCities = value; }
+
+
+        public List<object> GetTop3Groups()
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetTop3UserGroups(this.UserId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
