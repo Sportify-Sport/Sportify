@@ -30,7 +30,8 @@ CREATE PROCEDURE SP_InsertUser
     @PasswordHash NVARCHAR(255),
     @FavSportId INT,
     @CityId INT,
-    @Gender NVARCHAR(1)
+    @Gender NVARCHAR(1),
+	@ProfileImage NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -45,7 +46,8 @@ BEGIN
         PasswordHash, 
         FavSportId, 
         CityId, 
-        Gender
+        Gender,
+		ProfileImage
     )
     VALUES (
         @FirstName,
@@ -55,7 +57,8 @@ BEGIN
         @PasswordHash,
         @FavSportId,
         @CityId,
-        @Gender
+        @Gender,
+		@ProfileImage
     );
     
     SET @UserId = SCOPE_IDENTITY();

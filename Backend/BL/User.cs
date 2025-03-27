@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Backend.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.BL
 {
@@ -81,6 +82,34 @@ namespace Backend.BL
             {
                 DBservices dBservices = new DBservices();
                 return dBservices.GetUserProfile(userId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        // Update user profile
+        public static object UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.UpdateUserProfile(userId, model, imageFileName);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        // Get current profile image path
+        public static string GetCurrentProfileImage(int userId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetUserProfileImage(userId);
             }
             catch (Exception ex)
             {

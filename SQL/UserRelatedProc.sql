@@ -32,3 +32,33 @@ BEGIN
     WHERE UserId = @userId
 END
 GO
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <27/3/2025>
+-- Description:	<This Procedure update user profile>
+-- =============================================
+CREATE PROCEDURE SP_UpdateUserProfile
+    @userId INT,
+    @birthDate DATE,
+    @favSportId INT,
+    @cityId INT,
+    @bio NVARCHAR(500) = NULL,
+    @gender NVARCHAR(1),
+    @profileImage NVARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE Users
+    SET BirthDate = @birthDate, FavSportId = @favSportId, CityId = @cityId, Bio = @bio, Gender = @gender,
+        -- Only update ProfileImage if value is provided
+        ProfileImage = CASE WHEN @profileImage IS NOT NULL THEN @profileImage ELSE ProfileImage END
+    WHERE UserId = @userId;
+    
+    SELECT UserId, FirstName, LastName, BirthDate, Email, FavSportId, CityId, Bio, Gender, ProfileImage
+    FROM Users
+    WHERE UserId = @userId;
+END
+GO

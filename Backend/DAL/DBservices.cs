@@ -171,6 +171,7 @@ public class DBservices
         cmd.Parameters.AddWithValue("@FavSportID", registerDto.FavSportId);
         cmd.Parameters.AddWithValue("@CityID", registerDto.CityId);
         cmd.Parameters.AddWithValue("@Gender", registerDto.Gender);
+        cmd.Parameters.AddWithValue("@ProfileImage", "default_profile.png");
 
         return cmd;
     }
@@ -593,6 +594,113 @@ public class DBservices
         cmd.CommandTimeout = 10;
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves the current profile image file name for a user
+    //--------------------------------------------------------------------------------------------------
+    public string GetUserProfileImage(int userId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = new SqlCommand("SELECT ProfileImage FROM Users WHERE UserId = @userId", con);
+            cmd.Parameters.AddWithValue("@userId", userId);
+
+            object result = cmd.ExecuteScalar();
+            return result == DBNull.Value ? null : (string)result;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method updates a user's profile information 
+    //---------------------------------------------------------------------------------
+    public object UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUpdateUserProfile("SP_UpdateUserProfile", con, userId, model, imageFileName);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return new
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString(),
+                    BirthDate = Convert.ToDateTime(dataReader["BirthDate"]),
+                    Email = dataReader["Email"].ToString(),
+                    FavSportId = Convert.ToInt32(dataReader["FavSportId"]),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Bio = dataReader["Bio"] == DBNull.Value ? "" : dataReader["Bio"].ToString(),
+                    Gender = dataReader["Gender"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"] == DBNull.Value ? "" : dataReader["ProfileImage"].ToString()
+                };
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null && con.State == ConnectionState.Open)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for updating user profile data
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateUserProfile(string spName, SqlConnection con, int userId, UserUpdateModel model, string imageFileName)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@birthDate", model.BirthDate);
+        cmd.Parameters.AddWithValue("@favSportId", model.FavSportId);
+        cmd.Parameters.AddWithValue("@cityId", model.CityId);
+        cmd.Parameters.AddWithValue("@bio", string.IsNullOrEmpty(model.Bio) ? (object)DBNull.Value : model.Bio);
+        cmd.Parameters.AddWithValue("@gender", model.Gender);
+
+        // Only update image if a new one was provided
+        if (!string.IsNullOrEmpty(imageFileName))
+        {
+            cmd.Parameters.AddWithValue("@profileImage", imageFileName);
+        }
+        else
+        {
+            cmd.Parameters.AddWithValue("@profileImage", DBNull.Value);
+        }
+
         return cmd;
     }
 }
