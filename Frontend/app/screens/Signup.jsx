@@ -3,6 +3,7 @@ import { ScrollView, View, Text, TextInput, TouchableOpacity, Image, FlatList } 
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import styles from '../../styles/SignupStyles';
+import { getApiBaseUrl } from "../config/apiConfig";
 
 const Signup = () => {
   const [firstName, setFirstName] = useState('');
@@ -75,7 +76,8 @@ const Signup = () => {
   
     // API call
     try {
-      const response = await fetch('https://localhost:7059/api/Auth/register', {
+      const apiUrl = getApiBaseUrl();
+      const response = await fetch(`${apiUrl}/api/Auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,15 +88,14 @@ const Signup = () => {
           birthDate: formattedBirthdate,
           email,
           password,
-          favSportId: sportId, // Send the sportId
-          cityId, // Send cityId, not city name
+          favSportId: sportId,
+          cityId,
           gender: genderValue, // Send "M" or "F"
         }),
       });
   
       if (response.ok) {
         const data = await response.json();
-        console.log('Registration successful:', data);
         alert(`Registration successful, Go to the Login page to enter your account`);
         router.push('/screens/Login');
       } else {
@@ -113,8 +114,7 @@ const Signup = () => {
   };
 
   const handleSigninNavigation = () => {
-    console.log('Navigate to Sign In');
-    router.push('/screens/Login');
+    router.push('../(tabs)');
   };
 
   useEffect(() => {

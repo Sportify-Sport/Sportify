@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from '../../styles/LoginStyles';
 import googleIcon from '../../assets/images/google.png';
+import { getApiBaseUrl } from "../config/apiConfig";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -20,7 +21,8 @@ const Login = () => {
 
     try {
       // Call the API
-      const response = await fetch('https://localhost:7059/api/Auth/login', {
+      const apiUrl = getApiBaseUrl();
+      const response = await fetch(`${apiUrl}/api/Auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
