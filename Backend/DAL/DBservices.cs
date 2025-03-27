@@ -524,4 +524,75 @@ public class DBservices
         cmd.Parameters.AddWithValue("@userId", userId);
         return cmd;
     }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves a user's profile data without the password
+    //--------------------------------------------------------------------------------------------------
+    public object GetUserProfile(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetUserProfile("SP_GetUserProfile", con, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return new
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString(),
+                    BirthDate = Convert.ToDateTime(dataReader["BirthDate"]),
+                    Email = dataReader["Email"].ToString(),
+                    FavSportId = Convert.ToInt32(dataReader["FavSportId"]),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Bio = dataReader["Bio"].ToString(),
+                    Gender = dataReader["Gender"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString()
+                };
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user profile data
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUserProfile(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
 }

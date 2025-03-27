@@ -74,5 +74,18 @@ namespace Backend.BL
                 throw ex;
             }
         }
+
+        public static object GetUserProfile(int userId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetUserProfile(userId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

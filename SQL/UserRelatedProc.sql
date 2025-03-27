@@ -15,3 +15,20 @@ BEGIN
 	ORDER BY gm.JoinedAt DESC
 END
 GO
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <27/3/2025>
+-- Description:	<This Procedure returns user profile>
+-- =============================================
+CREATE PROCEDURE SP_GetUserProfile
+    @userId INT
+AS
+BEGIN
+	SET NOCOUNT ON;
+    SELECT UserId, FirstName, LastName, BirthDate, Email, FavSportId, CityId, ProfileImage,Bio, Gender
+    FROM Users
+    WHERE UserId = @userId
+END
+GO

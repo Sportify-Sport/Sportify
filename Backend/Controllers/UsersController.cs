@@ -12,14 +12,6 @@ namespace Backend.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        // GET: api/<UsersController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-
         [HttpGet("groups/top3")]
         [Authorize(Roles = "User")]
         public IActionResult GetTop3Groups()
@@ -40,29 +32,26 @@ namespace Backend.Controllers
             }
         }
 
-        // GET api/<UsersController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("profile")]
+        [Authorize(Roles = "User")]
+        public IActionResult GetUserProfile()
         {
-            return "value";
-        }
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var userProfile = BL.User.GetUserProfile(userId);
 
-        // POST api/<UsersController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
+                if (userProfile == null)
+                {
+                    return NotFound($"User with ID {userId} not found");
+                }
 
-        // PUT api/<UsersController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<UsersController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+                return Ok(userProfile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving user profile: {ex.Message}");
+            }
         }
     }
 }
