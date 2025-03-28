@@ -16,44 +16,44 @@ const Signup = () => {
   const [city, setCity] = useState('');
   const [cityId, setCityId] = useState(''); // Store cityId
   const [citySuggestions, setCitySuggestions] = useState([]);
-  const [allCities, setAllCities] = useState([]); // Store city objects (name, id)
 
   // Initialize the router
   const router = useRouter();
+
   const handleContinue = async () => {
-  // Date format validation (yyyy/mm/dd)
-  const datePattern = /^\d{4}\-(0[1-9]|1[0-2])\-(0[1-9]|[12][0-9]|3[01])$/;
-  if (!datePattern.test(birthdate)) {
-    alert('Please enter a valid birthdate in the format yyyy-mm-dd.');
-    return;
-  }
-  
+    // Date format validation (yyyy/mm/dd)
+    const datePattern = /^\d{4}\-(0[1-9]|1[0-2])\-(0[1-9]|[12][0-9]|3[01])$/;
+    if (!datePattern.test(birthdate)) {
+      alert('Please enter a valid birthdate in the format yyyy-mm-dd.');
+      return;
+    }
+
     // Password validation
     const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,12}$/;
     if (!passwordPattern.test(password)) {
       alert('Password must be 5-12 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.');
       return;
     }
-  
+
     // Email validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
       alert('Please enter a valid email address.');
       return;
     }
-  
+
     // Check if all fields are filled
     if (!firstName || !lastName || !gender || !birthdate || !email || !password || !confirmPassword || !favoriteSport || !cityId) {
       alert('Please fill in all fields.');
       return;
     }
-  
+
     // Confirm password check
     if (password !== confirmPassword) {
       alert('Passwords do not match.');
       return;
     }
-  
+
     // Map favorite sport to sportId
     let sportId;
     if (favoriteSport === 'Football') {
@@ -66,13 +66,13 @@ const Signup = () => {
       alert('Please select a valid favorite sport.');
       return;
     }
-  
+
     // Map gender to "M" or "F"
     const genderValue = gender === 'Male' ? 'M' : 'F';
-  
+
     // Format birthdate (mm/dd/yyyy to yyyy-mm-dd)
     const formattedBirthdate = birthdate.split('/').reverse().join('-');
-  
+
     // API call
     try {
       const response = await fetch('https://localhost:7059/api/Auth/register', {
@@ -91,7 +91,7 @@ const Signup = () => {
           gender: genderValue, // Send "M" or "F"
         }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         console.log('Registration successful:', data);
@@ -105,7 +105,7 @@ const Signup = () => {
       console.error('Error during registration:', error);
       alert('An error occurred during registration -', error);
     }
-  };  
+  };
 
   const handleGoogleSignup = () => {
     // Handle Google signup logic
@@ -117,6 +117,7 @@ const Signup = () => {
     router.push('/screens/Login');
   };
 
+<<<<<<< Updated upstream
   useEffect(() => {
     // Fetch cities when component loads
     const fetchCities = async () => {
@@ -146,14 +147,36 @@ const Signup = () => {
 
   // Search cities locally
   const searchCities = (query) => {
+=======
+  // Search cities dynamically from the gov API
+  const searchCities = async (query) => {
+>>>>>>> Stashed changes
     if (query.length < 3) {
       setCitySuggestions([]);
       return;
     }
-    const filteredCities = allCities.filter((city) =>
-      city.name.toLowerCase().includes(query.toLowerCase()) // Search by city name
-    );
-    setCitySuggestions(filteredCities);
+
+    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&q=${encodeURIComponent(query)}&limit=5`;
+
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      if (data.success && data.result && data.result.records) {
+        // Map each record to get only _id and תעתיק, and filter out records without a valid תעתיק
+        const suggestions = data.result.records
+          .filter(record => record['תעתיק'] && record['תעתיק'].trim() !== '')
+          .map(record => ({
+            id: record._id,
+            name: record['תעתיק']
+          }));
+        setCitySuggestions(suggestions);
+      } else {
+        setCitySuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching cities from gov API:', error);
+      setCitySuggestions([]);
+    }
   };
 
   const handleCityBlur = () => {
@@ -251,10 +274,8 @@ const Signup = () => {
             setCity(text);
             searchCities(text);
           }}
-          onBlur={handleCityBlur} // Check on blur
+          onBlur={handleCityBlur}
         />
-
-        {/* Show city suggestions */}
         {citySuggestions.length > 0 && (
           <FlatList
             data={citySuggestions}
@@ -263,7 +284,8 @@ const Signup = () => {
               <TouchableOpacity
                 onPress={() => {
                   setCity(item.name);
-                  setCityId(item.id); // Set cityId when a city is selected
+                  setCityId(item.id);
+                  console.log(item.name, item.id);
                   setCitySuggestions([]);
                 }}
                 style={styles.suggestionItem}
