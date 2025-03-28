@@ -90,7 +90,7 @@ namespace Backend.BL
         }
 
         // Update user profile
-        public static object UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+        public static bool UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
         {
             try
             {

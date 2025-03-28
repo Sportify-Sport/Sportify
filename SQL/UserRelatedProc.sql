@@ -49,7 +49,7 @@ CREATE PROCEDURE SP_UpdateUserProfile
     @profileImage NVARCHAR(255) = NULL
 AS
 BEGIN
-    SET NOCOUNT ON;
+    SET NOCOUNT OFF;
     
     UPDATE Users
     SET BirthDate = @birthDate, FavSportId = @favSportId, CityId = @cityId, Bio = @bio, Gender = @gender,
@@ -57,8 +57,5 @@ BEGIN
         ProfileImage = CASE WHEN @profileImage IS NOT NULL THEN @profileImage ELSE ProfileImage END
     WHERE UserId = @userId;
     
-    SELECT UserId, FirstName, LastName, BirthDate, Email, FavSportId, CityId, Bio, Gender, ProfileImage
-    FROM Users
-    WHERE UserId = @userId;
 END
 GO

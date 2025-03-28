@@ -74,7 +74,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles(new StaticFileOptions()
 {
     FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), @"profileImages")),
+        Path.Combine(Directory.GetCurrentDirectory(), @"uploadedImages")),
     RequestPath = new PathString("/Images")
 });
 

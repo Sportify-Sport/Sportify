@@ -71,15 +71,16 @@ namespace Backend.Controllers
                     imageFileName = await ProcessProfileImage(userId, model.ProfileImage);
                 }
 
-                // Update user profile in database
-                var result = BL.User.UpdateUserProfile(userId, model, imageFileName);
+                bool success = BL.User.UpdateUserProfile(userId, model, imageFileName);
 
-                if (result == null)
+                if (success)
                 {
-                    return NotFound($"User with ID {userId} not found");
+                    return Ok(new { success = true, message = "Profile updated successfully" });
                 }
-
-                return Ok(result);
+                else
+                {
+                    return NotFound(new { success = false, message = $"User with ID {userId} not found" });
+                }
             }
             catch (Exception ex)
             {
@@ -91,7 +92,7 @@ namespace Backend.Controllers
         private async Task<string> ProcessProfileImage(int userId, IFormFile image)
         {
             // Ensure profile images directory exists
-            string profileImagesPath = Path.Combine(Directory.GetCurrentDirectory(), "profileImages");
+            string profileImagesPath = Path.Combine(Directory.GetCurrentDirectory(), "uploadedImages");
             if (!Directory.Exists(profileImagesPath))
             {
                 Directory.CreateDirectory(profileImagesPath);

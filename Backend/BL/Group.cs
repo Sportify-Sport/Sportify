@@ -50,5 +50,20 @@
         public int Matches { get => matches; set => matches = value; }
         public int Wins { get => wins; set => wins = value; }
         public int Loses { get => loses; set => loses = value; }
+
+
+        // This method gets all details for a specific group
+        public static Group GetGroupDetails(int groupId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetGroupDetails(groupId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

@@ -465,7 +465,7 @@ public class DBservices
     {
         SqlConnection con;
         SqlCommand cmd;
-        
+
 
         try
         {
@@ -630,7 +630,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // This method updates a user's profile information 
     //---------------------------------------------------------------------------------
-    public object UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+    public bool UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
     {
         SqlConnection con = null;
 
@@ -639,26 +639,9 @@ public class DBservices
             con = connect("myProjDB");
             SqlCommand cmd = CreateCommandWithStoredProcedureUpdateUserProfile("SP_UpdateUserProfile", con, userId, model, imageFileName);
 
-            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            int rowsAffected = cmd.ExecuteNonQuery();
 
-            if (dataReader.Read())
-            {
-                return new
-                {
-                    UserId = Convert.ToInt32(dataReader["UserId"]),
-                    FirstName = dataReader["FirstName"].ToString(),
-                    LastName = dataReader["LastName"].ToString(),
-                    BirthDate = Convert.ToDateTime(dataReader["BirthDate"]),
-                    Email = dataReader["Email"].ToString(),
-                    FavSportId = Convert.ToInt32(dataReader["FavSportId"]),
-                    CityId = Convert.ToInt32(dataReader["CityId"]),
-                    Bio = dataReader["Bio"] == DBNull.Value ? "" : dataReader["Bio"].ToString(),
-                    Gender = dataReader["Gender"].ToString(),
-                    ProfileImage = dataReader["ProfileImage"] == DBNull.Value ? "" : dataReader["ProfileImage"].ToString()
-                };
-            }
-
-            return null;
+            return rowsAffected > 0;
         }
         catch (Exception ex)
         {
@@ -701,6 +684,87 @@ public class DBservices
             cmd.Parameters.AddWithValue("@profileImage", DBNull.Value);
         }
 
+        return cmd;
+    }
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves complete information for a specific group
+    //--------------------------------------------------------------------------------------------------
+    public Group GetGroupDetails(int groupId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetGroupDetails("SP_GetGroupDetails", con, groupId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                string groupImage = dataReader["GroupImage"] == DBNull.Value || string.IsNullOrEmpty(dataReader["GroupImage"].ToString())
+                ? "default_group.png"
+                : dataReader["GroupImage"].ToString();
+
+                Group group = new Group(
+                    Convert.ToInt32(dataReader["GroupId"]),
+                    dataReader["GroupName"].ToString(),
+                    dataReader["Description"].ToString(),
+                    Convert.ToInt32(dataReader["SportId"]),
+                    groupImage,
+                    Convert.ToInt32(dataReader["CityId"]),
+                    Convert.ToDateTime(dataReader["FoundedAt"]),
+                    Convert.ToInt32(dataReader["MaxMemNum"]),
+                    Convert.ToInt32(dataReader["TotalMembers"]),
+                    Convert.ToInt32(dataReader["MinAge"]),
+                    dataReader["Gender"].ToString(),
+                    Convert.ToInt32(dataReader["Matches"]),
+                    Convert.ToInt32(dataReader["Wins"]),
+                    Convert.ToInt32(dataReader["Loses"])
+                );
+
+                return group;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for retrieving group details
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupDetails(string spName, SqlConnection con, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@groupId", groupId);
         return cmd;
     }
 }
