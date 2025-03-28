@@ -19,6 +19,11 @@ const Login = () => {
     // Reset any previous error message
     setErrorMessage('');
 
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage('Please enter both email and password.');
+      return;
+    }  
+
     try {
       // Call the API
       const apiUrl = getApiBaseUrl();

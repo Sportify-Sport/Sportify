@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet,TouchableOpacity, TextInput, Alert, Platform, ScrollView, FlatList
-} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Alert, Platform, ScrollView, FlatList } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
@@ -17,49 +16,39 @@ export default function Profile() {
   const [city, setCity] = useState('Haifa');
   const [cityId, setCityId] = useState(''); // Store cityId
   const [citySuggestions, setCitySuggestions] = useState([]);
-  const [allCities, setAllCities] = useState([]);
   const [gender, setGender] = useState('M'); // "M" or "F"
   const [favoriteSport, setFavoriteSport] = useState('Football'); // "Football", "Basketball", "Marathon"
   const [isEditing, setIsEditing] = useState(false);
   const [age, setAge] = useState(0);
 
-  useEffect(() => {
-    // Fetch cities when component loads
-    const fetchCities = async () => {
-      try {
-        const response = await fetch(
-          'https://parseapi.back4app.com/classes/City?limit=1000&keys=name,cityId', // Updated API URL
-          {
-            headers: {
-              'X-Parse-Application-Id': '3weosiutAnAaPOxJsZSr2vCMvYe03u6exstY2RE6',
-              'X-Parse-Master-Key': '6OxeLaPRkf89GyFBcbopxOgojfBGO9PXtpQgjyBK',
-            },
-          }
-        );
-        const data = await response.json();
-        const cities = data.results.map((city) => ({
-          name: city.name,
-          id: city.cityId, // Now using cityId
-        }));
-        setAllCities(cities); // Store all cities (name and id)
-      } catch (error) {
-        console.error('Error fetching cities:', error);
-      }
-    };
-
-    fetchCities();
-  }, []);
-
-  // Search cities locally
-  const searchCities = (query) => {
+  // Search cities dynamically from the gov API
+  const searchCities = async (query) => {
     if (query.length < 3) {
       setCitySuggestions([]);
       return;
     }
-    const filteredCities = allCities.filter((city) =>
-      city.name.toLowerCase().includes(query.toLowerCase()) // Search by city name
-    );
-    setCitySuggestions(filteredCities);
+
+    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&q=${encodeURIComponent(query)}&limit=5`;
+
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      if (data.success && data.result && data.result.records) {
+        // Map each record to get only _id and תעתיק, and filter out records without a valid תעתיק
+        const suggestions = data.result.records
+          .filter(record => record['תעתיק'] && record['תעתיק'].trim() !== '')
+          .map(record => ({
+            id: record._id,
+            name: record['תעתיק']
+          }));
+        setCitySuggestions(suggestions);
+      } else {
+        setCitySuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching cities from gov API:', error);
+      setCitySuggestions([]);
+    }
   };
 
   const handleCityBlur = () => {
@@ -67,7 +56,6 @@ export default function Profile() {
       setCity(''); // Clear the input if the city is not selected from suggestions
     }
   };
-
 
   // Calculate age based on birthdate
   useEffect(() => {
@@ -83,7 +71,6 @@ export default function Profile() {
 
   const handleBirthdateBlur = () => {
     const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-
     if (!regex.test(birthdate)) {
       Alert.alert('Invalid Format', 'Please enter a valid birthdate in the format yyyy-mm-dd.');
       setBirthdate(prevBirthdate); // Revert to previous valid value
@@ -93,25 +80,19 @@ export default function Profile() {
     // Calculate age
     const birthDateObj = new Date(birthdate);
     const today = new Date();
-    const age = today.getFullYear() - birthDateObj.getFullYear();
+    let calculatedAge = today.getFullYear() - birthDateObj.getFullYear();
     const monthDiff = today.getMonth() - birthDateObj.getMonth();
     const dayDiff = today.getDate() - birthDateObj.getDate();
-
-    // Adjust age if the birthdate hasn't occurred yet this year
     if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-      age--;
+      calculatedAge--;
     }
-
-    if (age < 13 || age > 90) {
+    if (calculatedAge < 13 || calculatedAge > 90) {
       Alert.alert('Invalid Age', 'Age must be between 13 and 90 years.');
       setBirthdate(prevBirthdate); // Revert to previous valid value
       return;
     }
-
-    // If valid, store as new previous value
     setPrevBirthdate(birthdate);
   };
-
 
   // Function to handle image selection
   const handleChangeImage = async () => {
@@ -132,7 +113,6 @@ export default function Profile() {
               aspect: [1, 1],
               quality: 0.5,
             });
-            // Updated to use "canceled" and assets array
             if (!result.canceled) {
               setProfileImage(result.assets[0].uri);
             }
@@ -151,7 +131,6 @@ export default function Profile() {
               aspect: [1, 1],
               quality: 0.5,
             });
-            // Updated to use "canceled" and assets array
             if (!result.canceled) {
               setProfileImage(result.assets[0].uri);
             }
@@ -221,7 +200,6 @@ export default function Profile() {
 
       <View style={styles.infoContainer}>
         <Text style={styles.label}>City</Text>
-
         {isEditing ? (
           <>
             <TextInput
@@ -232,10 +210,8 @@ export default function Profile() {
                 setCity(text);
                 searchCities(text);
               }}
-              onBlur={handleCityBlur} // Check on blur
+              onBlur={handleCityBlur}
             />
-
-            {/* Show city suggestions */}
             {citySuggestions.length > 0 && (
               <FlatList
                 data={citySuggestions}
@@ -244,7 +220,7 @@ export default function Profile() {
                   <TouchableOpacity
                     onPress={() => {
                       setCity(item.name);
-                      setCityId(item.id); // Set cityId when a city is selected
+                      setCityId(item.id);
                       setCitySuggestions([]);
                     }}
                     style={styles.suggestionItem}
@@ -259,7 +235,6 @@ export default function Profile() {
           <Text style={styles.infoText}>{city || "Not set"}</Text>
         )}
       </View>
-
 
       <View style={styles.infoRow}>
         <View style={[styles.infoContainer, styles.halfWidth]}>
