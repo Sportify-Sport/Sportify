@@ -1,86 +1,110 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, Image, FlatList } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
-import styles from '../../styles/SignupStyles';
-import { getApiBaseUrl } from "../config/apiConfig";
+import React, { useState, useEffect } from "react";
+import {
+  ScrollView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  FlatList,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { useRouter } from "expo-router";
+import styles from "../../styles/SignupStyles";
+import getApiBaseUrl from "../config/apiConfig";
+import jwtDecode from "jwt-decode";
+import { useAuth } from "../context/AuthContext";
 
 const Signup = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [gender, setGender] = useState('');
-  const [birthdate, setBirthdate] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [favoriteSport, setFavoriteSport] = useState('');
-  const [city, setCity] = useState('');
-  const [cityId, setCityId] = useState(''); // Store cityId
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [gender, setGender] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [favoriteSport, setFavoriteSport] = useState("");
+  const [city, setCity] = useState("");
+  const [cityId, setCityId] = useState(""); // Store cityId
   const [citySuggestions, setCitySuggestions] = useState([]);
 
   // Initialize the router
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleContinue = async () => {
     // Date format validation (yyyy/mm/dd)
     const datePattern = /^\d{4}\-(0[1-9]|1[0-2])\-(0[1-9]|[12][0-9]|3[01])$/;
     if (!datePattern.test(birthdate)) {
-      alert('Please enter a valid birthdate in the format yyyy-mm-dd.');
+      alert("Please enter a valid birthdate in the format yyyy-mm-dd.");
       return;
     }
 
     // Password validation
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,12}$/;
+    const passwordPattern =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,12}$/;
     if (!passwordPattern.test(password)) {
-      alert('Password must be 5-12 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.');
+      alert(
+        "Password must be 5-12 characters long and include one uppercase letter, one lowercase letter, one number, and one special character."
+      );
       return;
     }
 
     // Email validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
-      alert('Please enter a valid email address.');
+      alert("Please enter a valid email address.");
       return;
     }
 
     // Check if all fields are filled
-    if (!firstName || !lastName || !gender || !birthdate || !email || !password || !confirmPassword || !favoriteSport || !cityId) {
-      alert('Please fill in all fields.');
+    if (
+      !firstName ||
+      !lastName ||
+      !gender ||
+      !birthdate ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !favoriteSport ||
+      !cityId
+    ) {
+      alert("Please fill in all fields.");
       return;
     }
 
     // Confirm password check
     if (password !== confirmPassword) {
-      alert('Passwords do not match.');
+      alert("Passwords do not match.");
       return;
     }
 
     // Map favorite sport to sportId
     let sportId;
-    if (favoriteSport === 'Football') {
+    if (favoriteSport === "Football") {
       sportId = 1;
-    } else if (favoriteSport === 'Basketball') {
+    } else if (favoriteSport === "Basketball") {
       sportId = 2;
-    } else if (favoriteSport === 'Marathon') {
+    } else if (favoriteSport === "Marathon") {
       sportId = 3;
     } else {
-      alert('Please select a valid favorite sport.');
+      alert("Please select a valid favorite sport.");
       return;
     }
 
     // Map gender to "M" or "F"
-    const genderValue = gender === 'Male' ? 'M' : 'F';
+    const genderValue = gender === "Male" ? "M" : "F";
 
     // Format birthdate (mm/dd/yyyy to yyyy-mm-dd)
-    const formattedBirthdate = birthdate.split('/').reverse().join('-');
+    const formattedBirthdate = birthdate.split("/").reverse().join("-");
 
     // API call
     try {
       const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/api/Auth/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           firstName,
@@ -96,25 +120,48 @@ const Signup = () => {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`Registration successful, Go to the Login page to enter your account`);
-        router.push('/screens/Login');
+        const token = data.token;
+
+        // try {
+        //   const decodedToken = jwtDecode(token);
+        // } catch (error) {
+        //   console.log("error");
+        // }
+
+        // const roleValue =
+        //   decodedToken[
+        //     "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        //   ];
+
+        const userData = {
+          // id: decodedToken[
+          //   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+          // ],
+          // email: decodedToken.email,
+          // name: decodedToken.name,
+          // role: roleValue,
+          // roles: Array.isArray(roleValue) ? roleValue : [roleValue],
+          permissions: data.permissions,
+        };
+
+        login(userData, token);
       } else {
         const errorData = await response.json();
-        alert(`Registration failed: ${errorData.message || 'Unknown error'}`);
+        alert(`Registration failed: ${errorData.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error('Error during registration:', error);
-      alert('An error occurred during registration -', error);
+      console.error("Error during registration:", error);
+      alert("An error occurred during registration -", error);
     }
   };
 
   const handleGoogleSignup = () => {
     // Handle Google signup logic
-    console.log('Sign up with Google pressed');
+    console.log("Sign up with Google pressed");
   };
 
   const handleSigninNavigation = () => {
-    router.push('../(tabs)');
+    router.push("../(tabs)");
   };
 
   // Search cities dynamically from the gov API
@@ -124,7 +171,9 @@ const Signup = () => {
       return;
     }
 
-    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&q=${encodeURIComponent(query)}&limit=5`;
+    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&q=${encodeURIComponent(
+      query
+    )}&limit=5`;
 
     try {
       const response = await fetch(apiUrl);
@@ -132,24 +181,24 @@ const Signup = () => {
       if (data.success && data.result && data.result.records) {
         // Map each record to get only _id and תעתיק, and filter out records without a valid תעתיק
         const suggestions = data.result.records
-          .filter(record => record['תעתיק'] && record['תעתיק'].trim() !== '')
-          .map(record => ({
+          .filter((record) => record["תעתיק"] && record["תעתיק"].trim() !== "")
+          .map((record) => ({
             id: record._id,
-            name: record['תעתיק']
+            name: record["תעתיק"],
           }));
         setCitySuggestions(suggestions);
       } else {
         setCitySuggestions([]);
       }
     } catch (error) {
-      console.error('Error fetching cities from gov API:', error);
+      console.error("Error fetching cities from gov API:", error);
       setCitySuggestions([]);
     }
   };
 
   const handleCityBlur = () => {
     if (!citySuggestions.some((suggestion) => suggestion.name === city)) {
-      setCity(''); // Clear the input if the city is not selected from suggestions
+      setCity(""); // Clear the input if the city is not selected from suggestions
     }
   };
 
@@ -264,15 +313,21 @@ const Signup = () => {
           />
         )}
 
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={handleContinue}
+        >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
 
-        <Text style={styles.orText}>________________       Or       ________________</Text>
+        <Text style={styles.orText}>________________ Or ________________</Text>
 
-        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignup}>
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={handleGoogleSignup}
+        >
           <Image
-            source={require('../../assets/images/google.png')}
+            source={require("../../assets/images/google.png")}
             style={styles.googleIcon}
           />
           <Text style={styles.googleButtonText}>Login with Google</Text>
