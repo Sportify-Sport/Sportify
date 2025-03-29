@@ -1,37 +1,37 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 import checkTokenValidity from "../utils/authUtils";
-import { Alert, Platform  } from "react-native";
+import { Alert, Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 
 // Cross-platform storage
 const Storage = {
   async getItem(key) {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       return localStorage.getItem(key);
     } else {
       return await SecureStore.getItemAsync(key);
     }
   },
-  
+
   async setItem(key, value) {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       localStorage.setItem(key, value);
       return;
     } else {
       return await SecureStore.setItemAsync(key, value);
     }
   },
-  
+
   async removeItem(key) {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       localStorage.removeItem(key);
       return;
     } else {
       return await SecureStore.deleteItemAsync(key);
     }
-  }
+  },
 };
 
 const AuthContext = createContext();
@@ -53,15 +53,21 @@ export const AuthProvider = ({ children }) => {
         const storedUser = await Storage.getItem("user");
 
         if (storedToken && storedUser) {
-          if (checkTokenValidity(storedToken)) {
-            setUser(JSON.parse(storedUser));
-            setToken(storedToken);
-            setLogoutAlertShown(false);
-            router.replace("../(tabs)");
-          } else {
-            // Token expired, Guest
-            logout();
-          }
+          // if (checkTokenValidity(storedToken)) {
+          //   setUser(JSON.parse(storedUser));
+          //   setToken(storedToken);
+          //   setLogoutAlertShown(false);
+          //   console.log(storedToken);
+          //   console.log(storedUser);
+          //   router.replace("../(tabs)");
+          // } else {
+          //   // Token expired, Guest
+          //   logout();
+          // }
+          setUser(JSON.parse(storedUser));
+          setToken(storedToken);
+          setLogoutAlertShown(false);
+          router.replace("../(tabs)");
         } else {
           // Guest
           setUser(null);
@@ -86,8 +92,6 @@ export const AuthProvider = ({ children }) => {
     Storage.setItem("user", JSON.stringify(newUser));
     setLogoutAlertShown(false);
     router.replace("../(tabs)");
-    console.log(token);
-    console.log(user);
   };
 
   const logout = async () => {
@@ -103,7 +107,7 @@ export const AuthProvider = ({ children }) => {
     if (!logoutAlertShown) {
       setLogoutAlertShown(true);
       // Only show Alert on native platforms, not on web
-      if (Platform.OS !== 'web') {
+      if (Platform.OS !== "web") {
         Alert.alert(
           "Session Expired",
           "Your session has expired. Please log in again."
