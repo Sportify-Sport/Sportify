@@ -186,53 +186,105 @@ export default function Profile() {
     setPrevBirthdate(birthdate);
   };
 
-  // Function to handle image selection remains unchanged
-  const handleChangeImage = async () => {
-    Alert.alert(
-      'Change Profile Picture',
-      'Choose an option:',
-      [
-        {
-          text: 'Take a picture',
-          onPress: async () => {
-            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-            if (!permissionResult.granted) {
-              Alert.alert('Permission required', 'Camera permission is required to take a photo.');
-              return;
-            }
-            let result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.5,
-            });
-            if (!result.canceled) {
-              setProfileImage(result.assets[0].uri);
-            }
-          },
+ // Function to handle image selection and upload
+const handleChangeImage = async () => {
+  Alert.alert(
+    'Change Profile Picture',
+    'Choose an option:',
+    [
+      {
+        text: 'Take a picture',
+        onPress: async () => {
+          const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+          if (!permissionResult.granted) {
+            Alert.alert('Permission required', 'Camera permission is required to take a photo.');
+            return;
+          }
+          let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+          });
+          if (!result.canceled) {
+            const uri = result.assets[0].uri;
+            setProfileImage(uri);
+            // Upload image to backend
+            uploadProfileImage(uri);
+          }
         },
-        {
-          text: 'Choose from gallery',
-          onPress: async () => {
-            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!permissionResult.granted) {
-              Alert.alert('Permission required', 'Media library permission is required to select a photo.');
-              return;
-            }
-            let result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.5,
-            });
-            if (!result.canceled) {
-              setProfileImage(result.assets[0].uri);
-            }
-          },
+      },
+      {
+        text: 'Choose from gallery',
+        onPress: async () => {
+          const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!permissionResult.granted) {
+            Alert.alert('Permission required', 'Media library permission is required to select a photo.');
+            return;
+          }
+          let result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+          });
+          if (!result.canceled) {
+            const uri = result.assets[0].uri;
+            setProfileImage(uri);
+            // Upload image to backend
+            uploadProfileImage(uri);
+          }
         },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-      { cancelable: true }
-    );
-  };
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ],
+    { cancelable: true }
+  );
+};
+
+// Helper function to upload the profile image to the backend
+const uploadProfileImage = async (imageUri) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      navigation.replace('/screens/Login');
+      return;
+    }
+
+    // Extract file name from the URI
+    const fileName = imageUri.split('/').pop();
+    // Determine file type (e.g., image/jpeg)
+    const match = /\.(\w+)$/.exec(fileName);
+    const fileType = match ? `image/${match[1]}` : `image`;
+
+    // Build FormData and append the image file
+    const formData = new FormData();
+    formData.append('profileImage', {
+      uri: imageUri,
+      name: fileName,
+      type: fileType,
+    });
+
+    // Upload the image with a PUT request
+    const response = await fetch(`${apiUrl}/api/Users/profile/image`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        // Do not manually set 'Content-Type'; let fetch set it automatically for multipart/form-data
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log('Image Upload Response:', data);
+    if (!response.ok) {
+      Alert.alert('Error', data.message || 'An error occurred while uploading the image.');
+    } else {
+      Alert.alert('Success', 'Profile image updated successfully.');
+    }
+  } catch (error) {
+    console.error('Error uploading profile image:', error);
+    Alert.alert('Error', 'An error occurred while uploading the profile image.');
+  }
+};
 
   // Function to update the user profile
   const handleSaveProfile = async () => {
@@ -241,18 +293,14 @@ export default function Profile() {
       Alert.alert('Missing Fields', 'Please fill in all required fields.');
       return;
     }
-
+  
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         navigation.replace('Index');
         return;
       }
-
-      // Create FormData with the update parameters
-      const formData = new FormData();
-      formData.append('BirthDate', birthdate);
-
+  
       // Map the favoriteSport string to an id
       let favSportId;
       switch(favoriteSport) {
@@ -268,19 +316,26 @@ export default function Profile() {
         default:
           favSportId = '';
       }
-      formData.append('FavSportId', favSportId);
-      formData.append('CityId', cityId);
-      formData.append('Bio', bio);
-      formData.append('Gender', gender === 'Male' ? 'M' : 'F');
-
-      const response = await fetch(`${apiUrl}/api/Users/UpdateUserProfile`, {
+  
+      // Create a plain object for the update parameters
+      const profileData = {
+        BirthDate: birthdate,
+        FavSportId: favSportId,
+        CityId: cityId,
+        Bio: bio,
+        Gender: gender === 'M' ? 'M' : 'F'
+      };
+  
+      // Send the request with JSON.stringify
+      const response = await fetch(`${apiUrl}/api/Users/profile/details`, {
         method: 'PUT',
         headers: {
           'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
         },
-        body: formData
+        body: JSON.stringify(profileData)
       });
-
+  
       const data = await response.json();
       console.log('Full Response:', data);
       if (!response.ok) {

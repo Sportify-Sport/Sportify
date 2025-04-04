@@ -10,11 +10,11 @@ export default StyleSheet.create({
         marginVertical: 20,
     },
     profileImage: {
-        width: 140,
-        height: 140,
-        borderRadius: 70, // Circular image
+        width: 150,
+        height: 150,
+        borderRadius: 75, // Circular image
         borderWidth: 3,
-        borderColor: '#fff',
+        borderColor: '#65DA84',
         backgroundColor: '#ccc',
     },
     name: {
