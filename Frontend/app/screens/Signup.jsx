@@ -6,14 +6,15 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  FlatList,
+  FlatList
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import styles from "../../styles/SignupStyles";
 import getApiBaseUrl from "../config/apiConfig";
-import jwtDecode from "jwt-decode";
-import { useAuth } from "../context/AuthContext";
+// import jwtDecode from "jwt-decode";
+// import { useAuth } from "../context/AuthContext";
 
 const Signup = () => {
   const [firstName, setFirstName] = useState("");
@@ -30,7 +31,7 @@ const Signup = () => {
 
   // Initialize the router
   const router = useRouter();
-  const { login } = useAuth();
+  // const { login } = useAuth();
 
   const handleContinue = async () => {
     // Date format validation (yyyy/mm/dd)
@@ -121,7 +122,12 @@ const Signup = () => {
       if (response.ok) {
         const data = await response.json();
         const token = data.token;
-
+        try {
+          await AsyncStorage.setItem('token', token);
+          console.log('Token saved successfully');
+        } catch (error) {
+          console.error('Failed to save token:', error);
+        }
         // try {
         //   const decodedToken = jwtDecode(token);
         // } catch (error) {
@@ -141,10 +147,10 @@ const Signup = () => {
           // name: decodedToken.name,
           // role: roleValue,
           // roles: Array.isArray(roleValue) ? roleValue : [roleValue],
-          permissions: data.permissions,
+          // permissions: data.permissions,
         };
 
-        login(userData, token);
+        router.replace('../(tabs)');
       } else {
         const errorData = await response.json();
         alert(`Registration failed: ${errorData.message || "Unknown error"}`);

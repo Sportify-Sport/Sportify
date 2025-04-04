@@ -8,7 +8,7 @@ import {
   TextInput, 
   Alert, 
   ScrollView, 
-  FlatList
+  FlatList,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,7 @@ import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../../styles/ProfileStyles';
+import getApiBaseUrl from "../config/apiConfig";
 
 export default function Profile() {
   const navigation = useNavigation();
@@ -34,6 +35,7 @@ export default function Profile() {
   const [favoriteSport, setFavoriteSport] = useState('loading'); // "Football", "Basketball", "Marathon"
   const [isEditing, setIsEditing] = useState(false);
   const [age, setAge] = useState(0);
+  const apiUrl = getApiBaseUrl();
 
   // Fetch the user profile when the component mounts
   const fetchUserProfile = async () => {
@@ -44,7 +46,7 @@ export default function Profile() {
         return;
       }
 
-      const profileResponse = await fetch('https://localhost:7059/api/Users/GetUserProfile', {
+      const profileResponse = await fetch(`${apiUrl}/api/Users/GetUserProfile`, {
         method: 'GET',
         headers: {
           'accept': '*/*',
@@ -270,13 +272,11 @@ export default function Profile() {
       formData.append('CityId', cityId);
       formData.append('Bio', bio);
       formData.append('Gender', gender === 'Male' ? 'M' : 'F');
-      formData.append('ProfileImage', profileImage);
 
-      const response = await fetch('https://localhost:7059/api/Users/UpdateUserProfile', {
+      const response = await fetch(`${apiUrl}/api/Users/UpdateUserProfile`, {
         method: 'PUT',
         headers: {
           'Authorization': 'Bearer ' + token,
-          'Content-Type': 'multipart/form-data'
         },
         body: formData
       });

@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from "../../styles/LoginStyles";
 import googleIcon from "../../assets/images/google.png";
 import getApiBaseUrl from "../config/apiConfig";
-import jwtDecode from "jwt-decode";
-import { useAuth } from "../context/AuthContext"
+// import jwtDecode from "jwt-decode";
+// import { useAuth } from "../context/AuthContext"
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +15,7 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const router = useRouter();
-  const { login } = useAuth();
+  // const { login } = useAuth();
 
   const handleLogin = async () => {
     // Reset any previous error message
@@ -39,7 +39,12 @@ const Login = () => {
       if (response.status === 200) {
         const data = await response.json();
         const token = data.token;
-        console.log(data)
+        try {
+          await AsyncStorage.setItem('token', token);
+          console.log('Token saved successfully');
+        } catch (error) {
+          console.error('Failed to save token:', error);
+        }
         // try {
         //   const decodedToken = jwtDecode(token);
         // } catch (error) {
@@ -59,13 +64,13 @@ const Login = () => {
           // name: decodedToken.name,
           // role: roleValue,
           // roles: Array.isArray(roleValue) ? roleValue : [roleValue],
-          permissions: data.permissions,
+          // permissions: data.permissions,
         };
 
-        login(userData, token);
+        // login(userData, token);
         // await AsyncStorage.setItem('token', data.token);
         // Navigate to the index page inside your tabs folder
-        //router.push('../(tabs)');
+        router.replace('../(tabs)');
       } else {
         // If the response is not 200, get the error message
         const errorData = await response.json();
