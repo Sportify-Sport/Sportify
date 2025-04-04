@@ -7,6 +7,5 @@
         public int CityId { get; set; }
         public string Bio { get; set; }
         public string Gender { get; set; }
-        public IFormFile ProfileImage { get; set; }
     }
 }

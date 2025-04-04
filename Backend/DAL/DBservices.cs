@@ -627,17 +627,79 @@ public class DBservices
         }
     }
 
+    ////---------------------------------------------------------------------------------
+    //// This method updates a user's profile information 
+    ////---------------------------------------------------------------------------------
+    //public bool UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+    //{
+    //    SqlConnection con = null;
+
+    //    try
+    //    {
+    //        con = connect("myProjDB");
+    //        SqlCommand cmd = CreateCommandWithStoredProcedureUpdateUserProfile("SP_UpdateUserProfile", con, userId, model, imageFileName);
+
+    //        int rowsAffected = cmd.ExecuteNonQuery();
+
+    //        return rowsAffected > 0;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        throw ex;
+    //    }
+    //    finally
+    //    {
+    //        if (con != null && con.State == ConnectionState.Open)
+    //        {
+    //            con.Close();
+    //        }
+    //    }
+    //}
+
+    ////---------------------------------------------------------------------------------
+    //// Create the SqlCommand for updating user profile data
+    ////---------------------------------------------------------------------------------
+    //private SqlCommand CreateCommandWithStoredProcedureUpdateUserProfile(string spName, SqlConnection con, int userId, UserUpdateModel model, string imageFileName)
+    //{
+    //    SqlCommand cmd = new SqlCommand();
+    //    cmd.Connection = con;
+    //    cmd.CommandText = spName;
+    //    cmd.CommandTimeout = 10;
+    //    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+    //    cmd.Parameters.AddWithValue("@userId", userId);
+    //    cmd.Parameters.AddWithValue("@birthDate", model.BirthDate);
+    //    cmd.Parameters.AddWithValue("@favSportId", model.FavSportId);
+    //    cmd.Parameters.AddWithValue("@cityId", model.CityId);
+    //    cmd.Parameters.AddWithValue("@bio", string.IsNullOrEmpty(model.Bio) ? (object)DBNull.Value : model.Bio);
+    //    cmd.Parameters.AddWithValue("@gender", model.Gender);
+
+    //    // Only update image if a new one was provided
+    //    if (!string.IsNullOrEmpty(imageFileName))
+    //    {
+    //        cmd.Parameters.AddWithValue("@profileImage", imageFileName);
+    //    }
+    //    else
+    //    {
+    //        cmd.Parameters.AddWithValue("@profileImage", DBNull.Value);
+    //    }
+
+    //    return cmd;
+    //}
+
+
+
     //---------------------------------------------------------------------------------
-    // This method updates a user's profile information 
+    // This method updates only user profile details (without image)
     //---------------------------------------------------------------------------------
-    public bool UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+    public bool UpdateUserDetails(int userId, UserUpdateModel model)
     {
         SqlConnection con = null;
 
         try
         {
             con = connect("myProjDB");
-            SqlCommand cmd = CreateCommandWithStoredProcedureUpdateUserProfile("SP_UpdateUserProfile", con, userId, model, imageFileName);
+            SqlCommand cmd = CreateCommandWithStoredProcedureUpdateUserDetails("SP_UpdateUserDetails", con, userId, model);
 
             int rowsAffected = cmd.ExecuteNonQuery();
 
@@ -657,9 +719,9 @@ public class DBservices
     }
 
     //---------------------------------------------------------------------------------
-    // Create the SqlCommand for updating user profile data
+    // Create the SqlCommand for updating user profile details
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureUpdateUserProfile(string spName, SqlConnection con, int userId, UserUpdateModel model, string imageFileName)
+    private SqlCommand CreateCommandWithStoredProcedureUpdateUserDetails(string spName, SqlConnection con, int userId, UserUpdateModel model)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -674,6 +736,60 @@ public class DBservices
         cmd.Parameters.AddWithValue("@bio", string.IsNullOrEmpty(model.Bio) ? (object)DBNull.Value : model.Bio);
         cmd.Parameters.AddWithValue("@gender", model.Gender);
 
+        return cmd;
+    }
+
+
+
+
+
+
+
+
+
+
+    //---------------------------------------------------------------------------------
+    // This method updates only the user profile image
+    //---------------------------------------------------------------------------------
+    public bool UpdateProfileImage(int userId, string imageFileName)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUpdateProfileImage("SP_UpdateProfileImage", con, userId, imageFileName);
+
+            int rowsAffected = cmd.ExecuteNonQuery();
+
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null && con.State == ConnectionState.Open)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for updating user profile image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateProfileImage(string spName, SqlConnection con, int userId, string imageFileName)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@userId", userId);
+
         // Only update image if a new one was provided
         if (!string.IsNullOrEmpty(imageFileName))
         {
@@ -686,6 +802,13 @@ public class DBservices
 
         return cmd;
     }
+
+
+
+
+
+
+
 
 
     //--------------------------------------------------------------------------------------------------

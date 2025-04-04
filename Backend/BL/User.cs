@@ -90,12 +90,29 @@ namespace Backend.BL
         }
 
         // Update user profile
-        public static bool UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+        //public static bool UpdateUserProfile(int userId, UserUpdateModel model, string imageFileName)
+        //{
+        //    try
+        //    {
+        //        DBservices dBservices = new DBservices();
+        //        return dBservices.UpdateUserProfile(userId, model, imageFileName);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
+
+
+        //--------------------------------------------------------------------------------------------------
+        // This method updates a user's profile details (without the image)
+        //--------------------------------------------------------------------------------------------------
+        public static bool UpdateUserDetails(int userId, UserUpdateModel model)
         {
             try
             {
                 DBservices dBservices = new DBservices();
-                return dBservices.UpdateUserProfile(userId, model, imageFileName);
+                return dBservices.UpdateUserDetails(userId, model);
             }
             catch (Exception ex)
             {
@@ -103,7 +120,26 @@ namespace Backend.BL
             }
         }
 
+        //--------------------------------------------------------------------------------------------------
+        // This method updates only a user's profile image
+        //--------------------------------------------------------------------------------------------------
+        public static bool UpdateProfileImage(int userId, string imageFileName)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.UpdateProfileImage(userId, imageFileName);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
+        //--------------------------------------------------------------------------------------------------
         // Get current profile image path
+        //--------------------------------------------------------------------------------------------------
         public static string GetCurrentProfileImage(int userId)
         {
             try

@@ -56,26 +56,50 @@ namespace Backend.Controllers
         }
 
 
-        [HttpPut("UpdateUserProfile")]
+        //[HttpPut("UpdateUserProfile")]
+        //[Authorize(Roles = "User")]
+        //public async Task<IActionResult> UpdateUserProfile([FromForm] UserUpdateModel model)
+        //{
+        //    try
+        //    {
+        //        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+        //        // Handle profile image if provided
+        //        string imageFileName = null;
+        //        if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+        //        {
+        //            imageFileName = await ProcessProfileImage(userId, model.ProfileImage);
+        //        }
+
+        //        bool success = BL.User.UpdateUserProfile(userId, model, imageFileName);
+
+        //        if (success)
+        //        {
+        //            return Ok(new { success = true, message = "Profile updated successfully" });
+        //        }
+        //        else
+        //        {
+        //            return NotFound(new { success = false, message = $"User with ID {userId} not found" });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, $"An error occurred while updating user profile: {ex.Message}");
+        //    }
+        //}
+
+        [HttpPut("profile/details")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> UpdateUserProfile([FromForm] UserUpdateModel model)
+        public IActionResult UpdateUserDetails([FromBody] UserUpdateModel model)
         {
             try
             {
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-                // Handle profile image if provided
-                string imageFileName = null;
-                if (model.ProfileImage != null && model.ProfileImage.Length > 0)
-                {
-                    imageFileName = await ProcessProfileImage(userId, model.ProfileImage);
-                }
-
-                bool success = BL.User.UpdateUserProfile(userId, model, imageFileName);
+                bool success = BL.User.UpdateUserDetails(userId, model);
 
                 if (success)
                 {
-                    return Ok(new { success = true, message = "Profile updated successfully" });
+                    return Ok(new { success = true, message = "Profile details updated successfully" });
                 }
                 else
                 {
@@ -84,7 +108,41 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"An error occurred while updating user profile: {ex.Message}");
+                return StatusCode(500, $"An error occurred while updating user details: {ex.Message}");
+            }
+        }
+
+        [HttpPut("profile/image")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> UpdateProfileImage(IFormFile profileImage)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                if (profileImage == null || profileImage.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "No image file provided" });
+                }
+
+                // Process the image
+                string imageFileName = await ProcessProfileImage(userId, profileImage);
+
+                // Update the profile image in the database
+                bool success = BL.User.UpdateProfileImage(userId, imageFileName);
+
+                if (success)
+                {
+                    return Ok(new { success = true, message = "Profile image updated successfully" });
+                }
+                else
+                {
+                    return NotFound(new { success = false, message = $"User with ID {userId} not found" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while updating profile image: {ex.Message}");
             }
         }
 

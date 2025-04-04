@@ -47,11 +47,11 @@ namespace Backend.Controllers
                 var response = new
                 {
                     token,
-                    permissions = new
-                    {
-                        adminForGroups = user.AdminForGroups,
-                        organizerForCities = user.OrganizerForCities
-                    }
+                    //permissions = new
+                    //{
+                    //    adminForGroups = user.AdminForGroups,
+                    //    organizerForCities = user.OrganizerForCities
+                    //}
                 };
 
                 return Ok(response);
@@ -86,10 +86,10 @@ namespace Backend.Controllers
                 Gender = registerDto.Gender,
                 FavSportId = registerDto.FavSportId,
                 CityId = registerDto.CityId,
-                IsGroupAdmin = false,
-                IsCityOrganizer = false,
-                AdminForGroups = new List<int>(),
-                OrganizerForCities = new List<int>()
+                //IsGroupAdmin = false,
+                //IsCityOrganizer = false,
+                //AdminForGroups = new List<int>(),
+                //OrganizerForCities = new List<int>()
             };
         }
 
@@ -117,11 +117,11 @@ namespace Backend.Controllers
                 var response = new
                 {
                     token,
-                    permissions = new
-                    {
-                        adminForGroups = user.AdminForGroups,
-                        organizerForCities = user.OrganizerForCities
-                    }
+                    //permissions = new
+                    //{
+                    //    adminForGroups = user.AdminForGroups,
+                    //    organizerForCities = user.OrganizerForCities
+                    //}
                 };
 
                 return Ok(response);
@@ -144,15 +144,15 @@ namespace Backend.Controllers
                 new Claim(ClaimTypes.Role, "User")
             };
 
-            if (user.IsGroupAdmin)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, "GroupAdmin"));
-            }
+            //if (user.IsGroupAdmin)
+            //{
+            //    claims.Add(new Claim(ClaimTypes.Role, "GroupAdmin"));
+            //}
 
-            if (user.IsCityOrganizer)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, "CityOrganizer"));
-            }
+            //if (user.IsCityOrganizer)
+            //{
+            //    claims.Add(new Claim(ClaimTypes.Role, "CityOrganizer"));
+            //}
 
             var now = DateTime.UtcNow;
             var expires = now.AddDays(14);
