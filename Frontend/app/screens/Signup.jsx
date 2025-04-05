@@ -167,7 +167,8 @@ const Signup = () => {
   };
 
   const handleSigninNavigation = () => {
-    router.push("../(tabs)");
+    // router.push("../(tabs)");
+    router.push("./Login")
   };
 
   // Search cities dynamically from the gov API

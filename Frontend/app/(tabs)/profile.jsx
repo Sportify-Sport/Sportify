@@ -8,18 +8,18 @@ import {
   TextInput, 
   Alert, 
   ScrollView, 
-  FlatList,
+  FlatList
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from "expo-router";
 import styles from '../../styles/ProfileStyles';
 import getApiBaseUrl from "../config/apiConfig";
 
 export default function Profile() {
-  const navigation = useNavigation();
+  const router = useRouter();
 
   // State variables (initially using placeholder values)
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
@@ -363,8 +363,31 @@ const uploadProfileImage = async (imageUri) => {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
-    navigation.replace('/screens/Login');
+    router.replace('../screens/Login');
   };
+  //To remember: add this when Uploaded to file zilla
+  // const handleLogout = () => {
+  //   Alert.alert(
+  //     "Confirm Logout",
+  //     "Are you sure you want to log out?",
+  //     [
+  //       {
+  //         text: "Cancel",
+  //         style: "cancel"
+  //       },
+  //       {
+  //         text: "Logout",
+  //         style: "destructive",
+  //         onPress: async () => {
+  //           await AsyncStorage.removeItem('token');
+  //           router.replace('../screens/Login');
+  //         }
+  //       }
+  //     ],
+  //     { cancelable: true }
+  //   );
+  // };
+
   // C:\Users\Asus\OneDrive\Desktop\Sportify\Frontend\app\screens\Login.jsx
   return (
     <ScrollView contentContainerStyle={styles.container}>
