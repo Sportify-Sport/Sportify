@@ -14,7 +14,7 @@ CREATE TABLE Users (
     PasswordHash NVARCHAR(255) NOT NULL,
     FavSportId INT REFERENCES Sports(SportId) NOT NULL,
     CityId INT NOT NULL,
-    ProfileImage NVARCHAR(255) DEFAULT '',
+    ProfileImage NVARCHAR(255) DEFAULT 'default_event.png',
     Bio NVARCHAR(500) DEFAULT '',
     Gender NVARCHAR(1) NOT NULL CHECK (Gender IN ('M', 'F')),
 );

@@ -152,5 +152,19 @@ namespace Backend.BL
                 throw ex;
             }
         }
+
+
+        public List<object> GetAllGroups()
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetAllUserGroups(this.UserId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

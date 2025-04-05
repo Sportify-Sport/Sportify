@@ -890,4 +890,143 @@ public class DBservices
         cmd.Parameters.AddWithValue("@groupId", groupId);
         return cmd;
     }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves all groups that the user has joined
+    //--------------------------------------------------------------------------------------------------
+    public List<object> GetAllUserGroups(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetAllUserGroups("SP_GetAllUserGroups", con, userId);
+
+        List<object> groupsList = new List<object>();
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                groupsList.Add(new
+                {
+                    GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                    GroupName = dataReader["GroupName"].ToString(),
+                    GroupImage = dataReader["GroupImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"])
+                });
+            }
+
+            return groupsList;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting all groups for the user
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetAllUserGroups(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves details for a specific event
+    //--------------------------------------------------------------------------------------------------
+    public Event GetEventDetails(int eventId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureEventDetails("SP_GetEventDetails", con, eventId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                Event eventDetails = new Event();
+
+                eventDetails.EventId = Convert.ToInt32(dataReader["EventId"]);
+                eventDetails.EventName = dataReader["EventName"].ToString();
+                eventDetails.RequiresTeams = Convert.ToBoolean(dataReader["RequiresTeams"]);
+                eventDetails.StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]);
+                eventDetails.EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]);
+                eventDetails.CityId = Convert.ToInt32(dataReader["CityId"]);
+                eventDetails.LocationId = dataReader["LocationId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["LocationId"]);
+                eventDetails.SportId = Convert.ToInt32(dataReader["SportId"]);
+                eventDetails.MaxTeams = dataReader["MaxTeams"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxTeams"]);
+                eventDetails.CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]);
+                eventDetails.IsPublic = Convert.ToBoolean(dataReader["IsPublic"]);
+                eventDetails.WinnerId = dataReader["WinnerId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["WinnerId"]);
+                eventDetails.WaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]);
+                eventDetails.MinAge = Convert.ToInt32(dataReader["MinAge"]);
+                eventDetails.Gender = dataReader["Gender"].ToString();
+                eventDetails.ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]);
+                eventDetails.TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]);
+                eventDetails.ProfileImage = dataReader["ProfileImage"].ToString();
+                eventDetails.LocationName = dataReader["LocationName"].ToString();
+                eventDetails.Latitude = dataReader["Latitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Latitude"]);
+                eventDetails.Longitude = dataReader["Longitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Longitude"]);
+
+                return eventDetails;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting event details
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureEventDetails(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        return cmd;
+    }
 }

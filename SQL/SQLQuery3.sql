@@ -36,3 +36,67 @@ VALUES ('Tel Aviv Runners', 'Training group preparing for the Tel Aviv Marathon'
 
 INSERT INTO Groups (GroupName, Description, SportId, GroupImage, CityId, FoundedAt, MaxMemNum, TotalMembers, MinAge, Gender, Matches, Wins, Loses)
 VALUES ('Herzliya Women Marathoners', 'Women''s marathon training group with professional coaching', 3, '', 7, '2021-03-08', 20, 15, 21, 'Female', 0, 0, 0);
+
+
+INSERT INTO EventLocations (LocationName)
+VALUES
+('Haifa Sports Complex'),
+('Tel Aviv Beach Arena'),
+('Jerusalem Liberty Stadium'),
+('Eilat Track Center'),
+('Nazareth City Park');
+
+-- Football Event
+INSERT INTO Events (EventName, RequiresTeams, Description, StartDatetime, EndDatetime, CityId, LocationId, SportId, MaxTeams, IsPublic, MinAge, Gender)
+VALUES (
+    'Haifa Youth Football Cup', 1, 'A regional football tournament for youth teams.',
+    '2025-05-10 09:00', '2025-05-10 17:00',
+    101, 1, 1, 8, 1, 14, 'Male'
+);
+
+-- Basketball Event
+INSERT INTO Events (EventName, RequiresTeams, Description, StartDatetime, EndDatetime, CityId, LocationId, SportId, MaxTeams, IsPublic, MinAge, Gender)
+VALUES (
+    'Tel Aviv 3x3 Challenge', 1, 'Street-style 3x3 basketball tournament.',
+    '2025-06-02 15:00', '2025-06-02 20:00',
+    102, 2, 2, 12, 1, 16, 'Mixed'
+);
+
+-- Marathon Event
+INSERT INTO Events (EventName, RequiresTeams, Description, StartDatetime, EndDatetime, CityId, LocationId, SportId, MaxParticipants, IsPublic, MinAge, Gender)
+VALUES (
+    'Jerusalem Spring Marathon', 0, 'Scenic marathon through the streets of Jerusalem.',
+    '2025-04-18 07:00', '2025-04-18 14:00',
+    103, 3, 3, 300, 1, 18, 'Mixed'
+);
+
+-- Another Marathon
+INSERT INTO Events (EventName, RequiresTeams, Description, StartDatetime, EndDatetime, CityId, LocationId, SportId, MaxParticipants, IsPublic, MinAge, Gender)
+VALUES (
+    'Eilat Desert Run', 0, 'Endurance run in the stunning Eilat desert.',
+    '2025-11-08 06:00', '2025-11-08 12:00',
+    104, 4, 3, 200, 1, 21, 'Mixed'
+);
+
+-- Women’s Basketball Tournament
+INSERT INTO Events (EventName, RequiresTeams, Description, StartDatetime, EndDatetime, CityId, LocationId, SportId, MaxTeams, IsPublic, MinAge, Gender)
+VALUES (
+    'Nazareth Women Basketball Cup', 1, 'Tournament for female basketball teams across the north.',
+    '2025-07-01 10:00', '2025-07-01 18:00',
+    105, 5, 2, 6, 1, 17, 'Female'
+);
+
+
+INSERT INTO EventLocations (LocationName)
+VALUES ('Ramat Gan National Stadium');
+
+INSERT INTO Events (
+    EventName, RequiresTeams, Description, StartDatetime, EndDatetime,
+    CityId, LocationId, SportId, MaxTeams, IsPublic, MinAge, Gender
+)
+VALUES (
+    'Ramat Gan Mixed Football Day', 1,
+    'A casual football day for mixed-gender teams. Open to all skill levels.',
+    '2025-08-10 10:00', '2025-08-10 16:00',
+    106, 6, 1, 10, 1, 16, 'Mixed'
+);

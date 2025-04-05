@@ -200,5 +200,25 @@ namespace Backend.Controllers
 
             return fileName;
         }
+
+        [HttpGet("groups/all")]
+        [Authorize(Roles = "User")]
+        public IActionResult GetAllUserGroups()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                User user = new User { UserId = userId };
+
+                var groups = user.GetAllGroups();
+
+                return Ok(groups);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while retrieving all user groups");
+            }
+        }
     }
 }
