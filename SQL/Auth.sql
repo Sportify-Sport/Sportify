@@ -78,7 +78,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT UserId, FirstName, LastName, Email, PasswordHash
+    SELECT UserId, FirstName, LastName, Email, PasswordHash, IsGroupAdmin, IsCityOrganizer
     FROM Users
     WHERE Email = @Email
 END

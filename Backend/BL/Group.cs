@@ -65,5 +65,21 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // This method checks if a user is an admin for a specific group
+        //--------------------------------------------------------------------------------------------------
+        public static bool IsUserGroupAdmin(int userId, int groupId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.IsUserGroupAdmin(userId, groupId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

@@ -86,8 +86,8 @@ namespace Backend.Controllers
                 Gender = registerDto.Gender,
                 FavSportId = registerDto.FavSportId,
                 CityId = registerDto.CityId,
-                //IsGroupAdmin = false,
-                //IsCityOrganizer = false,
+                IsGroupAdmin = false,
+                IsCityOrganizer = false,
                 //AdminForGroups = new List<int>(),
                 //OrganizerForCities = new List<int>()
             };
@@ -144,18 +144,18 @@ namespace Backend.Controllers
                 new Claim(ClaimTypes.Role, "User")
             };
 
-            //if (user.IsGroupAdmin)
-            //{
-            //    claims.Add(new Claim(ClaimTypes.Role, "GroupAdmin"));
-            //}
+            if (user.IsGroupAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "GroupAdmin"));
+            }
 
-            //if (user.IsCityOrganizer)
-            //{
-            //    claims.Add(new Claim(ClaimTypes.Role, "CityOrganizer"));
-            //}
+            if (user.IsCityOrganizer)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "CityOrganizer"));
+            }
 
             var now = DateTime.UtcNow;
-            var expires = now.AddDays(14);
+            var expires = now.AddDays(1);
 
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],
               _config["Jwt:Audience"],

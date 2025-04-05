@@ -13,9 +13,9 @@ namespace Backend.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        [HttpGet("groups/top3")]
+        [HttpGet("groups/top4")]
         [Authorize(Roles = "User")]
-        public IActionResult GetTop3Groups()
+        public IActionResult GetTop4Groups()
         {
             try
             {                
@@ -23,7 +23,7 @@ namespace Backend.Controllers
 
                 User user = new User { UserId = userId };
 
-                var groups = user.GetTop3Groups();
+                var groups = user.GetTop4Groups();
 
                 return Ok(groups);
             }
@@ -218,6 +218,25 @@ namespace Backend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, "An error occurred while retrieving all user groups");
+            }
+        }
+
+
+        [HttpGet("events/top")]
+        [Authorize(Roles = "User")]
+        public IActionResult GetUserEvents([FromQuery] int limit = 4)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                var userEvents = BL.User.GetUserEvents(userId, limit);
+
+                return Ok(new { success = true, data = userEvents });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
     }

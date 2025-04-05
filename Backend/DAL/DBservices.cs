@@ -215,10 +215,12 @@ public class DBservices
                         FirstName = dataReader["FirstName"].ToString(),
                         LastName = dataReader["LastName"].ToString(),
                         Email = dataReader["Email"].ToString(),
-                        IsGroupAdmin = false,
-                        IsCityOrganizer = false,
-                        AdminForGroups = new List<int>(),
-                        OrganizerForCities = new List<int>()
+                        IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
+                        IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"])
+                        //IsGroupAdmin = false,
+                        //IsCityOrganizer = false,
+                        //AdminForGroups = new List<int>(),
+                        //OrganizerForCities = new List<int>()
                     };
                 }
             }
@@ -242,10 +244,10 @@ public class DBservices
         }
 
         // Check if user is group admin and get admin groups
-        GetUserAdminGroups(user);
+        //GetUserAdminGroups(user);
 
         // Check if user is city organizer and get organizer cities
-        GetUserOrganizerCities(user);
+        //GetUserOrganizerCities(user);
 
         return user;
     }
@@ -459,9 +461,9 @@ public class DBservices
 
 
     //--------------------------------------------------------------------------------------------------
-    // This method retrieves 3 Groups that the user joined to
+    // This method retrieves 4 Groups that the user joined to
     //--------------------------------------------------------------------------------------------------
-    public List<object> GetTop3UserGroups(int userId)
+    public List<object> GetTop4UserGroups(int userId)
     {
         SqlConnection con;
         SqlCommand cmd;
@@ -476,7 +478,7 @@ public class DBservices
             throw (ex);
         }
 
-        cmd = CreateCommandWithStoredProcedureGetTop3UserGroups("SP_GetTop3UserGroups", con, userId);
+        cmd = CreateCommandWithStoredProcedureGetTop4UserGroups("SP_GetTop4UserGroups", con, userId);
 
         List<object> groupsList = new List<object>();
 
@@ -513,9 +515,9 @@ public class DBservices
 
 
     //---------------------------------------------------------------------------------
-    // Create the SqlCommand for getting 3 groups for the user
+    // Create the SqlCommand for getting 4 groups for the user
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureGetTop3UserGroups(string spName, SqlConnection con, int userId)
+    private SqlCommand CreateCommandWithStoredProcedureGetTop4UserGroups(string spName, SqlConnection con, int userId)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -957,7 +959,6 @@ public class DBservices
         return cmd;
     }
 
-
     //--------------------------------------------------------------------------------------------------
     // This method retrieves details for a specific event
     //--------------------------------------------------------------------------------------------------
@@ -1027,6 +1028,171 @@ public class DBservices
         cmd.CommandTimeout = 10;
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@eventId", eventId);
+        return cmd;
+    }
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method checks if a user is an admin for a specific group
+    //--------------------------------------------------------------------------------------------------
+    public bool IsUserGroupAdmin(int userId, int groupId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureIsUserGroupAdmin("SP_IsUserGroupAdmin", con, userId, groupId);
+
+            // Returns the first column of the first row
+            object result = cmd.ExecuteScalar();
+
+            // If result is 1, user is admin; if 0, user is not admin
+            return result != null && Convert.ToInt32(result) == 1;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking if user is a group admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIsUserGroupAdmin(string spName, SqlConnection con, int userId, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves random upcoming public events
+    //--------------------------------------------------------------------------------------------------
+    public object GetRandomEvents(int count)
+    {
+        SqlConnection con = null;
+        List<object> randomEventsList = new List<object>();
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureRandomEvents("SP_GetRandomEvents", con, count);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var eventPreview = new
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString()
+                };
+
+                randomEventsList.Add(eventPreview);
+            }
+
+            return randomEventsList;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting random events
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRandomEvents(string spName, SqlConnection con, int count)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@count", count);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves events a user is registered for
+    //--------------------------------------------------------------------------------------------------
+    public object GetUserEvents(int userId, int limit)
+    {
+        SqlConnection con = null;
+        List<object> userEventsList = new List<object>();
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUserEvents("SP_GetUserEvents", con, userId, limit);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var eventInfo = new
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    PlayWatch = dataReader["PlayWatch"] != DBNull.Value ? Convert.ToBoolean(dataReader["PlayWatch"]) : true
+                };
+
+                userEventsList.Add(eventInfo);
+            }
+
+            return userEventsList;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user events
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUserEvents(string spName, SqlConnection con, int userId, int limit)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@limit", limit);
         return cmd;
     }
 }

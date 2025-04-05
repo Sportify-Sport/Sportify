@@ -92,5 +92,21 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get random upcoming public events
+        //--------------------------------------------------------------------------------------------------
+        public static object GetRandomEvents(int count = 5)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetRandomEvents(count);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

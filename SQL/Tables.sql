@@ -17,6 +17,8 @@ CREATE TABLE Users (
     ProfileImage NVARCHAR(255) DEFAULT 'default_event.png',
     Bio NVARCHAR(500) DEFAULT '',
     Gender NVARCHAR(1) NOT NULL CHECK (Gender IN ('M', 'F')),
+	IsCityOrganizer BIT NOT NULL DEFAULT 0,
+	IsGroupAdmin BIT NOT NULL DEFAULT 0,
 );
 
 

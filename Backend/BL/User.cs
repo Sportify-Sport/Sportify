@@ -63,12 +63,12 @@ namespace Backend.BL
         public List<int> OrganizerForCities { get => organizerForCities; set => organizerForCities = value; }
 
 
-        public List<object> GetTop3Groups()
+        public List<object> GetTop4Groups()
         {
             try
             {
                 DBservices dBservices = new DBservices();
-                return dBservices.GetTop3UserGroups(this.UserId);
+                return dBservices.GetTop4UserGroups(this.UserId);
             }
             catch (Exception ex)
             {
@@ -160,6 +160,23 @@ namespace Backend.BL
             {
                 DBservices dBservices = new DBservices();
                 return dBservices.GetAllUserGroups(this.UserId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
+        //--------------------------------------------------------------------------------------------------
+        // Get events that a user has registered for (directly or via group membership)
+        //--------------------------------------------------------------------------------------------------
+        public static object GetUserEvents(int userId, int limit = 4)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetUserEvents(userId, limit);
             }
             catch (Exception ex)
             {

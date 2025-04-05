@@ -1,15 +1,15 @@
 -- =============================================
 -- Author:		<Mohamed Abo Full>
--- Create date: <26/3/2025>
--- Description:	<This Procedure returns 3 groups that the user joined to>
+-- Create date: <5/4/2025>
+-- Description:	<This Procedure returns 4 groups that the user joined to>
 -- =============================================
-CREATE PROCEDURE SP_GetTop3UserGroups
+CREATE PROCEDURE SP_GetTop4UserGroups
 	@userId INT
 AS
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT TOP 3 g.GroupId, g.GroupName, g.GroupImage, g.CityId, g.SportId
+	SELECT TOP 4 g.GroupId, g.GroupName, g.GroupImage, g.CityId, g.SportId
     FROM Groups g INNER JOIN GroupMembers gm ON g.GroupId = gm.GroupId
 	WHERE gm.UserId = @userId
 	ORDER BY gm.JoinedAt DESC
@@ -115,7 +115,6 @@ END
 -- Create date: <5/4/2025>
 -- Description:	<This Procedure returns all the groups the user registered to>
 -- =============================================
-
 CREATE PROCEDURE SP_GetAllUserGroups
     @userId INT
 AS
@@ -136,4 +135,52 @@ BEGIN
         gm.UserId = @userId
     ORDER BY 
         g.FoundedAt DESC;
+END
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <5/4/2025>
+-- Description:	<This Procedure returns 4 (limit) events that the user joined to>
+-- =============================================
+CREATE PROCEDURE SP_GetUserEvents
+    @userId INT,
+    @limit INT = 4
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT DISTINCT TOP (@limit) 
+        e.EventId, 
+        e.EventName, 
+        e.StartDatetime, 
+        e.SportId, 
+        e.ProfileImage,
+        CASE
+            WHEN ep.UserId IS NOT NULL THEN ep.PlayWatch  -- Direct participation
+            WHEN EXISTS (  -- Check for group participation
+                SELECT 1
+                FROM EventTeams et
+                JOIN GroupMembers gm ON et.GroupId = gm.GroupId
+                WHERE et.EventId = e.EventId AND gm.UserId = @userId
+            ) THEN 1  -- Set to TRUE(1) for group participation
+            ELSE NULL  -- Should never reach here due to WHERE clause
+        END AS PlayWatch
+    FROM [Events] e
+    LEFT JOIN EventParticipants ep ON e.EventId = ep.EventId AND ep.UserId = @userId
+    WHERE e.EventId IN (
+        -- Direct participation
+        SELECT ep2.EventId
+        FROM EventParticipants ep2
+        WHERE ep2.UserId = @userId
+        
+        UNION
+        
+        -- Indirect participation through groups
+        SELECT et.EventId
+        FROM EventTeams et
+        JOIN GroupMembers gm ON et.GroupId = gm.GroupId
+        WHERE gm.UserId = @userId
+    )
+    ORDER BY e.StartDatetime ASC;
 END
