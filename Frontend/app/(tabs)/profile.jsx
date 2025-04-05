@@ -42,7 +42,7 @@ export default function Profile() {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        navigation.replace('/screens/Login');
+        router.replace('/screens/Login');
         return;
       }
 
@@ -87,7 +87,7 @@ export default function Profile() {
       setFavoriteSport(sport);
 
       // Update profile image (assuming the filename is appended to a base URL)
-      setProfileImage('https://localhost:7059/' + profileData.profileImage);
+      setProfileImage(`${apiUrl}/Images/${profileData.profileImage}`);
 
       // Save cityId from the response for later use
       setCityId(profileData.cityId);

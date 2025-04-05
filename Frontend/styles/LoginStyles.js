@@ -74,6 +74,27 @@ export default StyleSheet.create({
     fontSize: 14,
     color: '#999',
   },
+  guestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingVertical: 12,
+    justifyContent: 'center',
+  },
+  guestButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 600,
+    color: '#333',
+  },
+  guestIcon: {
+    width: 30,        
+    height: 30,        
+    marginRight: 0,    
+    resizeMode: 'contain',
+  },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',

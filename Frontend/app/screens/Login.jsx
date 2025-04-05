@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from "../../styles/LoginStyles";
 import googleIcon from "../../assets/images/google.png";
+import guestIcon from "../../assets/images/guest-icon-design-vector.jpg";
 import getApiBaseUrl from "../config/apiConfig";
 // import jwtDecode from "jwt-decode";
 // import { useAuth } from "../context/AuthContext"
@@ -86,8 +87,12 @@ const Login = () => {
     console.log("Forgot password pressed");
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Login with Google pressed");
+  // const handleGoogleLogin = () => {
+  //   console.log("Login with Google pressed");
+  // };
+
+  const handleGuestLogin= () => {
+    router.replace('../(tabs)');
   };
 
   const handleSignupNavigation = () => {
@@ -146,9 +151,13 @@ const Login = () => {
 
       <Text style={styles.orText}>_________________ Or _________________</Text>
 
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
+      {/* <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
         <Image source={googleIcon} style={styles.googleIcon} />
         <Text style={styles.googleButtonText}>Login with Google</Text>
+      </TouchableOpacity> */}
+            <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
+        <Image source={guestIcon} style={styles.guestIcon} />
+        <Text style={styles.guestButtonText}>Countinue as a guest</Text>
       </TouchableOpacity>
 
       <View style={styles.signupContainer}>
