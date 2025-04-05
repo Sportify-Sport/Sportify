@@ -1159,7 +1159,7 @@ public class DBservices
                     EventName = dataReader["EventName"].ToString(),
                     StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
                     SportId = Convert.ToInt32(dataReader["SportId"]),
-                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    EventImage = dataReader["ProfileImage"].ToString(),
                     PlayWatch = dataReader["PlayWatch"] != DBNull.Value ? Convert.ToBoolean(dataReader["PlayWatch"]) : true
                 };
 
