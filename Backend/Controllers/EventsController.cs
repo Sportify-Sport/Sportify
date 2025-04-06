@@ -51,5 +51,28 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [AllowAnonymous]
+        [HttpGet("GetEvents")]
+        public IActionResult GetEvents([FromQuery] DateTime? lastEventDate = null, [FromQuery] int? lastEventId = null, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+                var result = BL.Event.GetEventsPaginated(lastEventDate, lastEventId, pageSize);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = result.Events,
+                    hasMore = result.HasMore
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
     }
 }

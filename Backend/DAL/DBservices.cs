@@ -1372,4 +1372,89 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves paginated events
+    //--------------------------------------------------------------------------------------------------
+    public (List<object> Events, bool HasMore) GetEventsPaginated(
+        DateTime? lastEventDate,
+        int? lastEventId,
+        int pageSize)
+    {
+        SqlConnection con = null;
+        List<object> eventsList = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureEventsPaginated(
+                "SP_GetEventsPaginated", con, lastEventDate, lastEventId, pageSize + 1); // Request one extra to check for more
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            int count = 0;
+
+            while (dataReader.Read())
+            {
+                count++;
+
+                // Skip the last item if we got more than requested
+                if (count <= pageSize)
+                {
+                    var eventInfo = new
+                    {
+                        EventId = Convert.ToInt32(dataReader["EventId"]),
+                        EventName = dataReader["EventName"].ToString(),
+                        StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                        EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]),
+                        SportId = Convert.ToInt32(dataReader["SportId"]),
+                        ProfileImage = dataReader["ProfileImage"].ToString()
+                    };
+
+                    eventsList.Add(eventInfo);
+                }
+            }
+
+            // If we got more items than requested, there are more pages
+            hasMore = count > pageSize;
+
+            return (eventsList, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting paginated events
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureEventsPaginated(string spName, SqlConnection con, DateTime? lastEventDate, int? lastEventId, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        if (lastEventDate.HasValue)
+            cmd.Parameters.AddWithValue("@lastEventDate", lastEventDate.Value);
+        else
+            cmd.Parameters.AddWithValue("@lastEventDate", DBNull.Value);
+
+        if (lastEventId.HasValue)
+            cmd.Parameters.AddWithValue("@lastEventId", lastEventId.Value);
+        else
+            cmd.Parameters.AddWithValue("@lastEventId", DBNull.Value);
+
+        return cmd;
+    }
+
 }

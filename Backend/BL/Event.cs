@@ -108,5 +108,21 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get paginated events for infinite scrolling
+        //--------------------------------------------------------------------------------------------------
+        public static (List<object> Events, bool HasMore) GetEventsPaginated(DateTime? lastEventDate = null, int? lastEventId = null, int pageSize = 10)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetEventsPaginated(lastEventDate, lastEventId, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

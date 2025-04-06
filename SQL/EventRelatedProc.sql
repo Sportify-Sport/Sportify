@@ -40,3 +40,36 @@ BEGIN
       AND StartDatetime >= GETDATE()
     ORDER BY NEWID();
 END
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <5/4/2025>
+-- Description:	<This Procedure gets events from the events table (Paginiation)>
+-- =============================================
+CREATE PROCEDURE SP_GetEventsPaginated
+    @lastEventDate DATETIME = NULL,
+    @lastEventId INT = NULL,
+    @pageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        EventId, 
+        EventName, 
+        StartDatetime, 
+        EndDatetime, 
+        SportId, 
+        ProfileImage
+    FROM [Events]
+    WHERE 
+        -- First page or continuation condition
+        @lastEventDate IS NULL
+        OR StartDatetime > @lastEventDate
+        OR (StartDatetime = @lastEventDate AND EventId > @lastEventId)
+    ORDER BY StartDatetime ASC, EventId ASC
+    OFFSET 0 ROWS
+    FETCH NEXT @pageSize ROWS ONLY;
+END
+GO
