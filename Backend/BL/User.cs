@@ -183,5 +183,25 @@ namespace Backend.BL
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get paginated events that a user has registered for
+        //--------------------------------------------------------------------------------------------------
+        public static (List<object> Events, bool HasMore) GetUserEventsPaginated(
+            int userId,
+            DateTime? lastEventDate = null,
+            int? lastEventId = null,
+            int pageSize = 10)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetUserEventsPaginated(userId, lastEventDate, lastEventId, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

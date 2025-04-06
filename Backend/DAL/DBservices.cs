@@ -1195,4 +1195,97 @@ public class DBservices
         cmd.Parameters.AddWithValue("@limit", limit);
         return cmd;
     }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves paginated events a user is registered for
+    //--------------------------------------------------------------------------------------------------
+    public (List<object> Events, bool HasMore) GetUserEventsPaginated(
+        int userId,
+        DateTime? lastEventDate,
+        int? lastEventId,
+        int pageSize)
+    {
+        SqlConnection con = null;
+        List<object> userEventsList = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUserEventsPaginated(
+                "SP_GetUserEventsPaginated", con, userId, lastEventDate, lastEventId, pageSize + 1); // Request one extra to check for more
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            int count = 0;
+
+            while (dataReader.Read())
+            {
+                count++;
+
+                // Skip the last item if we got more than requested
+                if (count <= pageSize)
+                {
+                    var eventInfo = new
+                    {
+                        EventId = Convert.ToInt32(dataReader["EventId"]),
+                        EventName = dataReader["EventName"].ToString(),
+                        StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                        SportId = Convert.ToInt32(dataReader["SportId"]),
+                        EventImage = dataReader["ProfileImage"].ToString(),
+                        PlayWatch = dataReader["PlayWatch"] != DBNull.Value ? Convert.ToBoolean(dataReader["PlayWatch"]) : true
+                    };
+
+                    userEventsList.Add(eventInfo);
+                }
+            }
+
+            // If we got more items than requested, there are more pages
+            hasMore = count > pageSize;
+
+            return (userEventsList, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting paginated user events
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUserEventsPaginated(
+        string spName,
+        SqlConnection con,
+        int userId,
+        DateTime? lastEventDate,
+        int? lastEventId,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        if (lastEventDate.HasValue)
+            cmd.Parameters.AddWithValue("@lastEventDate", lastEventDate.Value);
+        else
+            cmd.Parameters.AddWithValue("@lastEventDate", DBNull.Value);
+
+        if (lastEventId.HasValue)
+            cmd.Parameters.AddWithValue("@lastEventId", lastEventId.Value);
+        else
+            cmd.Parameters.AddWithValue("@lastEventId", DBNull.Value);
+
+        return cmd;
+    }
 }

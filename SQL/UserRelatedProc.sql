@@ -184,3 +184,62 @@ BEGIN
     )
     ORDER BY e.StartDatetime ASC;
 END
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <6/4/2025>
+-- Description:	<This procedure returns paginated events that the user participated in, either directly or through a group>
+-- =============================================
+CREATE PROCEDURE SP_GetUserEventsPaginated
+    @userId INT,
+    @lastEventDate DATETIME = NULL,
+    @lastEventId INT = NULL,
+    @pageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT
+        e.EventId, 
+        e.EventName, 
+        e.StartDatetime, 
+        e.SportId, 
+        e.ProfileImage,
+        CASE
+            WHEN ep.UserId IS NOT NULL THEN ep.PlayWatch  -- Direct participation
+            WHEN EXISTS (  -- Check for group participation
+                SELECT 1
+                FROM EventTeams et
+                JOIN GroupMembers gm ON et.GroupId = gm.GroupId
+                WHERE et.EventId = e.EventId AND gm.UserId = @userId
+            ) THEN 1  -- Set to TRUE(1) for group participation
+            ELSE NULL  -- Should never reach here
+        END AS PlayWatch
+    FROM [Events] e
+    LEFT JOIN EventParticipants ep ON e.EventId = ep.EventId AND ep.UserId = @userId
+    WHERE e.EventId IN (
+        -- Direct participation
+        SELECT ep2.EventId
+        FROM EventParticipants ep2
+        WHERE ep2.UserId = @userId
+        
+        UNION
+        
+        -- Indirect participation through groups
+        SELECT et.EventId
+        FROM EventTeams et
+        JOIN GroupMembers gm ON et.GroupId = gm.GroupId
+        WHERE gm.UserId = @userId
+    )
+    AND (
+        -- First page or continuation condition
+        @lastEventDate IS NULL 
+        OR e.StartDatetime > @lastEventDate
+        OR (e.StartDatetime = @lastEventDate AND e.EventId > @lastEventId)
+    )
+    ORDER BY e.StartDatetime ASC, e.EventId ASC
+    OFFSET 0 ROWS
+    FETCH NEXT @pageSize ROWS ONLY;
+END
+GO

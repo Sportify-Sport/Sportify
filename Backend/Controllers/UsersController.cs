@@ -239,5 +239,33 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [HttpGet("events/paginated")]
+        [Authorize(Roles = "User")]
+        public IActionResult GetUserEventsPaginated(
+            [FromQuery] DateTime? lastEventDate = null, 
+            [FromQuery] int? lastEventId = null,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                var result = BL.User.GetUserEventsPaginated(userId, lastEventDate, lastEventId, pageSize);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = result.Events,
+                    hasMore = result.HasMore
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
     }
 }
