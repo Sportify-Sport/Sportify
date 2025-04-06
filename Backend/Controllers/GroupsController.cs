@@ -49,5 +49,30 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [AllowAnonymous]
+        [HttpGet("GetGroups")]
+        public IActionResult GetGroups([FromQuery] int? lastGroupId = null, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                // Validate pagination parameters
+                if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+                // Get paginated groups
+                var result = Group.GetGroupsPaginated(lastGroupId, pageSize);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = result.Groups,
+                    hasMore = result.HasMore
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
     }
 }

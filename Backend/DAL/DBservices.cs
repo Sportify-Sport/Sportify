@@ -10,6 +10,7 @@ using System.Data.Common;
 using System.Net;
 using Microsoft.AspNetCore.Identity;
 using Backend.Models;
+using System.Reflection;
 
 public class DBservices
 {
@@ -1288,4 +1289,87 @@ public class DBservices
 
         return cmd;
     }
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves paginated groups
+    //--------------------------------------------------------------------------------------------------
+    public (List<object> Groups, bool HasMore) GetGroupsPaginated(int? lastGroupId, int pageSize)
+    {
+        SqlConnection con = null;
+        List<object> groupsList = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureGroupsPaginated(
+                "SP_GetGroupsPaginated", con, lastGroupId, pageSize + 1); // Request one extra to check for more
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            int count = 0;
+
+            while (dataReader.Read())
+            {
+                count++;
+
+                // Skip the last item if we got more than requested
+                if (count <= pageSize)
+                {
+                    var groupInfo = new
+                    {
+                        GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                        GroupName = dataReader["GroupName"].ToString(),
+                        GroupImage = dataReader["GroupImage"].ToString(),
+                        CityId = Convert.ToInt32(dataReader["CityId"]),
+                        SportId = Convert.ToInt32(dataReader["SportId"]),
+                        Gender = dataReader["Gender"].ToString()
+                    };
+
+                    groupsList.Add(groupInfo);
+                }
+            }
+
+            // If we got more items than requested, there are more pages
+            hasMore = count > pageSize;
+
+            return (groupsList, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting paginated groups
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGroupsPaginated(
+        string spName,
+        SqlConnection con,
+        int? lastGroupId,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        if (lastGroupId.HasValue)
+            cmd.Parameters.AddWithValue("@lastGroupId", lastGroupId.Value);
+        else
+            cmd.Parameters.AddWithValue("@lastGroupId", DBNull.Value);
+
+        return cmd;
+    }
+
 }

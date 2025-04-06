@@ -81,5 +81,21 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get paginated groups for infinite scrolling
+        //--------------------------------------------------------------------------------------------------
+        public static (List<object> Groups, bool HasMore) GetGroupsPaginated(int? lastGroupId = null, int pageSize = 10)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetGroupsPaginated(lastGroupId, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
