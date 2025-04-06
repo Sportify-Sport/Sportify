@@ -130,7 +130,7 @@ export default function Index() {
       disabled={!token}
     >
       <View className={`flex-row items-center rounded-lg shadow px-4 py-2 m-1 ${token ? 'bg-white' : 'bg-gray-100'}`}>
-        <Image source={{ uri: `${apiUrl}/Images/${item.profileImage}`}} className="w-12 h-12 rounded" />
+        <Image source={{ uri: `${apiUrl}/Images/${item.eventImage}`}} className="w-12 h-12 rounded" />
         <View className="ml-3">
           <Text className={`${token ? 'font-semibold text-black' : 'text-gray-500'}`}>{item.eventName}</Text>
           <Text className="text-gray-500 text-sm">{new Date(item.startDatetime).toLocaleDateString()}</Text>
