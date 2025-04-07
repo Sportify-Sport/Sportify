@@ -61,7 +61,8 @@ BEGIN
         StartDatetime, 
         EndDatetime, 
         SportId, 
-        ProfileImage
+        ProfileImage,
+		CityId
     FROM [Events]
     WHERE 
         -- First page or continuation condition

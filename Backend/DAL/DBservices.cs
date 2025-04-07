@@ -1407,7 +1407,8 @@ public class DBservices
                         StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
                         EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]),
                         SportId = Convert.ToInt32(dataReader["SportId"]),
-                        ProfileImage = dataReader["ProfileImage"].ToString()
+                        ProfileImage = dataReader["ProfileImage"].ToString(),
+                        CityId = Convert.ToInt32(dataReader["CityId"]),
                     };
 
                     eventsList.Add(eventInfo);
