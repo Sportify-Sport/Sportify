@@ -32,23 +32,6 @@ namespace Backend.Controllers
         //    }
         //}
 
-        //[HttpGet("group/{groupId}/isAdmin")]
-        //[Authorize(Roles = "User")]
-        //public IActionResult IsUserGroupAdmin(int groupId)
-        //{
-        //    try
-        //    {
-        //        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-        //        bool isAdmin = Group.IsUserGroupAdmin(userId, groupId);
-
-        //        return Ok(new { success = true, isAdmin });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
-        //    }
-        //}
 
         [AllowAnonymous]
         [HttpGet("GetGroups")]
@@ -105,7 +88,7 @@ namespace Backend.Controllers
 
 
         [Authorize(Roles = "User")]
-        [HttpPost("join/{groupId}")]
+        [HttpPost("joinRequest/{groupId}")]
         public IActionResult RequestToJoinGroup(int groupId)
         {
             try
@@ -123,5 +106,43 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [Authorize(Roles = "User")]
+
+        [HttpGet("{groupId}/upcoming-events")]
+        public IActionResult GetUpcomingGroupEvents(int groupId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (page < 1 || pageSize < 1 || pageSize > 50)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Page must be ≥ 1 and pageSize must be between 1 and 50"
+                    });
+                }
+
+                (List<object> events, bool hasMore) = Group.GetUpcomingGroupEvents(groupId, page, pageSize);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = events,
+                    pagination = new
+                    {
+                        currentPage = page,
+                        pageSize = pageSize,
+                        hasMore = hasMore
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        
     }
 }

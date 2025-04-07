@@ -34,5 +34,32 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Check if user is an admin of this group
+        //--------------------------------------------------------------------------------------------------
+        public static bool IsUserGroupAdmin(int groupId, int userId)
+        {
+            DBservices db = new DBservices();
+            return db.IsUserGroupAdmin(groupId, userId);
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Check if user is a member of this group
+        //--------------------------------------------------------------------------------------------------
+        public static bool IsUserGroupMember(int groupId, int userId)
+        {
+            DBservices db = new DBservices();
+            return db.IsUserGroupMember(groupId, userId);
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get user details for a group member
+        //--------------------------------------------------------------------------------------------------
+        public static object GetGroupUserDetails(int groupId, int userId)
+        {
+            DBservices db = new DBservices();
+            return db.GetGroupUserDetails(groupId, userId);
+        }
     }
 }
