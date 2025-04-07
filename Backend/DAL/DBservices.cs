@@ -1709,4 +1709,236 @@ public class DBservices
         cmd.Parameters.AddWithValue("@userId", userId);
         return cmd;
     }
+
+
+    //---------------------------------------------------------------------------------
+    // Method for searching groups with infinity scroll
+    //---------------------------------------------------------------------------------
+    public (List<object>, bool) SearchGroups(
+        string name = null,
+        int? sportId = null,
+        int? cityId = null,
+        string age = null,
+        string gender = null,
+        int page = 1,
+        int pageSize = 10)
+    {
+        SqlConnection con = null;
+        List<object> groups = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureSearchGroups(
+                "SP_SearchGroups", con, name, sportId, cityId, age, gender, page, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var group = new
+                {
+                    GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                    GroupName = dataReader["GroupName"].ToString(),
+                    GroupImage = dataReader["GroupImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    Gender = dataReader["Gender"].ToString()
+                };
+
+                groups.Add(group);
+            }
+
+            if (groups.Count > pageSize)
+            {
+                hasMore = true;
+                groups.RemoveAt(groups.Count - 1);
+            }
+
+            return (groups, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Method for searching events with infinity scroll
+    //---------------------------------------------------------------------------------
+    public (List<object>, bool) SearchEvents(
+        string name = null,
+        int? sportId = null,
+        int? cityId = null,
+        string age = null,
+        string gender = null,
+        DateTime? startDate = null,
+        int page = 1,
+        int pageSize = 10)
+    {
+        SqlConnection con = null;
+        List<object> events = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureSearchEvents(
+                "SP_SearchEvents", con, name, sportId, cityId, age, gender, startDate, page, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var eventItem = new
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                    EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"])
+                };
+
+                events.Add(eventItem);
+            }
+
+            if (events.Count > pageSize)
+            {
+                hasMore = true;
+                events.RemoveAt(events.Count - 1);
+            }
+
+            return (events, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for group search
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSearchGroups(
+        string spName,
+        SqlConnection con,
+        string name,
+        int? sportId,
+        int? cityId,
+        string age,
+        string gender,
+        int page,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        // Add parameters
+        if (!string.IsNullOrEmpty(name))
+            cmd.Parameters.AddWithValue("@name", name);
+        else
+            cmd.Parameters.AddWithValue("@name", DBNull.Value);
+
+        if (sportId.HasValue)
+            cmd.Parameters.AddWithValue("@sportId", sportId.Value);
+        else
+            cmd.Parameters.AddWithValue("@sportId", DBNull.Value);
+
+        if (cityId.HasValue)
+            cmd.Parameters.AddWithValue("@cityId", cityId.Value);
+        else
+            cmd.Parameters.AddWithValue("@cityId", DBNull.Value);
+
+        if (!string.IsNullOrEmpty(age))
+            cmd.Parameters.AddWithValue("@age", age);
+        else
+            cmd.Parameters.AddWithValue("@age", DBNull.Value);
+
+        if (!string.IsNullOrEmpty(gender))
+            cmd.Parameters.AddWithValue("@gender", gender);
+        else
+            cmd.Parameters.AddWithValue("@gender", DBNull.Value);
+
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for event search
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSearchEvents(
+        string spName,
+        SqlConnection con,
+        string name,
+        int? sportId,
+        int? cityId,
+        string age,
+        string gender,
+        DateTime? startDate,
+        int page,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        if (!string.IsNullOrEmpty(name))
+            cmd.Parameters.AddWithValue("@name", name);
+        else
+            cmd.Parameters.AddWithValue("@name", DBNull.Value);
+
+        if (sportId.HasValue)
+            cmd.Parameters.AddWithValue("@sportId", sportId.Value);
+        else
+            cmd.Parameters.AddWithValue("@sportId", DBNull.Value);
+
+        if (cityId.HasValue)
+            cmd.Parameters.AddWithValue("@cityId", cityId.Value);
+        else
+            cmd.Parameters.AddWithValue("@cityId", DBNull.Value);
+
+        if (!string.IsNullOrEmpty(age))
+            cmd.Parameters.AddWithValue("@age", age);
+        else
+            cmd.Parameters.AddWithValue("@age", DBNull.Value);
+
+        if (!string.IsNullOrEmpty(gender))
+            cmd.Parameters.AddWithValue("@gender", gender);
+        else
+            cmd.Parameters.AddWithValue("@gender", DBNull.Value);
+
+        if (startDate.HasValue)
+            cmd.Parameters.AddWithValue("@startDate", startDate.Value);
+        else
+            cmd.Parameters.AddWithValue("@startDate", DBNull.Value);
+
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
 }
