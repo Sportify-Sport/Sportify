@@ -93,13 +93,17 @@ BEGIN
     SET NOCOUNT ON;
     
     DECLARE @requiresTeams BIT;
+    DECLARE @isPublic BIT;
     DECLARE @isParticipant BIT = 0;
     DECLARE @isGroupParticipant BIT = 0;
     DECLARE @playWatch BIT = NULL;
     DECLARE @isAdmin BIT = 0;
+    DECLARE @hasAccess BIT = 1;
     
-    -- First get the event details including RequiresTeams flag
-    SELECT @requiresTeams = RequiresTeams
+    -- First get the event details including RequiresTeams and IsPublic flags
+    SELECT 
+        @requiresTeams = RequiresTeams,
+        @isPublic = IsPublic
     FROM [Events]
     WHERE EventId = @eventId;
     
@@ -138,17 +142,35 @@ BEGIN
         END;
     END;
     
-    -- Return complete event details with participation status
-    SELECT 
-        e.*,
-        el.LocationName,
-        el.Latitude,
-        el.Longitude,
-        @isParticipant AS IsParticipant,
-        @isGroupParticipant AS IsGroupParticipant,
-        @playWatch AS PlayWatch,
-        @isAdmin AS IsAdmin
-    FROM [Events] e
-    LEFT JOIN EventLocations el ON e.LocationId = el.LocationId
-    WHERE e.EventId = @eventId;
+    -- Check access restriction for private team events
+    IF @requiresTeams = 1 AND @isPublic = 0
+    BEGIN
+        -- Only allow access if user is admin or participant
+        IF @userId IS NULL OR (@isAdmin = 0 AND @isParticipant = 0 AND @isGroupParticipant = 0)
+        BEGIN
+            SET @hasAccess = 0;
+        END;
+    END;
+    
+    -- Return complete event details with participation status if user has access
+    IF @hasAccess = 1
+    BEGIN
+        SELECT 
+            e.*,
+            el.LocationName,
+            el.Latitude,
+            el.Longitude,
+            @isParticipant AS IsParticipant,
+            @isGroupParticipant AS IsGroupParticipant,
+            @playWatch AS PlayWatch,
+            @isAdmin AS IsAdmin
+        FROM [Events] e
+        LEFT JOIN EventLocations el ON e.LocationId = el.LocationId
+        WHERE e.EventId = @eventId;
+    END
+    ELSE
+    BEGIN
+        -- Return NULL result set to indicate access denied
+        SELECT NULL AS EventId WHERE 1 = 0;
+    END;
 END

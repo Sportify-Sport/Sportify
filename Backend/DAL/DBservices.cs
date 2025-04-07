@@ -1570,6 +1570,12 @@ public class DBservices
 
             if (dataReader.Read())
             {
+                // Check if we got an empty result set (access denied)
+                if (dataReader["EventId"] == DBNull.Value)
+                {
+                    return null;
+                }
+
                 var eventDetails = new
                 {
                     // Basic event details for all users
@@ -1591,7 +1597,7 @@ public class DBservices
                     Gender = dataReader["Gender"].ToString(),
                     ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]),
                     TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]),
-                    EventImage = dataReader["ProfileImage"].ToString(),
+                    EventImage = dataReader["ProfileImage"].ToString(), // Fixed variable name to match DB column
 
                     // Location information
                     LocationName = dataReader["LocationName"] == DBNull.Value ? null : dataReader["LocationName"].ToString(),
@@ -1624,7 +1630,6 @@ public class DBservices
             }
         }
     }
-
     //---------------------------------------------------------------------------------
     // Create the SqlCommand for getting event details with participation status
     //---------------------------------------------------------------------------------

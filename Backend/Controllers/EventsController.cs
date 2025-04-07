@@ -92,7 +92,15 @@ namespace Backend.Controllers
 
                 if (eventDetails == null)
                 {
-                    return NotFound(new { success = false, message = $"Event with ID {eventId} not found" });
+                    if (User.Identity.IsAuthenticated)
+                    {
+                        return StatusCode(403, new { success = false, message = "You don't have access to this private event" });
+
+                    }
+                    else
+                    {
+                        return Unauthorized(new { success = false, message = "This is a private event. Please log in to access it." });
+                    }
                 }
 
                 return Ok(new { success = true, data = eventDetails });
@@ -104,3 +112,4 @@ namespace Backend.Controllers
         }
     }
 }
+
