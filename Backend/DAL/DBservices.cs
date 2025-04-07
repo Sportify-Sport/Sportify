@@ -1653,4 +1653,55 @@ public class DBservices
 
         return cmd;
     }
+
+
+    //--------------------------------------------------------------------------------------------------
+    // This method submits a group join request
+    //--------------------------------------------------------------------------------------------------
+    public string SubmitGroupJoinRequest(int groupId, int userId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureGroupJoinRequest("SP_SubmitGroupJoinRequest", con, groupId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return dataReader["Result"].ToString();
+            }
+
+            return "Error";
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for group join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGroupJoinRequest(
+        string spName, SqlConnection con, int groupId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
 }

@@ -113,5 +113,43 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Submit a request to join a group
+        //--------------------------------------------------------------------------------------------------
+        public static string SubmitJoinRequest(int groupId, int userId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                string result = dBservices.SubmitGroupJoinRequest(groupId, userId);
+
+                // Map result to appropriate user-friendly message
+                switch (result)
+                {
+                    case "Success":
+                        return "Your request to join the group has been submitted successfully.";
+
+                    case "AlreadyMember":
+                        return "You are already a member of this group.";
+
+                    case "AlreadyInSportGroup":
+                        return "You are already a member of another group with the same sport type. You can only join one group per sport.";
+
+                    case "PendingRequestExists":
+                        return "You already have a pending request to join this group.";
+
+                    case "RejectionCooldownActive":
+                        return "You cannot request to join this group at this time. Please try again after 1 month from your last rejection or removal.";
+
+                    default:
+                        return "An error occurred while processing your request.";
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

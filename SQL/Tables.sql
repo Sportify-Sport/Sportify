@@ -122,8 +122,9 @@ CREATE TABLE GroupJoinRequests (
     RequestId INT PRIMARY KEY IDENTITY(1,1),
     GroupId INT REFERENCES Groups(GroupId) ON DELETE CASCADE,
     RequesterUserId INT REFERENCES Users(UserId) ON DELETE CASCADE,
-    RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected')),
-    RequestDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE)
+    RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected', 'Removed')),
+    RequestDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
+	RejectionOrRemovalDate DATE NULL
 );
 
 

@@ -103,5 +103,25 @@ namespace Backend.Controllers
             }
         }
 
+
+        [Authorize(Roles = "User")]
+        [HttpPost("join/{groupId}")]
+        public IActionResult RequestToJoinGroup(int groupId)
+        {
+            try
+            {
+                int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                string result = Group.SubmitJoinRequest(groupId, userId);
+
+                bool success = result.Contains("successfully");
+
+                return Ok(new { success, message = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
     }
 }
