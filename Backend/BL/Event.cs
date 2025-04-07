@@ -77,21 +77,21 @@
 
 
 
-        //--------------------------------------------------------------------------------------------------
-        // Get details for a specific event
-        //--------------------------------------------------------------------------------------------------
-        public static Event GetEventDetails(int eventId)
-        {
-            try
-            {
-                DBservices dBservices = new DBservices();
-                return dBservices.GetEventDetails(eventId);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        ////--------------------------------------------------------------------------------------------------
+        //// Get details for a specific event
+        ////--------------------------------------------------------------------------------------------------
+        //public static Event GetEventDetails(int eventId)
+        //{
+        //    try
+        //    {
+        //        DBservices dBservices = new DBservices();
+        //        return dBservices.GetEventDetails(eventId);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         //--------------------------------------------------------------------------------------------------
         // Get random upcoming public events
@@ -118,6 +118,22 @@
             {
                 DBservices dBservices = new DBservices();
                 return dBservices.GetEventsPaginated(lastEventDate, lastEventId, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get event details with user participation status
+        //--------------------------------------------------------------------------------------------------
+        public static object GetEventDetailsWithParticipationStatus(int eventId, int? userId = null)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetEventDetailsWithParticipationStatus(eventId, userId);
             }
             catch (Exception ex)
             {
