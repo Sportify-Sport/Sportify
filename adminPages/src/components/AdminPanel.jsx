@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaMicrophone } from 'react-icons/fa';
-import SporifyLogo from '../assets/Images/Sportify logo.png';
+// import SporifyLogo from '../assets/Images/Sportify logo.png';
 const themeColor = '#65DA84';
 const itemsPerPage = 6;
 
@@ -157,7 +158,7 @@ export default function AdminPanel({ userName = 'User' }) {
   const [events, setEvents] = useState(dummyEvents);
   const [groups, setGroups] = useState(dummyGroups);
   const recognitionRef = useRef(null);
-
+  const navigate = useNavigate();
   const data = tab === 'events' ? events : groups;
   const filtered = data.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -183,10 +184,12 @@ export default function AdminPanel({ userName = 'User' }) {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      alert('Logged out');
+      localStorage.removeItem('token'); // Remove token from localStorage
+      navigate('/login');               // Redirect to login page
+      console.log('Logged out');
     }
   };
-
+  
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
