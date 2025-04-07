@@ -1941,4 +1941,80 @@ public class DBservices
 
         return cmd;
     }
+
+    //---------------------------------------------------------------------------------
+    // This method gets group members paginated with their group participation status (Admin or Member)
+    //---------------------------------------------------------------------------------
+    public (List<object>, bool) GetGroupMembers(int groupId, int page = 1, int pageSize = 10)
+    {
+        SqlConnection con = null;
+        List<object> members = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetGroupMembers(
+                "SP_GetGroupMembers", con, groupId, page, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var member = new
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    GroupMemberName = dataReader["GroupMemberName"].ToString(),
+                    GroupMemberImage = dataReader["GroupMemberImage"].ToString(),
+                    JoinYear = Convert.ToInt32(dataReader["JoinYear"]),
+                    IsAdmin = Convert.ToBoolean(dataReader["IsAdmin"])
+                };
+
+                members.Add(member);
+            }
+
+            // Check if we got more results than requested
+            if (members.Count > pageSize)
+            {
+                hasMore = true;
+                members.RemoveAt(members.Count - 1); // Remove the extra item
+            }
+
+            return (members, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting group members paginated
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupMembers(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int page,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
 }
