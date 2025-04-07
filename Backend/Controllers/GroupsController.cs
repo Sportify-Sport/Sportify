@@ -11,26 +11,26 @@ namespace Backend.Controllers
     [ApiController]
     public class GroupsController : ControllerBase
     {
-        [AllowAnonymous]
-        [HttpGet("group/{groupId}")]
-        public IActionResult GetGroupDetails(int groupId)
-        {
-            try
-            {
-                var groupDetails = Group.GetGroupDetails(groupId);
+        //[AllowAnonymous]
+        //[HttpGet("group/{groupId}")]
+        //public IActionResult GetGroupDetails(int groupId)
+        //{
+        //    try
+        //    {
+        //        var groupDetails = Group.GetGroupDetails(groupId);
 
-                if (groupDetails == null)
-                {
-                    return NotFound($"Group with ID {groupId} not found");
-                }
+        //        if (groupDetails == null)
+        //        {
+        //            return NotFound($"Group with ID {groupId} not found");
+        //        }
 
-                return Ok(groupDetails);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while retrieving group details: {ex.Message}");
-            }
-        }
+        //        return Ok(groupDetails);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, $"An error occurred while retrieving group details: {ex.Message}");
+        //    }
+        //}
 
         [HttpGet("group/{groupId}/isAdmin")]
         [Authorize(Roles = "User")]
@@ -74,5 +74,34 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+
+        [AllowAnonymous]
+        [HttpGet("getGroupDetails/{groupId}")]
+        public IActionResult GetGroupDetails(int groupId)
+        {
+            try
+            {
+                int? userId = null;
+                if (User.Identity.IsAuthenticated)
+                {
+                    userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                }
+
+                var groupDetails = BL.Group.GetGroupDetailsWithMembershipStatus(groupId, userId);
+
+                if (groupDetails == null)
+                {
+                    return NotFound(new { success = false, message = $"Group with ID {groupId} not found" });
+                }
+
+                return Ok(new { success = true, data = groupDetails });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
     }
 }

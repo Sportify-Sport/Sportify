@@ -52,19 +52,19 @@
         public int Loses { get => loses; set => loses = value; }
 
 
-        // This method gets all details for a specific group
-        public static Group GetGroupDetails(int groupId)
-        {
-            try
-            {
-                DBservices dBservices = new DBservices();
-                return dBservices.GetGroupDetails(groupId);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        //// This method gets all details for a specific group
+        //public static Group GetGroupDetails(int groupId)
+        //{
+        //    try
+        //    {
+        //        DBservices dBservices = new DBservices();
+        //        return dBservices.GetGroupDetails(groupId);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         //--------------------------------------------------------------------------------------------------
         // This method checks if a user is an admin for a specific group
@@ -91,6 +91,22 @@
             {
                 DBservices dBservices = new DBservices();
                 return dBservices.GetGroupsPaginated(lastGroupId, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Get group details with optional user membership status
+        //--------------------------------------------------------------------------------------------------
+        public static object GetGroupDetailsWithMembershipStatus(int groupId, int? userId = null)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetGroupDetailsWithMembershipStatus(groupId, userId);
             }
             catch (Exception ex)
             {
