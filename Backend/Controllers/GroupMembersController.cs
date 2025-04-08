@@ -128,7 +128,7 @@ namespace Backend.Controllers
             {
                 int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-                if (GroupMember.IsUserGroupAdmin(groupId, userId))
+                if (!GroupMember.IsUserGroupAdmin(groupId, userId))
                 {
                     return BadRequest(new { success = false, message = "Group admins cannot join the group he is admin to" });
                 }
