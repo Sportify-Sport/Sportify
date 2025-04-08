@@ -249,11 +249,6 @@ namespace Backend.Controllers
             {
                 int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-                if (GroupMember.IsUserGroupAdmin(groupId, userId))
-                {
-                    return BadRequest(new { success = false, message = "Group admins cannot leave the group they are admin to" });
-                }
-
                 bool success = GroupMember.LeaveGroup(groupId, userId);
 
                 if (success)
