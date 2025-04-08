@@ -242,7 +242,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost("{groupId}/leave")]
-        [Authorize]
+        [Authorize(Roles = "User")]
         public IActionResult LeaveGroup(int groupId)
         {
             try
