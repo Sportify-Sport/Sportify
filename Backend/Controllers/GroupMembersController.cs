@@ -86,7 +86,7 @@ namespace Backend.Controllers
             {
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-                if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
+                if (GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
