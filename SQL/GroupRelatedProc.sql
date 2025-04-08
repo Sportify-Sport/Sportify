@@ -178,3 +178,100 @@ ReturnResult:
     SELECT @result AS Result;
 END
 GO
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <8/4/2025>
+-- Description:	<Gets Upcoming Group Events for the specified page with pagination / infinity scroll>
+-- =============================================
+CREATE PROCEDURE SP_GetUpcomingGroupEvents
+    @groupId INT,
+    @page INT = 1,
+    @pageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @skip INT = (@page - 1) * @pageSize;
+    
+    SELECT 
+        e.EventId,
+        e.EventName,
+        e.StartDatetime
+    FROM [Events] e
+    INNER JOIN EventTeams et ON e.EventId = et.EventId
+    WHERE 
+        et.GroupId = @groupId
+        AND e.EndDatetime >= GETDATE()  
+    ORDER BY 
+        e.StartDatetime ASC
+    OFFSET @skip ROWS
+    FETCH NEXT @pageSize + 1 ROWS ONLY;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <8/4/2025>
+-- Description:	<Check if a user is an admin of a specific group>
+-- =============================================
+CREATE PROCEDURE SP_IsUserGroupAdmin
+    @groupId INT,
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT COUNT(*) 
+    FROM GroupMembers 
+    INNER JOIN Users ON GroupMembers.UserId = Users.UserId
+    WHERE GroupId = @groupId 
+    AND GroupMembers.UserId = @userId 
+    AND Users.IsGroupAdmin = 1;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <8/4/2025>
+-- Description:	<Check if a user is a member of a specific group>
+-- =============================================
+CREATE PROCEDURE SP_IsUserGroupMember
+    @groupId INT,
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT COUNT(*) 
+    FROM GroupMembers 
+    WHERE GroupId = @groupId 
+    AND UserId = @userId;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <8/4/2025>
+-- Description:	<Get user details for a group member with age calculation>
+-- =============================================
+CREATE PROCEDURE SP_GetGroupUserDetails
+    @groupId INT,
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        u.FirstName + ' ' + u.LastName AS FullName,
+        DATEDIFF(YEAR, u.BirthDate, GETDATE()) AS Age,
+        u.Email,
+        u.CityId,
+        u.Bio,
+        u.Gender
+    FROM Users u
+    INNER JOIN GroupMembers gm ON u.UserId = gm.UserId
+    WHERE gm.GroupId = @groupId AND u.UserId = @userId;
+END
+GO

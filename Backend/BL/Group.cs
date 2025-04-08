@@ -67,22 +67,6 @@
         //}
 
         //--------------------------------------------------------------------------------------------------
-        // This method checks if a user is an admin for a specific group
-        //--------------------------------------------------------------------------------------------------
-        public static bool IsUserGroupAdmin(int userId, int groupId)
-        {
-            try
-            {
-                DBservices dBservices = new DBservices();
-                return dBservices.IsUserGroupAdmin(userId, groupId);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        //--------------------------------------------------------------------------------------------------
         // Get paginated groups for infinite scrolling
         //--------------------------------------------------------------------------------------------------
         public static (List<object> Groups, bool HasMore) GetGroupsPaginated(int? lastGroupId = null, int pageSize = 10)
@@ -145,6 +129,22 @@
                     default:
                         return "An error occurred while processing your request.";
                 }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Gets upcoming events for a specific group with pagination
+        //--------------------------------------------------------------------------------------------------
+        public static (List<object> Events, bool HasMore) GetUpcomingGroupEvents(int groupId, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetUpcomingGroupEvents(groupId, page, pageSize);
             }
             catch (Exception ex)
             {

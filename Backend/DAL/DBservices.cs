@@ -1034,54 +1034,6 @@ public class DBservices
 
 
     //--------------------------------------------------------------------------------------------------
-    // This method checks if a user is an admin for a specific group
-    //--------------------------------------------------------------------------------------------------
-    public bool IsUserGroupAdmin(int userId, int groupId)
-    {
-        SqlConnection con = null;
-
-        try
-        {
-            con = connect("myProjDB");
-            SqlCommand cmd = CreateCommandWithStoredProcedureIsUserGroupAdmin("SP_IsUserGroupAdmin", con, userId, groupId);
-
-            // Returns the first column of the first row
-            object result = cmd.ExecuteScalar();
-
-            // If result is 1, user is admin; if 0, user is not admin
-            return result != null && Convert.ToInt32(result) == 1;
-        }
-        catch (Exception ex)
-        {
-            throw ex;
-        }
-        finally
-        {
-            if (con != null)
-            {
-                con.Close();
-            }
-        }
-    }
-
-    //---------------------------------------------------------------------------------
-    // Create the SqlCommand for checking if user is a group admin
-    //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureIsUserGroupAdmin(string spName, SqlConnection con, int userId, int groupId)
-    {
-        SqlCommand cmd = new SqlCommand();
-        cmd.Connection = con;
-        cmd.CommandText = spName;
-        cmd.CommandTimeout = 10;
-        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-
-        cmd.Parameters.AddWithValue("@userId", userId);
-        cmd.Parameters.AddWithValue("@groupId", groupId);
-
-        return cmd;
-    }
-
-    //--------------------------------------------------------------------------------------------------
     // This method retrieves random upcoming public events
     //--------------------------------------------------------------------------------------------------
     public object GetRandomEvents(int count)
@@ -2014,6 +1966,241 @@ public class DBservices
         cmd.Parameters.AddWithValue("@groupId", groupId);
         cmd.Parameters.AddWithValue("@page", page);
         cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method gets Group Upcoming Events using pagination
+    //---------------------------------------------------------------------------------
+    public (List<object>, bool) GetUpcomingGroupEvents(int groupId, int page = 1, int pageSize = 10)
+    {
+        SqlConnection con = null;
+        List<object> events = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetUpcomingGroupEvents("SP_GetUpcomingGroupEvents", con, groupId, page, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var eventItem = new
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"])
+                };
+
+                events.Add(eventItem);
+            }
+
+            // Check if we got more results than requested
+            if (events.Count > pageSize)
+            {
+                hasMore = true;
+                events.RemoveAt(events.Count - 1); // Remove the extra item
+            }
+
+            return (events, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting Upcoming Group Events
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUpcomingGroupEvents(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int page,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method checks if a user is an admin of a specific group
+    //---------------------------------------------------------------------------------
+    public bool IsUserGroupAdmin(int groupId, int userId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureIsUserGroupAdmin("SP_IsUserGroupAdmin", con, groupId, userId);
+
+            int count = (int)cmd.ExecuteScalar();
+            return count > 0;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking if a user is a group admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIsUserGroupAdmin(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method checks if a user is a member of a specific group
+    //---------------------------------------------------------------------------------
+    public bool IsUserGroupMember(int groupId, int userId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureIsUserGroupMember("SP_IsUserGroupMember", con, groupId, userId);
+
+            int count = (int)cmd.ExecuteScalar();
+            return count > 0;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking if a user is a group member
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIsUserGroupMember(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method gets user details for a group member
+    //---------------------------------------------------------------------------------
+    public object GetGroupUserDetails(int groupId, int userId)
+    {
+        SqlConnection con = null;
+        object userDetails = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetGroupUserDetails("SP_GetGroupUserDetails", con, groupId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                userDetails = new
+                {
+                    FullName = dataReader["FullName"].ToString(),
+                    Age = Convert.ToInt32(dataReader["Age"]),
+                    Email = dataReader["Email"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Bio = dataReader["Bio"].ToString(),
+                    Gender = dataReader["Gender"].ToString()
+                };
+            }
+
+            return userDetails;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting group user details
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupUserDetails(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
 
         return cmd;
     }
