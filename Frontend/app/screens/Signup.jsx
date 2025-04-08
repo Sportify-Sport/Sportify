@@ -178,20 +178,20 @@ const Signup = () => {
       return;
     }
 
-    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&q=${encodeURIComponent(
+    const CityApiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&q=${encodeURIComponent(
       query
     )}&limit=5`;
 
     try {
-      const response = await fetch(apiUrl);
+      const response = await fetch(CityApiUrl);
       const data = await response.json();
       if (data.success && data.result && data.result.records) {
         // Map each record to get only _id and תעתיק, and filter out records without a valid תעתיק
         const suggestions = data.result.records
-          .filter((record) => record["תעתיק"] && record["תעתיק"].trim() !== "")
+          .filter((record) => record["city_name_en"] && record["city_name_en"].trim() !== "")
           .map((record) => ({
             id: record._id,
-            name: record["תעתיק"],
+            name: record["city_name_en"],
           }));
         setCitySuggestions(suggestions);
       } else {

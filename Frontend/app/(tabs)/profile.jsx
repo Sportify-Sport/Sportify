@@ -95,7 +95,7 @@ export default function Profile() {
       // Fetch the city name from the government API using cityId
       if (profileData.cityId) {
         const cityResponse = await fetch(
-        `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&filters={"_id":${profileData.cityId}}`
+        `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${profileData.cityId}}`
         );
         const cityData = await cityResponse.json();
         if (cityData.success && cityData.result && cityData.result.records) {
@@ -103,7 +103,7 @@ export default function Profile() {
             r._id.toString() === profileData.cityId.toString()
           );
           if (record) {
-            setCity(record['תעתיק']);
+            setCity(record['city_name_en']);
           }
         }
       }
@@ -135,16 +135,16 @@ export default function Profile() {
       setCitySuggestions([]);
       return;
     }
-    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&q=${encodeURIComponent(query)}&limit=5`;
+    const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&q=${encodeURIComponent(query)}&limit=5`;
     try {
       const response = await fetch(apiUrl);
       const data = await response.json();
       if (data.success && data.result && data.result.records) {
         const suggestions = data.result.records
-          .filter(record => record['תעתיק'] && record['תעתיק'].trim() !== '')
+          .filter(record => record['city_name_en'] && record['city_name_en'].trim() !== '')
           .map(record => ({
             id: record._id,
-            name: record['תעתיק']
+            name: record['city_name_en']
           }));
         setCitySuggestions(suggestions);
       } else {
