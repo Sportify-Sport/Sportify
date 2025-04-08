@@ -2204,4 +2204,317 @@ public class DBservices
 
         return cmd;
     }
+
+    //---------------------------------------------------------------------------------
+    // This method gets pending group join requests with pagination
+    //---------------------------------------------------------------------------------
+    public (List<object>, bool) GetGroupPendingJoinRequests(int groupId, int page = 1, int pageSize = 10)
+    {
+        SqlConnection con = null;
+        List<object> requests = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetPendingJoinRequests(
+                "SP_GetGroupPendingJoinRequests", con, groupId, page, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                var request = new
+                {
+                    RequestId = Convert.ToInt32(dataReader["RequestId"]),
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FullName = dataReader["FullName"].ToString(),
+                    UserPicture = dataReader["UserPicture"].ToString(),
+                    RequestDate = Convert.ToDateTime(dataReader["RequestDate"])
+                };
+
+                requests.Add(request);
+            }
+
+            // Check if we got more results than requested
+            if (requests.Count > pageSize)
+            {
+                hasMore = true;
+                requests.RemoveAt(requests.Count - 1); // Remove the extra item
+            }
+
+            return (requests, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting pending join requests
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetPendingJoinRequests(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int page,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method approves a join request and adds the user to the group
+    //---------------------------------------------------------------------------------
+    public (bool Success, string Message) ApproveJoinRequest(int requestId, int groupId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureApproveJoinRequest(
+                "SP_ApproveJoinRequest", con, requestId, groupId);
+
+            SqlParameter outputSuccess = new SqlParameter("@Success", SqlDbType.Bit);
+            outputSuccess.Direction = ParameterDirection.Output;
+            cmd.Parameters.Add(outputSuccess);
+
+            SqlParameter outputMessage = new SqlParameter("@Message", SqlDbType.NVarChar, 255);
+            outputMessage.Direction = ParameterDirection.Output;
+            cmd.Parameters.Add(outputMessage);
+
+            cmd.ExecuteNonQuery();
+
+            bool success = (bool)outputSuccess.Value;
+            string message = outputMessage.Value.ToString();
+
+            return (success, message);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for approving a join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureApproveJoinRequest(
+        string spName,
+        SqlConnection con,
+        int requestId,
+        int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@requestId", requestId);
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method rejects a join request
+    //---------------------------------------------------------------------------------
+    public bool RejectJoinRequest(int requestId, int groupId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureRejectJoinRequest(
+                "SP_RejectJoinRequest", con, requestId, groupId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                int success = Convert.ToInt32(dataReader["Success"]);
+                return success == 1; // Return true if success is 1
+            }
+
+            return false; // Default to false if no rows are returned
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for rejecting a join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRejectJoinRequest(
+        string spName,
+        SqlConnection con,
+        int requestId,
+        int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@requestId", requestId);
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method removes a member from a group
+    //---------------------------------------------------------------------------------
+    public (bool Success, string Message) RemoveGroupMember(int groupId, int userId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureRemoveGroupMember(
+                "SP_RemoveGroupMember", con, groupId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                int success = Convert.ToInt32(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+
+                return (success == 1, message);
+            }
+
+            return (false, "Failed to process the removal request");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for removing a group member
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRemoveGroupMember(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method handles a user leaving a group
+    //---------------------------------------------------------------------------------
+    public bool LeaveGroup(int groupId, int userId)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+            SqlCommand cmd = CreateCommandWithStoredProcedureLeaveGroup(
+                "SP_LeaveGroup", con, groupId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                int success = Convert.ToInt32(dataReader["Success"]);
+                return success == 1;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for leaving a group
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureLeaveGroup(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+
+        return cmd;
+    }
 }

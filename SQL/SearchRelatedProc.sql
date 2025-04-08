@@ -28,7 +28,7 @@ BEGIN
     WHERE (@name IS NULL OR g.GroupName LIKE '%' + @name + '%')
         AND (@sportId IS NULL OR g.SportId = @sportId)
         AND (@cityId IS NULL OR g.CityId = @cityId)
-        AND (@gender IS NULL OR @gender = 'Mixed' OR g.Gender = @gender)
+        AND (@gender IS NULL OR g.Gender = @gender)
         AND (@age IS NULL OR 
             (@age = '13-18' AND g.MinAge >= 13 AND g.MinAge <= 18) OR
             (@age = '18-30' AND g.MinAge >= 18 AND g.MinAge <= 30) OR
@@ -71,7 +71,7 @@ BEGIN
         AND (@name IS NULL OR e.EventName LIKE '%' + @name + '%')
         AND (@sportId IS NULL OR e.SportId = @sportId)
         AND (@cityId IS NULL OR e.CityId = @cityId)
-        AND (@gender IS NULL OR @gender = 'Mixed' OR e.Gender = @gender)
+        AND (@gender IS NULL OR e.Gender = @gender)
         AND (@age IS NULL OR 
             (@age = '13-18' AND e.MinAge >= 13 AND e.MinAge <= 18) OR
             (@age = '18-30' AND e.MinAge >= 18 AND e.MinAge <= 30) OR
