@@ -13,7 +13,7 @@ namespace Backend.Controllers
         [AllowAnonymous]
         public IActionResult Search(
             [FromQuery] string type,
-            [FromQuery] string name = null,
+            [FromQuery] string? name = null,
             [FromQuery] int? sportId = null,
             [FromQuery] int? cityId = null,
             [FromQuery] string? age = null,
