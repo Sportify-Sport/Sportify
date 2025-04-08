@@ -77,16 +77,32 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT 
-        g.*,
-        CASE WHEN @userId IS NOT NULL AND EXISTS (
+    -- First, calculate IsMember
+    DECLARE @isMember BIT = 0;
+    
+    IF @userId IS NOT NULL
+    BEGIN
+        SELECT @isMember = CASE WHEN EXISTS (
             SELECT 1 FROM GroupMembers 
             WHERE GroupId = @groupId AND UserId = @userId
-        ) THEN 1 ELSE 0 END AS IsMember,
+        ) THEN 1 ELSE 0 END;
+    END
+    
+    SELECT 
+        g.*,
+        @isMember AS IsMember,
         CASE WHEN @userId IS NOT NULL AND EXISTS (
             SELECT 1 FROM GroupAdmins 
             WHERE GroupId = @groupId AND UserId = @userId
-        ) THEN 1 ELSE 0 END AS IsAdmin
+        ) THEN 1 ELSE 0 END AS IsAdmin,
+        CASE WHEN @userId IS NOT NULL 
+             AND @isMember = 0  -- Using the variable instead of repeating the EXISTS check
+             AND EXISTS (
+                SELECT 1 FROM GroupJoinRequests
+                WHERE GroupId = @groupId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
+             ) 
+             THEN 1 ELSE 0 
+        END AS HasPendingRequest
     FROM Groups g
     WHERE g.GroupId = @groupId;
 END

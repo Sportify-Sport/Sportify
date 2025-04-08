@@ -1435,6 +1435,7 @@ public class DBservices
 
                 bool isMember = userId.HasValue && Convert.ToBoolean(dataReader["IsMember"]);
                 bool isAdmin = userId.HasValue && Convert.ToBoolean(dataReader["IsAdmin"]);
+                bool hasPendingRequest = userId.HasValue && Convert.ToBoolean(dataReader["HasPendingRequest"]);
 
                 groupDetails = new
                 {
@@ -1453,7 +1454,8 @@ public class DBservices
                     Wins = Convert.ToInt32(dataReader["Wins"]),
                     Loses = Convert.ToInt32(dataReader["Loses"]),
                     IsMember = isMember,
-                    IsAdmin = isAdmin
+                    IsAdmin = isAdmin,
+                    HasPendingRequest = hasPendingRequest
                 };
             }
 
