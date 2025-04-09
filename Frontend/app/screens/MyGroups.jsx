@@ -1,17 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import getApiBaseUrl from '../config/apiConfig';
 
 const apiUrl = getApiBaseUrl();
 
 export default function MyGroupsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [token, setToken] = useState(null);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [citiesMap, setCitiesMap] = useState({});
+
+  // Static fallback for city names
+  const staticCityMap = {
+    1: "Tel Aviv",
+    2: "Haifa",
+    3: "Jerusalem",
+    4: "Beer Sheva",
+    5: "Eilat",
+    6: "Netanya",
+    7: "Herzliya",
+    // Add more as needed
+  };
+
+  const getCityNameById = async (cityId) => {
+    if (!cityId) return null;
+    
+    // First check static map
+    if (staticCityMap[cityId]) {
+      return staticCityMap[cityId];
+    }
+
+    // Then check cache
+    if (citiesMap[cityId]) {
+      return citiesMap[cityId];
+    }
+
+    try {
+      const resp = await fetch(
+        `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${cityId}}`
+      );
+      const json = await resp.json();
+      
+      if (json.success && json.result.records.length) {
+        const name = json.result.records[0]['city_name_en'] || 
+                     json.result.records[0]['שם_ישוב'] || 
+                     `City ${cityId}`;
+        setCitiesMap(m => ({ ...m, [cityId]: name }));
+        return name;
+      }
+    } catch (e) {
+      console.error('City lookup failed', e);
+    }
+    return `City ${cityId}`;
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,36 +76,73 @@ export default function MyGroupsScreen() {
 
   const fetchGroups = async (userToken) => {
     try {
-      const response = await fetch(`${apiUrl}/api/Users/groups`, {
+      setLoading(true);
+      const response = await fetch(`${apiUrl}/api/Users/groups/all`, {
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
       });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.replace('/screens/Login');
+          return;
+        }
+        throw new Error('Failed to fetch groups');
+      }
+
       const result = await response.json();
 
-      if (result.success && Array.isArray(result.data)) {
-        setGroups(result.data);
+      if (Array.isArray(result)) {
+        // First set groups with temporary city names
+        setGroups(result.map(group => ({
+          ...group,
+          cityName: staticCityMap[group.cityId] || `Loading...`
+        })));
+
+        // Then update with actual city names
+        const updatedGroups = await Promise.all(
+          result.map(async (group) => {
+            const cityName = await getCityNameById(group.cityId);
+            return { ...group, cityName };
+          })
+        );
+        
+        setGroups(updatedGroups);
       } else {
-        setError('Failed to load groups');
+        setError('Failed to fetch groups');
       }
     } catch (err) {
-      setError('Network error occurred');
-      console.error(err);
+      setError('Failed to fetch groups');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const renderGroup = ({ item }) => (
-    <TouchableOpacity className="flex-row items-center bg-white p-3 my-1 rounded-lg shadow-sm">
+    <TouchableOpacity
+      onPress={() => router.push(`/screens/GroupDetails?groupId=${item.groupId}`)}
+      className="flex-row items-center bg-white p-4 my-2 rounded-lg shadow-sm"
+    >
       <Image
         source={{ uri: `${apiUrl}/Images/${item.groupImage}` }}
-        className="w-10 h-10 rounded-full"
+        className="w-12 h-12 rounded-full"
       />
       <View className="ml-3 flex-1">
         <Text className="text-base font-bold text-gray-900">{item.groupName}</Text>
-        <Text className="text-sm text-gray-500">{item.location}</Text>
+        <Text className="text-sm text-gray-500 mt-1">
+          {item.cityName || 'Unknown Location'}
+        </Text>
       </View>
+      <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
     </TouchableOpacity>
   );
 
@@ -72,32 +156,35 @@ export default function MyGroupsScreen() {
 
   return (
     <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold text-gray-900 mb-4">My Groups</Text>
+      {/* Header with Back Button and Title */}
+      <View className="flex-row items-center mb-6">
+        <TouchableOpacity 
+          onPress={handleGoBack}
+          className="p-2 -ml-2"
+        >
+          <Ionicons name="arrow-back" size={24} color="#65DA84" />
+        </TouchableOpacity>
+        <Text className="text-2xl font-bold text-gray-900 ml-2">My Groups</Text>
+      </View>
 
       {error ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-red-500 mb-4">{error}</Text>
           <TouchableOpacity
-            className="bg-gray-200 px-4 py-2 rounded-full"
+            className="bg-gray-200 px-6 py-2 rounded-full"
             onPress={() => fetchGroups(token)}
           >
             <Text className="text-gray-800 font-medium">Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="bg-gray-200 px-4 py-2 rounded-full mt-4"
-            onPress={() => router.push('/')}
-          >
-            <Text className="text-gray-800 font-medium">Back to Home</Text>
           </TouchableOpacity>
         </View>
       ) : groups.length === 0 ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-500 mb-4">You haven't joined any groups yet</Text>
           <TouchableOpacity
-            className="bg-gray-200 px-4 py-2 rounded-full"
-            onPress={() => router.push('/')}
+            className="bg-gray-200 px-6 py-2 rounded-full"
+            onPress={handleGoBack}
           >
-            <Text className="text-gray-800 font-medium">Back to Home</Text>
+            <Text className="text-gray-800 font-medium">Go Back</Text>
           </TouchableOpacity>
         </View>
       ) : (
