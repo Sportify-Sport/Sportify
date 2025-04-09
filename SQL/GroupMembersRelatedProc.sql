@@ -197,6 +197,16 @@ BEGIN
         GOTO ReturnResult;
     END
     
+	-- If no rejected/removed/left request found, check for canceled request
+	IF @existingRequestId IS NULL
+	BEGIN
+		SELECT TOP 1 
+			@existingRequestId = RequestId
+		FROM GroupJoinRequests 
+		WHERE GroupId = @groupId AND RequesterUserId = @userId AND RequestStatus = 'Canceled'
+		ORDER BY RequestDate DESC;
+	END
+
     -- Process the request (update existing or insert new)
     IF @existingRequestId IS NOT NULL
     BEGIN
@@ -625,3 +635,41 @@ BEGIN
     END
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <9/4/2025>
+-- Description:	<Made for canceling join request for a group>
+-- =============================================
+CREATE PROCEDURE SP_CancelGroupJoinRequest
+    @groupId INT,
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @success BIT = 0;
+    DECLARE @errorMessage NVARCHAR(100) = NULL;
+    
+    -- Check if the user has a pending request for this group
+    IF EXISTS (
+        SELECT 1 
+        FROM GroupJoinRequests 
+        WHERE GroupId = @groupId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
+    )
+    BEGIN
+        -- Update the request status to Canceled
+        UPDATE GroupJoinRequests
+        SET RequestStatus = 'Canceled'
+        WHERE GroupId = @groupId AND RequesterUserId = @userId AND RequestStatus = 'Pending';
+        
+        SET @success = 1;
+    END
+    ELSE
+    BEGIN
+        SET @errorMessage = 'No pending request found to cancel';
+    END
+    
+    -- Return result
+    SELECT @success AS Success, @errorMessage AS ErrorMessage;
+END

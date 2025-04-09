@@ -114,7 +114,8 @@ CREATE TABLE EventJoinRequests (
     EventId INT REFERENCES [Events](EventId) ON DELETE CASCADE,
     RequesterUserId INT REFERENCES Users(UserId) ON DELETE CASCADE,
     RequestedDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
-    RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected'))
+    RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected', 'Removed', 'Left', 'Canceled')),
+	RejectionOrRemovalDate DATE NULL
 );
 
 
@@ -122,7 +123,7 @@ CREATE TABLE GroupJoinRequests (
     RequestId INT PRIMARY KEY IDENTITY(1,1),
     GroupId INT REFERENCES Groups(GroupId) ON DELETE CASCADE,
     RequesterUserId INT REFERENCES Users(UserId) ON DELETE CASCADE,
-    RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected', 'Removed', 'Left')),
+    RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected', 'Removed', 'Left', 'Canceled')),
     RequestDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
 	RejectionOrRemovalDate DATE NULL
 );

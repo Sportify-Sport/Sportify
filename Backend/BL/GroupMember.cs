@@ -154,5 +154,14 @@
             DBservices db = new DBservices();
             return db.GetUserWithPendingRequest(groupId, userId);
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Cancels user group join request
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string ErrorMessage) CancelGroupJoinRequest(int groupId, int userId)
+        {
+            DBservices db = new DBservices();
+            return db.CancelGroupJoinRequest(groupId, userId);
+        }
     }
 }

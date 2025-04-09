@@ -2581,4 +2581,288 @@ public class DBservices
         cmd.Parameters.AddWithValue("@userId", userId);
         return cmd;
     }
+
+    //--------------------------------------------------------------------------------- 
+    // This method checks if an event requires teams 
+    //---------------------------------------------------------------------------------
+    public bool? EventRequiresTeams(int eventId)
+    {
+        SqlConnection con = null;
+        bool? requiresTeams = null;
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureEventRequiresTeams("SP_EventRequiresTeams", con, eventId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                requiresTeams = Convert.ToBoolean(dataReader["RequiresTeams"]);
+            }
+
+            return requiresTeams;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------------- 
+    // Create the SqlCommand for checking if an event requires teams 
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureEventRequiresTeams(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method checks if a user is an admin of an event, returns true if the user is an admin, false otherwise.
+    //---------------------------------------------------------------------------------
+    public bool IsUserEventAdmin(int eventId, int userId)
+    {
+        SqlConnection con = null;
+        bool isAdmin = false;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureIsUserEventAdmin("SP_IsUserEventAdmin", con, eventId, userId);
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                isAdmin = Convert.ToBoolean(dataReader["isAdmin"]);
+            }
+
+            return isAdmin;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking if a user is an event admin using the stored procedure
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIsUserEventAdmin(string spName, SqlConnection con, int eventId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method retrieves players for a non-team event with pagination
+    //---------------------------------------------------------------------------------
+    public (List<object>, bool) GetEventPlayers(int eventId, int page, int pageSize)
+    {
+        SqlConnection con = null;
+        List<object> players = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetEventPlayers("SP_GetEventPlayers", con, eventId, page, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                players.Add(new
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FullName = dataReader["FullName"].ToString(),
+                    Image = dataReader["Image"].ToString(),
+                    IsAdmin = Convert.ToBoolean(dataReader["IsAdmin"])
+                });
+            }
+
+            // Check if we got more results than requested
+            if (players.Count > pageSize)
+            {
+                hasMore = true;
+                players.RemoveAt(players.Count - 1); // Remove the extra item
+            }
+
+            return (players, hasMore);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for retrieving event players
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventPlayers(
+        string spName,
+        SqlConnection con,
+        int eventId,
+        int page,
+        int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method processes a request to join an event as either a player or watcher
+    //---------------------------------------------------------------------------------
+    public string ProcessEventJoinRequest(int eventId, int userId, bool playWatch)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureEventJoinRequest(
+                "SP_ProcessEventJoinRequestParticipants", con, eventId, userId, playWatch);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return dataReader["Result"].ToString();
+            }
+
+            return "UnknownError";
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for processing an event join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureEventJoinRequest(
+        string spName,
+        SqlConnection con,
+        int eventId,
+        int userId,
+        bool playWatch)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@playWatch", playWatch);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method cancels a user's pending join request for a group
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) CancelGroupJoinRequest(int groupId, int userId)
+    {
+        SqlConnection con = null;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureCancelRequest(
+                "SP_CancelGroupJoinRequest", con, groupId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ?
+                    dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for canceling a group join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCancelRequest(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+
 }

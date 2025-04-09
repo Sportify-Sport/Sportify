@@ -266,7 +266,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = "GroupAdmin")]
         [HttpGet("{groupId}/pendingUser/{userId}")]
         public IActionResult GetUserWithPendingRequest(int groupId, int userId)
         {
@@ -293,5 +293,31 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [Authorize(Roles = "User")]
+        [HttpPost("{groupId}/cancel-request")]
+        public IActionResult CancelGroupJoinRequest(int groupId)
+        {
+            try
+            {
+                int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                var result = GroupMember.CancelGroupJoinRequest(groupId, userId);
+
+                if (result.Success)
+                {
+                    return Ok(new { success = true, message = "Group join request canceled successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
     }
 }
