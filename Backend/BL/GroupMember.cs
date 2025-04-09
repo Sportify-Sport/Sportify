@@ -145,5 +145,14 @@
             DBservices db = new DBservices();
             return db.LeaveGroup(groupId, userId);
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Gets User details that have pending request in a group
+        //--------------------------------------------------------------------------------------------------
+        public static object GetUserWithPendingRequest(int groupId, int userId)
+        {
+            DBservices db = new DBservices();
+            return db.GetUserWithPendingRequest(groupId, userId);
+        }
     }
 }

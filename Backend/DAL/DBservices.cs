@@ -2519,4 +2519,66 @@ public class DBservices
 
         return cmd;
     }
+
+    //---------------------------------------------------------------------------------
+    // This method handles getting user details that got a pending request in the specified group
+    //---------------------------------------------------------------------------------
+    public object GetUserWithPendingRequest(int groupId, int userId)
+    {
+        SqlConnection con = null;
+        object userDetails = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUserPendingRequest("SP_GetUserWithPendingRequest", con, groupId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                userDetails = new
+                {
+                    FullName = dataReader["FullName"].ToString(),
+                    Age = Convert.ToInt32(dataReader["Age"]),
+                    Email = dataReader["Email"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Bio = dataReader["Bio"].ToString(),
+                    Gender = dataReader["Gender"].ToString()
+                };
+            }
+
+            return userDetails;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user details
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUserPendingRequest(
+        string spName,
+        SqlConnection con,
+        int groupId,
+        int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
 }

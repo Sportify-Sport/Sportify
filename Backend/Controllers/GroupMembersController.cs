@@ -265,5 +265,33 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
+
+        [Authorize]
+        [HttpGet("{groupId}/pendingUser/{userId}")]
+        public IActionResult GetUserWithPendingRequest(int groupId, int userId)
+        {
+            try
+            {
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
+                {
+                    return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
+                }
+
+                var userDetails = GroupMember.GetUserWithPendingRequest(groupId, userId);
+
+                if (userDetails == null)
+                {
+                    return NotFound(new { success = false, message = "No pending request found for this user in this group" });
+                }
+
+                return Ok(new { success = true, data = userDetails });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
     }
 }

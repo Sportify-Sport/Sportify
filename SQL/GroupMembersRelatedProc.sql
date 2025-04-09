@@ -597,3 +597,31 @@ BEGIN
     
     SELECT @Success AS Success;
 END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <9/4/2025>
+-- Description:	<Get a user details that got a pending request in the sepcified group>
+-- =============================================
+CREATE PROCEDURE SP_GetUserWithPendingRequest
+    @groupId INT,
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- First check if the user has a pending request for this group
+    IF EXISTS (
+        SELECT 1 
+        FROM GroupJoinRequests 
+        WHERE GroupId = @groupId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
+    )
+    BEGIN
+        -- User has a pending request, return their details
+        SELECT u.FirstName + ' ' + u.LastName AS FullName, DATEDIFF(YEAR, u.BirthDate, GETDATE()) AS Age, u.Email, u.CityId, u.Bio, u.Gender
+        FROM Users u
+        WHERE u.UserId = @userId;
+    END
+END
+GO
