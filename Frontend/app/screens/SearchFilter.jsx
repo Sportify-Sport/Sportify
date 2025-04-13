@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,13 @@ import {
 import { Dropdown } from "react-native-element-dropdown";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useFilters } from "../context/FilterContext";
 import getApiBaseUrl from "../config/apiConfig";
 
 const SearchFilter = () => {
   const router = useRouter();
-  const { type } = useLocalSearchParams(); // Get the type parameter
+  const { type } = useLocalSearchParams();
   const { filters, setFilters } = useFilters();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -27,74 +26,91 @@ const SearchFilter = () => {
     gender: false,
   });
   const [cityOptions, setCityOptions] = useState([
-    { label: "None", value: null }, // default "None"
+    { label: "None", value: null },
   ]);
 
-  // useEffect(() => {
-  //   const fetchCities = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         `https://data.gov.il/api/3/action/datastore_search?resource_id=e9701dcb-9f1c-43bb-bd44-eb380ade542f&limit=1000`
-  //       );
-  //       const data = await response.json();
-  
-  //       if (data.result && data.result.records) {
-  //         const cities = data.result.records
-  //           .map((record) => record.EngName)
-  //           .filter((name) => !!name)
-  //           .map((name) => ({ label: name, value: name.toLowerCase() }));
-  
-  //         const uniqueCities = [
-  //           { label: "None", value: null },
-  //           ...Array.from(new Map(cities.map((c) => [c.label, c])).values()),
-  //         ];
-  
-  //         setCityOptions(uniqueCities);
-  //       }
-  //     } catch (error) {
-  //       console.error("Failed to fetch cities:", error);
-  //     }
-  //   };
-  
-  //   fetchCities();
-  // }, []);
+  // Local state to manage dropdown and date picker values
+  const [sport, setSport] = useState(filters.sport || null);
+  const [city, setCity] = useState(filters.city || null);
+  const [age, setAge] = useState(filters.age || null);
+  const [gender, setGender] = useState(filters.gender || null);
+  const [startDate, setStartDate] = useState(filters.startDate ? new Date(filters.startDate) : null);
 
+  // Sync local state with filters from context when the screen mounts or filters change
+  useEffect(() => {
+    setSport(filters.sport || null);
+    setCity(filters.city || null);
+    setAge(filters.age || null);
+    setGender(filters.gender || null);
+    setStartDate(filters.startDate ? new Date(filters.startDate) : null);
+  }, [filters]);
 
+  // Fetch city options
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        // Use a CORS proxy
-        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-        const targetUrl = 'https://data.gov.il/api/3/action/datastore_search?resource_id=351d4347-8ee0-4906-8e5b-9533aef13595&limit=1000';
-        
-        const response = await fetch(proxyUrl + targetUrl, {
-          headers: {
-            // Some proxies require this header
-            'X-Requested-With': 'XMLHttpRequest'
+        try {
+          // Fetch from government API
+          const response = await fetch(
+            `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&limit=1000`
+          );
+          const data = await response.json();
+
+          if (data.success && data.result?.records) {
+            const apiCities = data.result.records
+              // Filter out cities without an English name
+              .filter(record => record.city_name_en && record.city_name_en.trim() !== "")
+              .map(record => ({
+                label: record.city_name_en,
+                value: record._id.toString(), // Use the numeric city ID as the value
+              }));
+
+            // Remove duplicates and sort alphabetically
+            const uniqueCities = [
+              { label: "None", value: null },
+              ...Array.from(new Map(apiCities.map(city => [city.value, city])).values())
+                .sort((a, b) => a.label.localeCompare(b.label)),
+            ];
+
+            setCityOptions(uniqueCities);
+            return;
           }
-        });
-        
-        const data = await response.json();
-        // Rest of your processing code...
+        } catch (error) {
+          console.log("Using fallback cities after API failure:", error);
+        }
+
+        // Fallback to common cities with IDs (manually mapped for fallback)
+        const fallbackCities = [
+          { label: "Tel Aviv", value: "5000" }, // Example IDs (replace with actual IDs if known)
+          { label: "Jerusalem", value: "3000" },
+          { label: "Haifa", value: "4000" },
+        ].sort((a, b) => a.label.localeCompare(b.label));
+
+        setCityOptions([
+          { label: "None", value: null },
+          ...fallbackCities,
+        ]);
       } catch (error) {
-        console.error("Failed to fetch cities:", error);
+        console.error("Error setting up cities:", error);
+        // Minimum fallback
+        setCityOptions([
+          { label: "None", value: null },
+          { label: "Tel Aviv", value: "5000" },
+          { label: "Jerusalem", value: "3000" },
+          { label: "Haifa", value: "4000" },
+        ]);
       }
     };
-  
+
     fetchCities();
   }, []);
-  
+
   const filterOptions = {
     sport: [
       { label: "None", value: null },
-      { label: "Football", value: "football" },
-      { label: "Basketball", value: "basketball" },
-    ],
-    city: [
-      { label: "None", value: null },
-      { label: "Haifa", value: "haifa" },
-      { label: "Tel Aviv", value: "tel-aviv" },
-      { label: "Jerusalem", value: "jerusalem" },
+      { label: "Football", value: "1" },
+      { label: "Basketball", value: "2" },
+      { label: "Marathon", value: "3" },
     ],
     age: [
       { label: "None", value: null },
@@ -104,64 +120,65 @@ const SearchFilter = () => {
     ],
     gender: [
       { label: "None", value: null },
-      { label: "Male", value: "male" },
-      { label: "Female", value: "female" },
-      { label: "Mix", value: "Mix" },
+      { label: "Male", value: "Male" },
+      { label: "Female", value: "Female" },
+      { label: "Mixed", value: "Mixed" },
     ],
   };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(Platform.OS === "ios");
     if (selectedDate) {
-      setFilters({ ...filters, date: selectedDate });
+      setStartDate(selectedDate);
     } else {
-      setFilters({ ...filters, date: null });
+      setStartDate(null);
     }
   };
 
   const handleResetFilters = () => {
+    setSport(null);
+    setCity(null);
+    setAge(null);
+    setGender(null);
+    setStartDate(null);
     setFilters({
       sport: null,
       city: null,
       age: null,
       gender: null,
-      date: null,
+      startDate: null,
     });
   };
 
   const handleApplyFilters = () => {
-    const queryParams = {};
-    if (filters.sport) queryParams.sport = filters.sport;
-    if (filters.city) queryParams.city = filters.city;
-    if (filters.age) queryParams.age = filters.age;
-    if (filters.gender) queryParams.gender = filters.gender;
-    if (type === "event" && filters.date) queryParams.date = filters.date.toISOString();
+    // Update the filters in context with the current values
+    setFilters({
+      sport,
+      city, // This will now be the city ID (e.g., "5000")
+      age,
+      gender,
+      startDate: startDate ? startDate.toISOString() : null,
+    });
 
-    const baseUrl = getApiBaseUrl();
-    const url = new URL(`${baseUrl}/api/search`);
-    Object.keys(queryParams).forEach((key) =>
-      url.searchParams.append(key, queryParams[key])
-    );
-
-    console.log("Simulated API Request URL:", url.toString());
-
+    // Navigate back to SearchScreen
     router.back();
   };
 
   return (
     <ScrollView className="flex-1 bg-white p-5" contentContainerStyle={{ paddingBottom: 30 }}>
       <TouchableOpacity className="mb-4" onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color="black" />
+        <Ionicons name="arrow-back" size={24} color="#065f46" />
       </TouchableOpacity>
 
-      <Text className="text-2xl font-bold mb-6">Filter By</Text>
+      <Text className="text-2xl font-bold text-green-800 mb-6">Filter By</Text>
 
+      {/* Sport Filter */}
       <View className="mb-6">
-        <Text className="text-lg font-semibold mb-2">Sport</Text>
+        <Text className="text-lg font-semibold text-green-700 mb-2">Sport</Text>
         <Dropdown
-          style={[styles.dropdown, isFocus.sport && { borderColor: "#10B981" }]}
+          style={[styles.dropdown, isFocus.sport && { borderColor: "#065f46" }]}
           placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          selectedTextStyle={[styles.selectedTextStyle, { color: '#065f46' }]}
           inputSearchStyle={styles.inputSearchStyle}
           iconStyle={styles.iconStyle}
           data={filterOptions.sport}
@@ -171,29 +188,30 @@ const SearchFilter = () => {
           valueField="value"
           placeholder={!isFocus.sport ? "Select sport" : "..."}
           searchPlaceholder="Search..."
-          value={filters.sport}
+          value={sport}
           onFocus={() => setIsFocus({ ...isFocus, sport: true })}
           onBlur={() => setIsFocus({ ...isFocus, sport: false })}
           onChange={(item) => {
-            setFilters({ ...filters, sport: item.value });
+            setSport(item.value);
             setIsFocus({ ...isFocus, sport: false });
           }}
           renderLeftIcon={() => (
             <Ionicons
               name="tennisball-outline"
               size={20}
-              color={isFocus.sport ? "#10B981" : "gray"}
+              color={isFocus.sport ? "#065f46" : "#9CA3AF"}
             />
           )}
         />
       </View>
 
+      {/* City Filter */}
       <View className="mb-6">
-        <Text className="text-lg font-semibold mb-2">City</Text>
+        <Text className="text-lg font-semibold text-green-700 mb-2">City</Text>
         <Dropdown
-          style={[styles.dropdown, isFocus.city && { borderColor: "#10B981" }]}
+          style={[styles.dropdown, isFocus.city && { borderColor: "#065f46" }]}
           placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          selectedTextStyle={[styles.selectedTextStyle, { color: '#065f46' }]}
           inputSearchStyle={styles.inputSearchStyle}
           iconStyle={styles.iconStyle}
           data={cityOptions}
@@ -203,29 +221,30 @@ const SearchFilter = () => {
           valueField="value"
           placeholder={!isFocus.city ? "Select city" : "..."}
           searchPlaceholder="Search..."
-          value={filters.city}
+          value={city}
           onFocus={() => setIsFocus({ ...isFocus, city: true })}
           onBlur={() => setIsFocus({ ...isFocus, city: false })}
           onChange={(item) => {
-            setFilters({ ...filters, city: item.value });
+            setCity(item.value);
             setIsFocus({ ...isFocus, city: false });
           }}
           renderLeftIcon={() => (
             <Ionicons
               name="location-outline"
               size={20}
-              color={isFocus.city ? "#10B981" : "gray"}
+              color={isFocus.city ? "#065f46" : "#9CA3AF"}
             />
           )}
         />
       </View>
 
+      {/* Age Filter */}
       <View className="mb-6">
-        <Text className="text-lg font-semibold mb-2">Age</Text>
+        <Text className="text-lg font-semibold text-green-700 mb-2">Age Group</Text>
         <Dropdown
-          style={[styles.dropdown, isFocus.age && { borderColor: "#10B981" }]}
+          style={[styles.dropdown, isFocus.age && { borderColor: "#065f46" }]}
           placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          selectedTextStyle={[styles.selectedTextStyle, { color: '#065f46' }]}
           inputSearchStyle={styles.inputSearchStyle}
           iconStyle={styles.iconStyle}
           data={filterOptions.age}
@@ -233,31 +252,32 @@ const SearchFilter = () => {
           maxHeight={300}
           labelField="label"
           valueField="value"
-          placeholder={!isFocus.age ? "Select age" : "..."}
+          placeholder={!isFocus.age ? "Select age group" : "..."}
           searchPlaceholder="Search..."
-          value={filters.age}
+          value={age}
           onFocus={() => setIsFocus({ ...isFocus, age: true })}
           onBlur={() => setIsFocus({ ...isFocus, age: false })}
           onChange={(item) => {
-            setFilters({ ...filters, age: item.value });
+            setAge(item.value);
             setIsFocus({ ...isFocus, age: false });
           }}
           renderLeftIcon={() => (
             <Ionicons
               name="people-outline"
               size={20}
-              color={isFocus.age ? "#10B981" : "gray"}
+              color={isFocus.age ? "#065f46" : "#9CA3AF"}
             />
           )}
         />
       </View>
 
+      {/* Gender Filter */}
       <View className="mb-6">
-        <Text className="text-lg font-semibold mb-2">Gender</Text>
+        <Text className="text-lg font-semibold text-green-700 mb-2">Gender</Text>
         <Dropdown
-          style={[styles.dropdown, isFocus.gender && { borderColor: "#10B981" }]}
+          style={[styles.dropdown, isFocus.gender && { borderColor: "#065f46" }]}
           placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          selectedTextStyle={[styles.selectedTextStyle, { color: '#065f46' }]}
           inputSearchStyle={styles.inputSearchStyle}
           iconStyle={styles.iconStyle}
           data={filterOptions.gender}
@@ -267,61 +287,63 @@ const SearchFilter = () => {
           valueField="value"
           placeholder={!isFocus.gender ? "Select gender" : "..."}
           searchPlaceholder="Search..."
-          value={filters.gender}
+          value={gender}
           onFocus={() => setIsFocus({ ...isFocus, gender: true })}
           onBlur={() => setIsFocus({ ...isFocus, gender: false })}
           onChange={(item) => {
-            setFilters({ ...filters, gender: item.value });
+            setGender(item.value);
             setIsFocus({ ...isFocus, gender: false });
           }}
           renderLeftIcon={() => (
             <Ionicons
               name="person-outline"
               size={20}
-              color={isFocus.gender ? "#10B981" : "gray"}
+              color={isFocus.gender ? "#065f46" : "#9CA3AF"}
             />
           )}
         />
       </View>
 
-      {/* Show Date Picker only for events */}
+      {/* Date Picker (only for events) */}
       {type !== "group" && (
         <View className="mb-6">
-          <Text className="text-lg font-semibold mb-2">Start Date</Text>
+          <Text className="text-lg font-semibold text-green-700 mb-2">Start Date</Text>
           <TouchableOpacity
-            className="flex-row items-center justify-between border border-gray-300 rounded-lg p-3"
+            className="flex-row items-center justify-between border border-green-200 rounded-lg p-3"
             onPress={() => setShowDatePicker(true)}
           >
-            <Text className="text-gray-600">
-              {filters.date ? filters.date.toLocaleDateString() : "dd/mm/yyyy"}
+            <Text className="text-green-800">
+              {startDate ? startDate.toLocaleDateString() : "Select date"}
             </Text>
-            <Ionicons name="calendar-outline" size={24} color="#10B981" />
+            <Ionicons name="calendar-outline" size={24} color="#065f46" />
           </TouchableOpacity>
         </View>
       )}
 
       {showDatePicker && type !== "group" && (
         <DateTimePicker
-          value={filters.date || new Date()}
+          value={startDate || new Date()}
           mode="date"
           display="default"
           onChange={handleDateChange}
         />
       )}
 
-      <TouchableOpacity
-        className="bg-gray-500 py-3 rounded-lg items-center mt-4"
-        onPress={handleResetFilters}
-      >
-        <Text className="text-white font-bold text-lg">Reset Filters</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className="bg-green-500 py-3 rounded-lg items-center mt-4"
-        onPress={handleApplyFilters}
-      >
-        <Text className="text-white font-bold text-lg">Apply Filters</Text>
-      </TouchableOpacity>
+      {/* Action Buttons */}
+      <View className="flex-row space-x-4 mt-6">
+        <TouchableOpacity
+          className="flex-1 bg-gray-200 py-3 rounded-lg items-center"
+          onPress={handleResetFilters}
+        >
+          <Text className="text-gray-800 font-bold text-lg">Reset</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-1 bg-green-600 py-3 rounded-lg items-center"
+          onPress={handleApplyFilters}
+        >
+          <Text className="text-white font-bold text-lg">Apply</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
@@ -329,14 +351,15 @@ const SearchFilter = () => {
 const styles = {
   dropdown: {
     height: 50,
-    borderColor: "gray",
-    borderWidth: 0.5,
+    borderColor: "#D1FAE5",
+    borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#F0FDF4",
   },
   placeholderStyle: {
     fontSize: 16,
-    color: "gray",
+    color: "#9CA3AF",
   },
   selectedTextStyle: {
     fontSize: 16,
@@ -348,305 +371,9 @@ const styles = {
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+    color: "#065f46",
+    backgroundColor: "#F0FDF4",
   },
 };
 
 export default SearchFilter;
-
-
-// import React, { useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   ScrollView,
-//   Platform,
-// } from "react-native";
-// import { Dropdown } from "react-native-element-dropdown";
-// import DateTimePicker from "@react-native-community/datetimepicker";
-// import { Ionicons } from "@expo/vector-icons";
-// import { useRouter, useLocalSearchParams } from "expo-router";
-// import { useFilters } from "../context/FilterContext";
-// import getApiBaseUrl from "../config/apiConfig";
-
-// const SearchFilter = () => {
-//   const router = useRouter();
-//   const { type } = useLocalSearchParams(); // Get the type parameter
-//   const { filters, setFilters } = useFilters();
-
-//   const [showDatePicker, setShowDatePicker] = useState(false);
-//   const [isFocus, setIsFocus] = useState({
-//     sport: false,
-//     city: false,
-//     age: false,
-//     gender: false,
-//   });
-
-//   const filterOptions = {
-//     sport: [
-//       { label: "None", value: null },
-//       { label: "Football", value: "football" },
-//       { label: "Basketball", value: "basketball" },
-//       { label: "Tennis", value: "tennis" },
-//     ],
-//     city: [
-//       { label: "None", value: null },
-//       { label: "Haifa", value: "haifa" },
-//       { label: "Tel Aviv", value: "tel-aviv" },
-//       { label: "Jerusalem", value: "jerusalem" },
-//     ],
-//     age: [
-//       { label: "None", value: null },
-//       { label: "Under 18", value: "under-18" },
-//       { label: "18-25", value: "18-25" },
-//       { label: "26-40", value: "26-40" },
-//     ],
-//     gender: [
-//       { label: "None", value: null },
-//       { label: "Male", value: "male" },
-//       { label: "Female", value: "female" },
-//     ],
-//   };
-
-//   const handleDateChange = (event, selectedDate) => {
-//     setShowDatePicker(Platform.OS === "ios");
-//     if (selectedDate) {
-//       setFilters({ ...filters, date: selectedDate });
-//     } else {
-//       setFilters({ ...filters, date: null });
-//     }
-//   };
-
-//   const handleResetFilters = () => {
-//     setFilters({
-//       sport: null,
-//       city: null,
-//       age: null,
-//       gender: null,
-//       date: null,
-//     });
-//   };
-
-//   const handleApplyFilters = () => {
-//     const queryParams = {};
-//     if (filters.sport) queryParams.sport = filters.sport;
-//     if (filters.city) queryParams.city = filters.city;
-//     if (filters.age) queryParams.age = filters.age;
-//     if (filters.gender) queryParams.gender = filters.gender;
-//     if (type === "event" && filters.date) queryParams.date = filters.date.toISOString();
-
-//     const baseUrl = getApiBaseUrl();
-//     const url = new URL(`${baseUrl}/api/search`);
-//     Object.keys(queryParams).forEach((key) =>
-//       url.searchParams.append(key, queryParams[key])
-//     );
-
-//     console.log("Simulated API Request URL:", url.toString());
-
-//     router.back();
-//   };
-
-//   return (
-//     <ScrollView className="flex-1 bg-white p-5" contentContainerStyle={{ paddingBottom: 30 }}>
-//       <TouchableOpacity className="mb-4" onPress={() => router.back()}>
-//         <Ionicons name="arrow-back" size={24} color="black" />
-//       </TouchableOpacity>
-
-//       <Text className="text-2xl font-bold mb-6">Filter By</Text>
-
-//       <View className="mb-6">
-//         <Text className="text-lg font-semibold mb-2">Sport</Text>
-//         <Dropdown
-//           style={[styles.dropdown, isFocus.sport && { borderColor: "#10B981" }]}
-//           placeholderStyle={styles.placeholderStyle}
-//           selectedTextStyle={styles.selectedTextStyle}
-//           inputSearchStyle={styles.inputSearchStyle}
-//           iconStyle={styles.iconStyle}
-//           data={filterOptions.sport}
-//           search
-//           maxHeight={300}
-//           labelField="label"
-//           valueField="value"
-//           placeholder={!isFocus.sport ? "Select sport" : "..."}
-//           searchPlaceholder="Search..."
-//           value={filters.sport}
-//           onFocus={() => setIsFocus({ ...isFocus, sport: true })}
-//           onBlur={() => setIsFocus({ ...isFocus, sport: false })}
-//           onChange={(item) => {
-//             setFilters({ ...filters, sport: item.value });
-//             setIsFocus({ ...isFocus, sport: false });
-//           }}
-//           renderLeftIcon={() => (
-//             <Ionicons
-//               name="tennisball-outline"
-//               size={20}
-//               color={isFocus.sport ? "#10B981" : "gray"}
-//             />
-//           )}
-//         />
-//       </View>
-
-//       <View className="mb-6">
-//         <Text className="text-lg font-semibold mb-2">City</Text>
-//         <Dropdown
-//           style={[styles.dropdown, isFocus.city && { borderColor: "#10B981" }]}
-//           placeholderStyle={styles.placeholderStyle}
-//           selectedTextStyle={styles.selectedTextStyle}
-//           inputSearchStyle={styles.inputSearchStyle}
-//           iconStyle={styles.iconStyle}
-//           data={filterOptions.city}
-//           search
-//           maxHeight={300}
-//           labelField="label"
-//           valueField="value"
-//           placeholder={!isFocus.city ? "Select city" : "..."}
-//           searchPlaceholder="Search..."
-//           value={filters.city}
-//           onFocus={() => setIsFocus({ ...isFocus, city: true })}
-//           onBlur={() => setIsFocus({ ...isFocus, city: false })}
-//           onChange={(item) => {
-//             setFilters({ ...filters, city: item.value });
-//             setIsFocus({ ...isFocus, city: false });
-//           }}
-//           renderLeftIcon={() => (
-//             <Ionicons
-//               name="location-outline"
-//               size={20}
-//               color={isFocus.city ? "#10B981" : "gray"}
-//             />
-//           )}
-//         />
-//       </View>
-
-//       <View className="mb-6">
-//         <Text className="text-lg font-semibold mb-2">Age</Text>
-//         <Dropdown
-//           style={[styles.dropdown, isFocus.age && { borderColor: "#10B981" }]}
-//           placeholderStyle={styles.placeholderStyle}
-//           selectedTextStyle={styles.selectedTextStyle}
-//           inputSearchStyle={styles.inputSearchStyle}
-//           iconStyle={styles.iconStyle}
-//           data={filterOptions.age}
-//           search
-//           maxHeight={300}
-//           labelField="label"
-//           valueField="value"
-//           placeholder={!isFocus.age ? "Select age" : "..."}
-//           searchPlaceholder="Search..."
-//           value={filters.age}
-//           onFocus={() => setIsFocus({ ...isFocus, age: true })}
-//           onBlur={() => setIsFocus({ ...isFocus, age: false })}
-//           onChange={(item) => {
-//             setFilters({ ...filters, age: item.value });
-//             setIsFocus({ ...isFocus, age: false });
-//           }}
-//           renderLeftIcon={() => (
-//             <Ionicons
-//               name="people-outline"
-//               size={20}
-//               color={isFocus.age ? "#10B981" : "gray"}
-//             />
-//           )}
-//         />
-//       </View>
-
-//       <View className="mb-6">
-//         <Text className="text-lg font-semibold mb-2">Gender</Text>
-//         <Dropdown
-//           style={[styles.dropdown, isFocus.gender && { borderColor: "#10B981" }]}
-//           placeholderStyle={styles.placeholderStyle}
-//           selectedTextStyle={styles.selectedTextStyle}
-//           inputSearchStyle={styles.inputSearchStyle}
-//           iconStyle={styles.iconStyle}
-//           data={filterOptions.gender}
-//           search
-//           maxHeight={300}
-//           labelField="label"
-//           valueField="value"
-//           placeholder={!isFocus.gender ? "Select gender" : "..."}
-//           searchPlaceholder="Search..."
-//           value={filters.gender}
-//           onFocus={() => setIsFocus({ ...isFocus, gender: true })}
-//           onBlur={() => setIsFocus({ ...isFocus, gender: false })}
-//           onChange={(item) => {
-//             setFilters({ ...filters, gender: item.value });
-//             setIsFocus({ ...isFocus, gender: false });
-//           }}
-//           renderLeftIcon={() => (
-//             <Ionicons
-//               name="person-outline"
-//               size={20}
-//               color={isFocus.gender ? "#10B981" : "gray"}
-//             />
-//           )}
-//         />
-//       </View>
-
-//       {/* Show Date Picker only for events */}
-//       {type !== "group" && (
-//         <View className="mb-6">
-//           <Text className="text-lg font-semibold mb-2">Start Date</Text>
-//           <TouchableOpacity
-//             className="flex-row items-center justify-between border border-gray-300 rounded-lg p-3"
-//             onPress={() => setShowDatePicker(true)}
-//           >
-//             <Text className="text-gray-600">
-//               {filters.date ? filters.date.toLocaleDateString() : "dd/mm/yyyy"}
-//             </Text>
-//             <Ionicons name="calendar-outline" size={24} color="#10B981" />
-//           </TouchableOpacity>
-//         </View>
-//       )}
-
-//       {showDatePicker && type !== "group" && (
-//         <DateTimePicker
-//           value={filters.date || new Date()}
-//           mode="date"
-//           display="default"
-//           onChange={handleDateChange}
-//         />
-//       )}
-
-//       <TouchableOpacity
-//         className="bg-gray-500 py-3 rounded-lg items-center mt-4"
-//         onPress={handleResetFilters}
-//       >
-//         <Text className="text-white font-bold text-lg">Reset Filters</Text>
-//       </TouchableOpacity>
-
-//       <TouchableOpacity
-//         className="bg-green-500 py-3 rounded-lg items-center mt-4"
-//         onPress={handleApplyFilters}
-//       >
-//         <Text className="text-white font-bold text-lg">Apply Filters</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// };
-
-// const styles = {
-//   dropdown: {
-//     height: 50,
-//     borderColor: "gray",
-//     borderWidth: 0.5,
-//     borderRadius: 8,
-//     paddingHorizontal: 8,
-//   },
-//   placeholderStyle: {
-//     fontSize: 16,
-//     color: "gray",
-//   },
-//   selectedTextStyle: {
-//     fontSize: 16,
-//   },
-//   iconStyle: {
-//     width: 20,
-//     height: 20,
-//   },
-//   inputSearchStyle: {
-//     height: 40,
-//     fontSize: 16,
-//   },
-// };
-
-// export default SearchFilter;
