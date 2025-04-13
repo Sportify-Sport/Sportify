@@ -16,7 +16,7 @@ import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { useFilters } from "../context/FilterContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import getApiBaseUrl from "../config/apiConfig";
-
+import Voice from '@react-native-voice/voice';
 const apiUrl = getApiBaseUrl();
 
 export default function SearchScreen() {
@@ -38,6 +38,9 @@ export default function SearchScreen() {
   const limit = 10;
   const [searchTimeout, setSearchTimeout] = useState(null);
 
+
+
+  
   // Load sports map from storage
   useEffect(() => {
     const loadSportsMap = async () => {
@@ -297,6 +300,38 @@ export default function SearchScreen() {
     Keyboard.dismiss();
   };
 
+
+  useEffect(() => {
+    Voice.onSpeechResults = (result) => {
+      const text = result.value[0];
+      setSearch(text); // update the input field
+      handleSearch();  // optionally trigger the search
+    };
+  
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+  
+  const startVoiceRecognition = async () => {
+    try {
+      await Voice.start('en-US'); // Or 'he-IL' for Hebrew, etc.
+    } catch (e) {
+      console.error('Voice start error:', e);
+    }
+  };
+  // const startVoiceRecognition = async () => {
+  //   if (Platform.OS === "web") {
+  //     alert("Voice recognition is not supported on web.");
+  //     return;
+  //   }
+  
+  //   try {
+  //     await Voice.start('en-US');
+  //   } catch (e) {
+  //     console.error('Voice start error:', e);
+  //   }
+  // };
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View className="flex-1 bg-gray-100 p-4">
@@ -331,6 +366,9 @@ export default function SearchScreen() {
                 <Ionicons name="close-circle" size={20} color="gray" className="mr-2" />
               </TouchableOpacity>
             )}
+              <TouchableOpacity onPress={startVoiceRecognition}>
+                <Ionicons name="mic" size={20} color="gray" className="mr-2" />
+              </TouchableOpacity>
             <TouchableOpacity
               onPress={() =>
                 router.push({

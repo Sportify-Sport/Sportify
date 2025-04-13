@@ -1038,10 +1038,13 @@ export default function GroupDetails() {
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={28} color="#333" />
+            <Ionicons name="arrow-back" size={28} color="#65DA84" />
           </TouchableOpacity>
           <Text className="text-3xl font-extrabold text-gray-900 flex-1 text-center">{group.groupName}</Text>
+          <View className="flex-row items-center space-x-3">
           <Image source={{ uri: `${apiUrl}/Images/${group.groupImage}` }} style={{ width: 48, height: 48, borderRadius: 24 }} />
+
+          </View>
         </View>
         <View className="h-px bg-green-400 mb-4" />
 
@@ -1079,10 +1082,12 @@ export default function GroupDetails() {
               members.slice(0, membersDisplayCount).map((m) => (
                 <View key={m.userId} className="flex-row justify-between items-center py-3 border-b border-gray-200">
                   <View className="flex-row items-center space-x-3">
+                    <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
                     <Image
                       source={{ uri: `${apiUrl}/Images/${m.groupMemberImage}` }}
                       className="w-10 h-10 rounded-full"
                     />
+                    </View>
                     <View>
                       <Text className="text-gray-800 text-base font-medium">{m.groupMemberName}</Text>
                       <Text className="text-gray-500 text-sm">Since {m.joinYear}</Text>
@@ -1154,10 +1159,12 @@ export default function GroupDetails() {
             ) : (
               requests.slice(0, requestsDisplayCount).map((r) => (
                 <View key={r.requestId} className="flex-row justify-between items-center py-2">
+                  <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
                   <Image
                     source={{ uri: `${apiUrl}/Images/${r.userPicture}` }}
                     className="w-10 h-10 rounded-full"
                   />
+                  </View>
                   <View className="flex-1 ml-3">
                     <Text className="text-gray-700 text-lg">{r.fullName}</Text>
                     <Text className="text-gray-500 text-sm">{new Date(r.requestDate).toLocaleDateString('en-CA')}</Text>

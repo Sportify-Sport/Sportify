@@ -99,21 +99,21 @@ export default function MyEventsScreen() {
   const renderEvent = ({ item }) => (
     <TouchableOpacity
       onPress={() => router.push(`/screens/EventDetails?eventId=${item.eventId}`)}
-      className="flex-row items-center bg-green-50 p-4 my-2 rounded-lg border border-green-100"
+      className="flex-row items-center bg-green-50 p-4 my-2 rounded-lg border border-green-800"
     >
-      <View className="w-12 h-12 rounded-full bg-green-100 justify-center items-center">
+      <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
         <Image
           source={{ uri: `${apiUrl}/Images/${item.eventImage}` }}
           className="w-10 h-10 rounded-full"
         />
       </View>
       <View className="ml-3 flex-1">
-        <Text className="text-base font-bold text-green-800">{item.eventName}</Text>
-        <Text className="text-sm text-green-600 mt-1">
+        <Text className="text-base font-bold text-gray-900">{item.eventName}</Text>
+        <Text className="text-sm text-gray-600 mt-1">
           {new Date(item.startDatetime).toLocaleDateString()} •{' '}
           {new Date(item.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
-        <Text className="text-sm text-green-600">
+        <Text className="text-sm text-gray-600">
           {sportsMap[item.sportId] || `Sport ID: ${item.sportId}`}
         </Text>
       </View>
@@ -139,14 +139,14 @@ export default function MyEventsScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#65DA84" />
         </TouchableOpacity>
-        <Text className="text-2xl font-bold text-green-800 ml-2">My Events</Text>
+        <Text className="text-2xl font-bold text-green-500 ml-2">My Events</Text>
       </View>
 
       {error ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-red-500 mb-4">{error}</Text>
           <TouchableOpacity
-            className="bg-green-100 px-6 py-2 rounded-full border border-green-200"
+            className="bg-green-100 px-6 py-2 rounded-full border border-blue-200"
             onPress={() => fetchEvents(token)}
           >
             <Text className="text-green-800 font-medium">Retry</Text>
@@ -159,7 +159,7 @@ export default function MyEventsScreen() {
             className="bg-green-100 px-6 py-2 rounded-full border border-green-200"
             onPress={handleGoBack}
           >
-            <Text className="text-green-800 font-medium">Go Back</Text>
+            <Text className="text-green-500 font-medium">Go Back</Text>
           </TouchableOpacity>
         </View>
       ) : (

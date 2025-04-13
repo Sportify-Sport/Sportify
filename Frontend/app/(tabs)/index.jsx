@@ -72,7 +72,7 @@ export default function Index() {
 
     Promise.all([
       fetch(`${apiUrl}/api/Users/GetUserProfile`, { headers }).then((res) => res.json()),
-      fetch(`${apiUrl}/api/Users/events/top?limit=4`, { headers }).then((res) => res.json()),
+      fetch(`${apiUrl}/api/Users/events/paginated?pageSize=4`, { headers }).then((res) => res.json()),
       fetch(`${apiUrl}/api/Users/groups/top4`, { headers }).then((res) => res.json()),
     ])
       .then(([profileJson, eventsJson, groupsJson]) => {

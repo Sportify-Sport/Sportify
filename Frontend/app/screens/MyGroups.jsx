@@ -130,19 +130,21 @@ export default function MyGroupsScreen() {
   const renderGroup = ({ item }) => (
     <TouchableOpacity
       onPress={() => router.push(`/screens/GroupDetails?groupId=${item.groupId}`)}
-      className="flex-row items-center bg-white p-4 my-2 rounded-lg shadow-sm"
+      className="flex-row items-center bg-green-50 p-4 my-2 rounded-lg border border-green-800"
     >
-      <Image
-        source={{ uri: `${apiUrl}/Images/${item.groupImage}` }}
-        className="w-12 h-12 rounded-full"
-      />
+      <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
+        <Image
+          source={{ uri: `${apiUrl}/Images/${item.groupImage}` }}
+          className="w-10 h-10 rounded-full"
+        />
+      </View>
       <View className="ml-3 flex-1">
         <Text className="text-base font-bold text-gray-900">{item.groupName}</Text>
         <Text className="text-sm text-gray-500 mt-1">
           {item.cityName || 'Unknown Location'}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+      <Ionicons name="chevron-forward" size={20} color="#65DA84" />
     </TouchableOpacity>
   );
 
@@ -164,14 +166,14 @@ export default function MyGroupsScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#65DA84" />
         </TouchableOpacity>
-        <Text className="text-2xl font-bold text-gray-900 ml-2">My Groups</Text>
+        <Text className="text-2xl font-bold text-green-500 ml-2">My Groups</Text>
       </View>
 
       {error ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-red-500 mb-4">{error}</Text>
           <TouchableOpacity
-            className="bg-gray-200 px-6 py-2 rounded-full"
+            className="bg-green-800 px-6 py-2 rounded-full"
             onPress={() => fetchGroups(token)}
           >
             <Text className="text-gray-800 font-medium">Retry</Text>
