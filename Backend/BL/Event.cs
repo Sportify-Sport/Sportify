@@ -140,5 +140,24 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Checks if the user is the admin of the event
+        //--------------------------------------------------------------------------------------------------
+        public static bool IsUserEventAdmin(int eventId, int userId)
+        {
+            DBservices db = new DBservices();
+            return db.IsUserEventAdmin(eventId, userId);
+        }
+
+
+        //--------------------------------------------------------------------------------------------------
+        // Checks if the event requires teams or participants
+        //--------------------------------------------------------------------------------------------------
+        public static bool? EventRequiresTeams(int eventId)
+        {
+            DBservices db = new DBservices();
+            return db.EventRequiresTeams(eventId);
+        }
     }
 }

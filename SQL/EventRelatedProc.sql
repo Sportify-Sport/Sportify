@@ -95,7 +95,6 @@ BEGIN
     DECLARE @requiresTeams BIT;
     DECLARE @isPublic BIT;
     DECLARE @isParticipant BIT = 0;
-    DECLARE @isGroupParticipant BIT = 0;
     DECLARE @playWatch BIT = NULL;
     DECLARE @isAdmin BIT = 0;
     DECLARE @hasAccess BIT = 1;
@@ -110,34 +109,36 @@ BEGIN
     -- If user is authenticated, check participation status
     IF @userId IS NOT NULL
     BEGIN
-        -- Always check admin status regardless of participation
+        -- First check admin status - if admin, we don't need to check other participation
         IF EXISTS (SELECT 1 FROM EventAdmins WHERE EventId = @eventId AND CityOrganizerId = @userId)
         BEGIN
             SET @isAdmin = 1;
-        END;
-        
-        -- Check direct participation
-        IF EXISTS (SELECT 1 FROM EventParticipants WHERE EventId = @eventId AND UserId = @userId)
+        END
+        -- Only check participation if not admin
+        ELSE
         BEGIN
-            SET @isParticipant = 1;
-            
-            -- Get PlayWatch value for direct participation
-            SELECT @playWatch = PlayWatch
-            FROM EventParticipants
-            WHERE EventId = @eventId AND UserId = @userId;
-        END;
-        
-        -- Check group participation if event requires teams
-        IF @requiresTeams = 1 
-        BEGIN
-            IF EXISTS (
-                SELECT 1 FROM EventTeams et
-                JOIN GroupMembers gm ON et.GroupId = gm.GroupId
-                WHERE et.EventId = @eventId AND gm.UserId = @userId
-            )
+            -- Check direct participation
+            IF EXISTS (SELECT 1 FROM EventParticipants WHERE EventId = @eventId AND UserId = @userId)
             BEGIN
-                SET @isGroupParticipant = 1;
-                SET @playWatch = 1; -- Group participants are always players
+                SET @isParticipant = 1;
+                
+                -- Get PlayWatch value for direct participation
+                SELECT @playWatch = PlayWatch
+                FROM EventParticipants
+                WHERE EventId = @eventId AND UserId = @userId;
+            END
+            -- Check group participation if event requires teams
+            ELSE IF @requiresTeams = 1 
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM EventTeams et
+                    JOIN GroupMembers gm ON et.GroupId = gm.GroupId
+                    WHERE et.EventId = @eventId AND gm.UserId = @userId
+                )
+                BEGIN
+                    SET @isParticipant = 1;
+                    SET @playWatch = 1; -- Group participants are always players
+                END
             END;
         END;
     END;
@@ -146,7 +147,7 @@ BEGIN
     IF @requiresTeams = 1 AND @isPublic = 0
     BEGIN
         -- Only allow access if user is admin or participant
-        IF @userId IS NULL OR (@isAdmin = 0 AND @isParticipant = 0 AND @isGroupParticipant = 0)
+        IF @userId IS NULL OR (@isAdmin = 0 AND @isParticipant = 0)
         BEGIN
             SET @hasAccess = 0;
         END;
@@ -161,7 +162,6 @@ BEGIN
             el.Latitude,
             el.Longitude,
             @isParticipant AS IsParticipant,
-            @isGroupParticipant AS IsGroupParticipant,
             @playWatch AS PlayWatch,
             @isAdmin AS IsAdmin
         FROM [Events] e
@@ -174,3 +174,49 @@ BEGIN
         SELECT NULL AS EventId WHERE 1 = 0;
     END;
 END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <9/4/2025>
+-- Description:	<Checks if the user is the admin for the specified event>
+-- =============================================
+CREATE PROCEDURE SP_IsUserEventAdmin
+    @eventId INT,
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT CASE 
+             WHEN EXISTS (
+                 SELECT 1 
+                 FROM EventAdmins 
+                 WHERE EventId = @eventId AND CityOrganizerId = @userId
+             ) THEN CAST(1 AS BIT) 
+             ELSE CAST(0 AS BIT) 
+           END AS isAdmin;
+END
+GO
+
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <9/4/2025>
+-- Description:	<Checks if the event is for teams or participants (Like Marathon)>
+-- =============================================
+CREATE PROCEDURE SP_EventRequiresTeams
+    @eventId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Check if event exists and return RequiresTeams value directly
+    SELECT RequiresTeams 
+    FROM [Events] 
+    WHERE EventId = @eventId;
+    
+    -- If event doesn't exist, no rows will be returned
+    -- This will be interpreted as null in C#
+END
+GO

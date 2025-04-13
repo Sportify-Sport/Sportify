@@ -1560,7 +1560,6 @@ public class DBservices
 
                     // User participation information (only for authenticated users)
                     IsParticipant = userId.HasValue && Convert.ToBoolean(dataReader["IsParticipant"]),
-                    IsGroupParticipant = userId.HasValue && Convert.ToBoolean(dataReader["IsGroupParticipant"]),
                     PlayWatch = userId.HasValue && dataReader["PlayWatch"] != DBNull.Value ? (bool?)Convert.ToBoolean(dataReader["PlayWatch"]) : null,
                     IsAdmin = userId.HasValue && Convert.ToBoolean(dataReader["IsAdmin"])
                 };
@@ -2861,6 +2860,65 @@ public class DBservices
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@groupId", groupId);
         cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method cancels an event participation or request based on the type parameter
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) CancelEventParticipation(int eventId, int userId, bool isCancelingRequest)
+    {
+        SqlConnection con = null;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureCancelEvent("SP_CancelEventParticipation", con, eventId, userId, isCancelingRequest);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for canceling event participation or request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCancelEvent(
+        string spName,
+        SqlConnection con,
+        int eventId,
+        int userId,
+        bool isCancelingRequest)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@isCancelingRequest", isCancelingRequest);
         return cmd;
     }
 
