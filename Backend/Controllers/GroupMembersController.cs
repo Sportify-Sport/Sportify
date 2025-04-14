@@ -2,6 +2,7 @@
 using Backend.BL;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Backend.Controllers
@@ -126,6 +127,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group Id" });
+                }
+
                 int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
                 if (GroupMember.IsUserGroupAdmin(groupId, userId))
@@ -272,6 +278,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0 || userId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group Id or user Id" });
+                }
+
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
@@ -300,6 +311,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group Id" });
+                }
+
                 int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
                 var result = GroupMember.CancelGroupJoinRequest(groupId, userId);

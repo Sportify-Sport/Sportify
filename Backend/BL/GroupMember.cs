@@ -99,6 +99,9 @@
                     case "CooldownActive":
                         return "You cannot request to join this group at this time. Please try again after 1 week from your last rejection or removal or leaving of the group.";
 
+                    case "GroupNotFound":
+                        return "The group you're trying to join doesn't exist.";
+
                     default:
                         return "An error occurred while processing your request.";
                 }

@@ -2759,8 +2759,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB");
-            SqlCommand cmd = CreateCommandWithStoredProcedureEventJoinRequest(
-                "SP_ProcessEventJoinRequestParticipants", con, eventId, userId, playWatch);
+            SqlCommand cmd = CreateCommandWithStoredProcedureEventJoinRequest("SP_ProcessEventJoinRequestParticipants", con, eventId, userId, playWatch);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
@@ -2787,12 +2786,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // Create the SqlCommand for processing an event join request
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureEventJoinRequest(
-        string spName,
-        SqlConnection con,
-        int eventId,
-        int userId,
-        bool playWatch)
+    private SqlCommand CreateCommandWithStoredProcedureEventJoinRequest(string spName, SqlConnection con, int eventId, int userId, bool playWatch)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -2804,6 +2798,7 @@ public class DBservices
         cmd.Parameters.AddWithValue("@playWatch", playWatch);
         return cmd;
     }
+
 
     //---------------------------------------------------------------------------------
     // This method cancels a user's pending join request for a group
@@ -2817,66 +2812,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB");
-            SqlCommand cmd = CreateCommandWithStoredProcedureCancelRequest(
-                "SP_CancelGroupJoinRequest", con, groupId, userId);
-
-            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-
-            if (dataReader.Read())
-            {
-                success = Convert.ToBoolean(dataReader["Success"]);
-                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ?
-                    dataReader["ErrorMessage"].ToString() : null;
-            }
-
-            return (success, errorMessage);
-        }
-        catch (Exception ex)
-        {
-            throw ex;
-        }
-        finally
-        {
-            if (con != null)
-            {
-                con.Close();
-            }
-        }
-    }
-
-    //---------------------------------------------------------------------------------
-    // Create the SqlCommand for canceling a group join request
-    //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureCancelRequest(
-        string spName,
-        SqlConnection con,
-        int groupId,
-        int userId)
-    {
-        SqlCommand cmd = new SqlCommand();
-        cmd.Connection = con;
-        cmd.CommandText = spName;
-        cmd.CommandTimeout = 10;
-        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@groupId", groupId);
-        cmd.Parameters.AddWithValue("@userId", userId);
-        return cmd;
-    }
-
-
-    //---------------------------------------------------------------------------------
-    // This method cancels an event participation or request based on the type parameter
-    //---------------------------------------------------------------------------------
-    public (bool Success, string ErrorMessage) CancelEventParticipation(int eventId, int userId, bool isCancelingRequest)
-    {
-        SqlConnection con = null;
-        bool success = false;
-        string errorMessage = null;
-
-        try
-        {
-            con = connect("myProjDB");
-            SqlCommand cmd = CreateCommandWithStoredProcedureCancelEvent("SP_CancelEventParticipation", con, eventId, userId, isCancelingRequest);
+            SqlCommand cmd = CreateCommandWithStoredProcedureCancelRequest("SP_CancelGroupJoinRequest", con, groupId, userId);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
@@ -2902,14 +2838,62 @@ public class DBservices
     }
 
     //---------------------------------------------------------------------------------
-    // Create the SqlCommand for canceling event participation or request
+    // Create the SqlCommand for canceling a group join request
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureCancelEvent(
-        string spName,
-        SqlConnection con,
-        int eventId,
-        int userId,
-        bool isCancelingRequest)
+    private SqlCommand CreateCommandWithStoredProcedureCancelRequest(string spName, SqlConnection con, int groupId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method cancels a pending event join request
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) CancelEventJoinRequest(int eventId, int userId)
+    {
+        SqlConnection con = null;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureCancelEventRequest("SP_CancelEventJoinRequest", con, eventId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for canceling an event join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCancelEventRequest(string spName, SqlConnection con, int eventId, int userId)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -2918,7 +2902,166 @@ public class DBservices
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@eventId", eventId);
         cmd.Parameters.AddWithValue("@userId", userId);
-        cmd.Parameters.AddWithValue("@isCancelingRequest", isCancelingRequest);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method processes a user's request to leave an event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) LeaveEvent(int eventId, int userId)
+    {
+        SqlConnection con = null;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureLeaveEvent("SP_LeaveEvent", con, eventId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for leaving an event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureLeaveEvent(string spName, SqlConnection con, int eventId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method allows an event admin to remove a player from an event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) AdminRemoveEventPlayer(int eventId, int playerUserId, int adminUserId)
+    {
+        SqlConnection con = null;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureAdminRemovePlayer("SP_AdminRemoveEventPlayer", con, eventId, playerUserId, adminUserId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for an admin removing a player from an event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureAdminRemovePlayer(string spName, SqlConnection con, int eventId, int playerUserId, int adminUserId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@playerUserId", playerUserId);
+        cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method allows an event admin to process a join request
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) AdminProcessJoinRequest(int eventId, int requestUserId, int adminUserId, bool approve)
+    {
+        SqlConnection con = null;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureProcessJoinRequest("SP_AdminProcessJoinRequest", con, eventId, requestUserId, adminUserId, approve);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for processing a join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureProcessJoinRequest(string spName, SqlConnection con, int eventId, int requestUserId, int adminUserId, bool approve)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@requestUserId", requestUserId);
+        cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+        cmd.Parameters.AddWithValue("@approve", approve);
         return cmd;
     }
 

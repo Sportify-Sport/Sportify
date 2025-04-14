@@ -155,6 +155,13 @@ BEGIN
     -- Get the sport ID for this group
     SELECT @sportId = SportId FROM Groups WHERE GroupId = @groupId;
     
+	-- Check if group exists
+	IF @sportId IS NULL
+	BEGIN
+		SET @result = 'GroupNotFound';
+		GOTO ReturnResult;
+	END
+
     -- Check if user is already a member
     IF EXISTS (SELECT 1 FROM GroupMembers WHERE GroupId = @groupId AND UserId = @userId)
     BEGIN

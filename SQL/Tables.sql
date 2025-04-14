@@ -113,8 +113,8 @@ CREATE TABLE EventJoinRequests (
     RequestId INT PRIMARY KEY IDENTITY(1,1),
     EventId INT REFERENCES [Events](EventId) ON DELETE CASCADE,
     RequesterUserId INT REFERENCES Users(UserId) ON DELETE CASCADE,
-    RequestedDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
     RequestStatus NVARCHAR(20) NOT NULL CHECK (RequestStatus IN ('Pending', 'Approved', 'Rejected', 'Removed', 'Left', 'Canceled')),
+	RequestedDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
 	RejectionOrRemovalDate DATE NULL
 );
 
