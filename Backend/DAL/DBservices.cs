@@ -2218,8 +2218,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB"); // create the connection
-            SqlCommand cmd = CreateCommandWithStoredProcedureGetPendingJoinRequests(
-                "SP_GetGroupPendingJoinRequests", con, groupId, page, pageSize);
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetPendingJoinRequests("SP_GetGroupPendingJoinRequests", con, groupId, page, pageSize);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
@@ -3065,5 +3064,106 @@ public class DBservices
         return cmd;
     }
 
+    //---------------------------------------------------------------------------------
+    // This method retrieves pending join requests with pagination for infinite scroll
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage, List<object> Requests, bool HasMore) GetEventPendingJoinRequests(int eventId, int adminUserId, int page, int pageSize)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+        List<object> requests = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetPendingRequests("SP_GetEventPendingJoinRequestsPaginated", con, eventId, adminUserId, page, pageSize);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            // First result set - status information
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ?dataReader["ErrorMessage"].ToString() : null;
+             }
+
+            // If successful, proceed to second result set with the actual requests
+            if (success)
+            {
+                dataReader.NextResult();
+
+                int count = 0;
+                while (dataReader.Read())
+                {
+                    count++;
+
+                    // Only add to result if within the requested page size
+                    if (count <= pageSize)
+                    {
+                        requests.Add(new
+                        {
+                            UserId = Convert.ToInt32(dataReader["UserId"]),
+                            FullName = dataReader["FullName"].ToString(),
+                            UserPicture = dataReader["UserPicture"].ToString(),
+                            RequestDate = Convert.ToDateTime(dataReader["RequestedDate"])
+                        });
+                    }
+                }
+
+                // If we got more records than the page size, there are more records
+                hasMore = (count > pageSize);
+            }
+
+            return (success, errorMessage, requests, hasMore);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting pending join requests
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetPendingRequests(string spName, SqlConnection con, int eventId, int adminUserId, int page, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;          // the stored procedure name
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command
+
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+
+        return cmd;
+    }
 
 }

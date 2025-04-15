@@ -74,5 +74,14 @@
             DBservices db = new DBservices();
             return db.AdminProcessJoinRequest(eventId, requestUserId, adminUserId, approve);
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Gets all pending join requests for an event
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string ErrorMessage, List<object> Requests, bool HasMore) GetPendingJoinRequests(int eventId, int adminUserId, int page, int pageSize)
+        {
+            DBservices db = new DBservices();
+            return db.GetEventPendingJoinRequests(eventId, adminUserId, page, pageSize);
+        }
     }
 }

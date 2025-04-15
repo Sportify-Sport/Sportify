@@ -234,6 +234,47 @@ namespace Backend.Controllers
             }
         }
 
+        [Authorize(Roles = "CityOrganizer")]
+        [HttpGet("events/{eventId}/pending-requests")]
+        public IActionResult GetEventPendingJoinRequests(int eventId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
+                if (page < 1 || pageSize < 1 || pageSize > 50)
+                {
+                    return BadRequest(new {
+                        success = false,
+                        message = "Page must be ≥ 1 and pageSize must be between 1 and 50"
+                    });
+                }
+
+                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                var result = EventParticipant.GetPendingJoinRequests(eventId, adminUserId, page, pageSize);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.ErrorMessage });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    requests = result.Requests,
+                    hasMore = result.HasMore,
+                    page = page
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
 
     }
 }
