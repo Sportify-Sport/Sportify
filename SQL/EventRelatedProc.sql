@@ -98,6 +98,7 @@ BEGIN
     DECLARE @playWatch BIT = NULL;
     DECLARE @isAdmin BIT = 0;
     DECLARE @hasAccess BIT = 1;
+	DECLARE @hasPendingRequest BIT = 0;
     
     -- First get the event details including RequiresTeams and IsPublic flags
     SELECT 
@@ -139,6 +140,19 @@ BEGIN
                     SET @isParticipant = 1;
                     SET @playWatch = 1; -- Group participants are always players
                 END
+            END
+            -- If not admin and not participant, check for pending request
+            ELSE
+            BEGIN
+                -- Check if user has a pending join request
+                IF EXISTS (
+                    SELECT 1 
+                    FROM EventJoinRequests 
+                    WHERE EventId = @eventId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
+                )
+                BEGIN
+                    SET @hasPendingRequest = 1;
+                END
             END;
         END;
     END;
@@ -163,7 +177,8 @@ BEGIN
             el.Longitude,
             @isParticipant AS IsParticipant,
             @playWatch AS PlayWatch,
-            @isAdmin AS IsAdmin
+            @isAdmin AS IsAdmin,
+			@hasPendingRequest AS HasPendingRequest
         FROM [Events] e
         LEFT JOIN EventLocations el ON e.LocationId = el.LocationId
         WHERE e.EventId = @eventId;

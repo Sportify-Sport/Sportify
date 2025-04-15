@@ -77,21 +77,21 @@
 
 
 
-        ////--------------------------------------------------------------------------------------------------
-        //// Get details for a specific event
-        ////--------------------------------------------------------------------------------------------------
-        //public static Event GetEventDetails(int eventId)
-        //{
-        //    try
-        //    {
-        //        DBservices dBservices = new DBservices();
-        //        return dBservices.GetEventDetails(eventId);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw ex;
-        //    }
-        //}
+        //--------------------------------------------------------------------------------------------------
+        // Get details for a specific event
+        //--------------------------------------------------------------------------------------------------
+        public static Event GetEventDetailsWithoutStatus(int eventId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetEventDetailsWithoutStatus(eventId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
         //--------------------------------------------------------------------------------------------------
         // Get random upcoming public events

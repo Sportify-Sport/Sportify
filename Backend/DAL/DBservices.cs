@@ -960,77 +960,77 @@ public class DBservices
         return cmd;
     }
 
-    ////--------------------------------------------------------------------------------------------------
-    //// This method retrieves details for a specific event
-    ////--------------------------------------------------------------------------------------------------
-    //public Event GetEventDetails(int eventId)
-    //{
-    //    SqlConnection con = null;
+    //--------------------------------------------------------------------------------------------------
+    // This method retrieves details for a specific event
+    //--------------------------------------------------------------------------------------------------
+    public Event GetEventDetailsWithoutStatus(int eventId)
+    {
+        SqlConnection con = null;
 
-    //    try
-    //    {
-    //        con = connect("myProjDB");
-    //        SqlCommand cmd = CreateCommandWithStoredProcedureEventDetails("SP_GetEventDetails", con, eventId);
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetEventDetailsWithoutStatus("SP_GetEventDetails", con, eventId);
 
-    //        SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
-    //        if (dataReader.Read())
-    //        {
-    //            Event eventDetails = new Event();
+            if (dataReader.Read())
+            {
+                Event eventDetails = new Event();
 
-    //            eventDetails.EventId = Convert.ToInt32(dataReader["EventId"]);
-    //            eventDetails.EventName = dataReader["EventName"].ToString();
-    //            eventDetails.RequiresTeams = Convert.ToBoolean(dataReader["RequiresTeams"]);
-    //            eventDetails.StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]);
-    //            eventDetails.EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]);
-    //            eventDetails.CityId = Convert.ToInt32(dataReader["CityId"]);
-    //            eventDetails.LocationId = dataReader["LocationId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["LocationId"]);
-    //            eventDetails.SportId = Convert.ToInt32(dataReader["SportId"]);
-    //            eventDetails.MaxTeams = dataReader["MaxTeams"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxTeams"]);
-    //            eventDetails.CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]);
-    //            eventDetails.IsPublic = Convert.ToBoolean(dataReader["IsPublic"]);
-    //            eventDetails.WinnerId = dataReader["WinnerId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["WinnerId"]);
-    //            eventDetails.WaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]);
-    //            eventDetails.MinAge = Convert.ToInt32(dataReader["MinAge"]);
-    //            eventDetails.Gender = dataReader["Gender"].ToString();
-    //            eventDetails.ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]);
-    //            eventDetails.TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]);
-    //            eventDetails.ProfileImage = dataReader["ProfileImage"].ToString();
-    //            eventDetails.LocationName = dataReader["LocationName"].ToString();
-    //            eventDetails.Latitude = dataReader["Latitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Latitude"]);
-    //            eventDetails.Longitude = dataReader["Longitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Longitude"]);
+                eventDetails.EventId = Convert.ToInt32(dataReader["EventId"]);
+                eventDetails.EventName = dataReader["EventName"].ToString();
+                eventDetails.RequiresTeams = Convert.ToBoolean(dataReader["RequiresTeams"]);
+                eventDetails.StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]);
+                eventDetails.EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]);
+                eventDetails.CityId = Convert.ToInt32(dataReader["CityId"]);
+                eventDetails.LocationId = dataReader["LocationId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["LocationId"]);
+                eventDetails.SportId = Convert.ToInt32(dataReader["SportId"]);
+                eventDetails.MaxTeams = dataReader["MaxTeams"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxTeams"]);
+                eventDetails.CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]);
+                eventDetails.IsPublic = Convert.ToBoolean(dataReader["IsPublic"]);
+                eventDetails.WinnerId = dataReader["WinnerId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["WinnerId"]);
+                eventDetails.WaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]);
+                eventDetails.MinAge = Convert.ToInt32(dataReader["MinAge"]);
+                eventDetails.Gender = dataReader["Gender"].ToString();
+                eventDetails.ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]);
+                eventDetails.TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]);
+                eventDetails.ProfileImage = dataReader["ProfileImage"].ToString();
+                eventDetails.LocationName = dataReader["LocationName"].ToString();
+                eventDetails.Latitude = dataReader["Latitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Latitude"]);
+                eventDetails.Longitude = dataReader["Longitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Longitude"]);
 
-    //            return eventDetails;
-    //        }
+                return eventDetails;
+            }
 
-    //        return null;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        throw ex;
-    //    }
-    //    finally
-    //    {
-    //        if (con != null)
-    //        {
-    //            con.Close();
-    //        }
-    //    }
-    //}
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
 
-    ////---------------------------------------------------------------------------------
-    //// Create the SqlCommand for getting event details
-    ////---------------------------------------------------------------------------------
-    //private SqlCommand CreateCommandWithStoredProcedureEventDetails(string spName, SqlConnection con, int eventId)
-    //{
-    //    SqlCommand cmd = new SqlCommand();
-    //    cmd.Connection = con;
-    //    cmd.CommandText = spName;
-    //    cmd.CommandTimeout = 10;
-    //    cmd.CommandType = System.Data.CommandType.StoredProcedure;
-    //    cmd.Parameters.AddWithValue("@eventId", eventId);
-    //    return cmd;
-    //}
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting event details
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventDetailsWithoutStatus(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        return cmd;
+    }
 
 
     //--------------------------------------------------------------------------------------------------
@@ -1561,7 +1561,8 @@ public class DBservices
                     // User participation information (only for authenticated users)
                     IsParticipant = userId.HasValue && Convert.ToBoolean(dataReader["IsParticipant"]),
                     PlayWatch = userId.HasValue && dataReader["PlayWatch"] != DBNull.Value ? (bool?)Convert.ToBoolean(dataReader["PlayWatch"]) : null,
-                    IsAdmin = userId.HasValue && Convert.ToBoolean(dataReader["IsAdmin"])
+                    IsAdmin = userId.HasValue && Convert.ToBoolean(dataReader["IsAdmin"]),
+                    HasPendingRequest = userId.HasValue && Convert.ToBoolean(dataReader["HasPendingRequest"])
                 };
 
                 return eventDetails;
