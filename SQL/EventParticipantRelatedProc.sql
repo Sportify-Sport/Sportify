@@ -431,7 +431,7 @@ GO
 
 -- =============================================
 -- Author:		<Mohamed Abo Full>
--- Create date: <14/4/2025>
+-- Create date: <15/4/2025>
 -- Description:	<This procedure is for approving or rejecting a player request in an event>
 -- =============================================
 CREATE PROCEDURE SP_AdminProcessJoinRequest
@@ -584,5 +584,256 @@ BEGIN
     
 ReturnResult:
     SELECT @success AS Success, @errorMessage AS ErrorMessage;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <15/4/2025>
+-- Description:	<This procedure is for getting pending requests for a participants event>
+-- =============================================
+CREATE PROCEDURE SP_GetEventPendingJoinRequestsPaginated
+    @eventId INT,
+    @adminUserId INT,
+    @page INT = 1,
+    @pageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @success BIT = 0;
+    DECLARE @errorMessage NVARCHAR(100) = NULL;
+    DECLARE @requiresTeams BIT;
+    DECLARE @isAdmin BIT = 0;
+    DECLARE @skip INT = (@page - 1) * @pageSize;
+    
+    -- Check if the event exists and get properties
+    SELECT @requiresTeams = RequiresTeams
+    FROM [Events]
+    WHERE EventId = @eventId;
+    
+    IF @requiresTeams IS NULL
+    BEGIN
+        SET @errorMessage = 'Event not found';
+        GOTO ReturnResult;
+    END
+    
+    -- Verify this is a non-team event
+    IF @requiresTeams = 1
+    BEGIN
+        SET @errorMessage = 'This API is only for non-team events';
+        GOTO ReturnResult;
+    END
+    
+    -- Check if the user making the request is an admin for this event
+    SELECT @isAdmin = COUNT(*)
+    FROM EventAdmins
+    WHERE EventId = @eventId AND CityOrganizerId = @adminUserId;
+    
+    IF @isAdmin = 0
+    BEGIN
+        SET @errorMessage = 'You are not an admin for this event';
+        GOTO ReturnResult;
+    END
+    
+    SET @success = 1;
+    
+ReturnResult:
+    -- First result set - status
+    SELECT @success AS Success, @errorMessage AS ErrorMessage;
+    
+    -- Second result set - data (only if successful)
+    IF @success = 1
+    BEGIN
+        SELECT 
+            u.UserId,
+            u.FirstName + ' ' + u.LastName AS FullName,
+            u.ProfileImage AS UserPicture,
+            ejr.RequestedDate
+        FROM EventJoinRequests ejr
+        INNER JOIN Users u ON ejr.RequesterUserId = u.UserId
+        WHERE ejr.EventId = @eventId AND ejr.RequestStatus = 'Pending'
+        ORDER BY ejr.RequestedDate ASC
+        OFFSET @skip ROWS
+        FETCH NEXT @pageSize + 1 ROWS ONLY;
+    END
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <15/4/2025>
+-- Description:	<This procedure is for getting user details that got a pending request in a participants event>
+-- =============================================
+CREATE PROCEDURE SP_GetEventPendingRequestUserDetails
+    @eventId INT,
+    @userId INT,
+    @adminUserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @success BIT = 0;
+    DECLARE @errorMessage NVARCHAR(100) = NULL;
+    DECLARE @requiresTeams BIT;
+    DECLARE @isAdmin BIT = 0;
+    DECLARE @requestExists BIT = 0;
+    
+    -- Check if event exists and get properties
+    SELECT @requiresTeams = RequiresTeams
+    FROM [Events]
+    WHERE EventId = @eventId;
+    
+    IF @requiresTeams IS NULL
+    BEGIN
+        SET @errorMessage = 'Event not found';
+        GOTO ReturnResult;
+    END
+    
+    -- Verify this is a non-team event
+    IF @requiresTeams = 1
+    BEGIN
+        SET @errorMessage = 'This API is only for non-team events';
+        GOTO ReturnResult;
+    END
+    
+    -- Check if user making the request is an admin for this event
+    SELECT @isAdmin = COUNT(*)
+    FROM EventAdmins
+    WHERE EventId = @eventId AND CityOrganizerId = @adminUserId;
+    
+    IF @isAdmin = 0
+    BEGIN
+        SET @errorMessage = 'You are not an admin for this event';
+        GOTO ReturnResult;
+    END
+    
+    -- Check if specified user has a pending request for this event
+    SELECT @requestExists = COUNT(*)
+    FROM EventJoinRequests
+    WHERE EventId = @eventId 
+      AND RequesterUserId = @userId 
+      AND RequestStatus = 'Pending';
+    
+    IF @requestExists = 0
+    BEGIN
+        SET @errorMessage = 'User does not have a pending request for this event';
+        GOTO ReturnResult;
+    END
+    
+    SET @success = 1;
+    
+ReturnResult:
+    -- First result set - status
+    SELECT @success AS Success, @errorMessage AS ErrorMessage;
+    
+    -- Second result set - user details (only if successful)
+    IF @success = 1
+    BEGIN
+        SELECT 
+            u.FirstName + ' ' + u.LastName AS FullName,
+            DATEDIFF(YEAR, u.BirthDate, GETDATE()) - 
+                CASE 
+                    WHEN DATEADD(YEAR, DATEDIFF(YEAR, u.BirthDate, GETDATE()), u.BirthDate) > GETDATE() 
+                    THEN 1 
+                    ELSE 0 
+                END AS Age,
+            u.ProfileImage,
+            u.Email,
+            u.CityId,
+            u.Bio,
+            u.Gender
+        FROM Users u
+        WHERE u.UserId = @userId;
+    END
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <15/4/2025>
+-- Description:	<This procedure is for getting user details that got a is a participant in a participants event>
+-- =============================================
+CREATE PROCEDURE SP_GetEventPlayerDetails
+    @eventId INT,
+    @userId INT,
+    @adminUserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @success BIT = 0;
+    DECLARE @errorMessage NVARCHAR(100) = NULL;
+    DECLARE @requiresTeams BIT;
+    DECLARE @isAdmin BIT = 0;
+    DECLARE @isPlayer BIT = 0;
+    
+    -- Check if event exists and get properties
+    SELECT @requiresTeams = RequiresTeams
+    FROM [Events]
+    WHERE EventId = @eventId;
+    
+    IF @requiresTeams IS NULL
+    BEGIN
+        SET @errorMessage = 'Event not found';
+        GOTO ReturnResult;
+    END
+    
+    -- Verify this is a non-team event
+    IF @requiresTeams = 1
+    BEGIN
+        SET @errorMessage = 'This API is only for non-team events';
+        GOTO ReturnResult;
+    END
+    
+    -- Check if user making the request is an admin for this event
+    SELECT @isAdmin = COUNT(*)
+    FROM EventAdmins
+    WHERE EventId = @eventId AND CityOrganizerId = @adminUserId;
+    
+    IF @isAdmin = 0
+    BEGIN
+        SET @errorMessage = 'You are not an admin for this event';
+        GOTO ReturnResult;
+    END
+    
+    -- Check if specified user is a player in this event
+    SELECT @isPlayer = COUNT(*)
+    FROM EventParticipants
+    WHERE EventId = @eventId 
+      AND UserId = @userId 
+      AND PlayWatch = 1;
+    
+    IF @isPlayer = 0
+    BEGIN
+        SET @errorMessage = 'User is not a player in this event';
+        GOTO ReturnResult;
+    END
+    
+    SET @success = 1;
+    
+ReturnResult:
+    -- First result set - status
+    SELECT @success AS Success, @errorMessage AS ErrorMessage;
+    
+    -- Second result set - user details (only if successful)
+    IF @success = 1
+    BEGIN
+        SELECT 
+            u.FirstName + ' ' + u.LastName AS FullName,
+            DATEDIFF(YEAR, u.BirthDate, GETDATE()) - 
+                CASE 
+                    WHEN DATEADD(YEAR, DATEDIFF(YEAR, u.BirthDate, GETDATE()), u.BirthDate) > GETDATE() 
+                    THEN 1 
+                    ELSE 0 
+                END AS Age,
+            u.ProfileImage,
+            u.Email,
+            u.CityId,
+            u.Bio,
+            u.Gender
+        FROM Users u
+        WHERE u.UserId = @userId;
+    END
 END
 GO

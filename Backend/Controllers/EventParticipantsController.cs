@@ -247,7 +247,8 @@ namespace Backend.Controllers
 
                 if (page < 1 || pageSize < 1 || pageSize > 50)
                 {
-                    return BadRequest(new {
+                    return BadRequest(new
+                    {
                         success = false,
                         message = "Page must be ≥ 1 and pageSize must be between 1 and 50"
                     });
@@ -268,6 +269,80 @@ namespace Backend.Controllers
                     requests = result.Requests,
                     hasMore = result.HasMore,
                     page = page
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        [Authorize(Roles = "CityOrganizer")]
+        [HttpGet("events/{eventId}/pending-request-user/{userId}")]
+        public IActionResult GetEventPendingRequestUserDetails(int eventId, int userId)
+        {
+            try
+            {
+                if (eventId <= 0 || userId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID or user ID" });
+                }
+
+                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                var result = EventParticipant.GetPendingRequestUserDetails(eventId, userId, adminUserId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.ErrorMessage });
+                }
+
+                if (result.UserDetails == null)
+                {
+                    return NotFound(new { success = false, message = "User details not found" });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    user = result.UserDetails
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        [Authorize(Roles = "CityOrganizer")]
+        [HttpGet("events/{eventId}/player/{userId}")]
+        public IActionResult GetEventPlayerDetails(int eventId, int userId)
+        {
+            try
+            {
+                if (eventId <= 0 || userId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID or user ID" });
+                }
+
+                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                var result = EventParticipant.GetPlayerDetails(eventId, userId, adminUserId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.ErrorMessage });
+                }
+
+                if (result.UserDetails == null)
+                {
+                    return NotFound(new { success = false, message = "User details not found" });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    user = result.UserDetails
                 });
             }
             catch (Exception ex)

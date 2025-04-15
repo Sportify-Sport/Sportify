@@ -3096,8 +3096,8 @@ public class DBservices
             if (dataReader.Read())
             {
                 success = Convert.ToBoolean(dataReader["Success"]);
-                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ?dataReader["ErrorMessage"].ToString() : null;
-             }
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
 
             // If successful, proceed to second result set with the actual requests
             if (success)
@@ -3163,6 +3163,174 @@ public class DBservices
         cmd.Parameters.AddWithValue("@page", page);
         cmd.Parameters.AddWithValue("@pageSize", pageSize);
 
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method retrieves user details that got a pending request in a event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage, object UserDetails) GetEventPendingRequestUserDetails(int eventId, int userId, int adminUserId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+        object userDetails = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandGetEventPendingRequestUserDetails("SP_GetEventPendingRequestUserDetails", con, eventId, userId, adminUserId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            // First result set - status information
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            // If successful, proceed to second result set with user details
+            if (success && dataReader.NextResult() && dataReader.Read())
+            {
+                userDetails = new
+                {
+                    FullName = dataReader["FullName"].ToString(),
+                    Age = Convert.ToInt32(dataReader["Age"]),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    Email = dataReader["Email"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Bio = dataReader["Bio"].ToString(),
+                    Gender = dataReader["Gender"].ToString()
+                };
+            }
+
+            dataReader.Close();
+
+            return (success, errorMessage, userDetails);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user details that got a pending request in a event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandGetEventPendingRequestUserDetails(string spName, SqlConnection con, int eventId, int userId, int adminUserId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method Gets details of a user who is a player in an event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage, object UserDetails) GetEventPlayerDetails(int eventId, int userId, int adminUserId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+        object userDetails = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandGetEventPlayerDetails("SP_GetEventPlayerDetails", con, eventId, userId, adminUserId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            // First result set - status information
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            // If successful, proceed to second result set with user details
+            if (success && dataReader.NextResult() && dataReader.Read())
+            {
+                userDetails = new
+                {
+                    FullName = dataReader["FullName"].ToString(),
+                    Age = Convert.ToInt32(dataReader["Age"]),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    Email = dataReader["Email"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Bio = dataReader["Bio"].ToString(),
+                    Gender = dataReader["Gender"].ToString()
+                };
+            }
+
+            dataReader.Close();
+
+            return (success, errorMessage, userDetails);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for Getting user details that is a player in the sepcified event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandGetEventPlayerDetails(string spName, SqlConnection con, int eventId, int userId, int adminUserId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
         return cmd;
     }
 

@@ -83,5 +83,24 @@
             DBservices db = new DBservices();
             return db.GetEventPendingJoinRequests(eventId, adminUserId, page, pageSize);
         }
+
+
+        //--------------------------------------------------------------------------------------------------
+        // Gets details of a user with pending request for an event
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string ErrorMessage, object UserDetails) GetPendingRequestUserDetails(int eventId, int userId, int adminUserId)
+        {
+            DBservices db = new DBservices();
+            return db.GetEventPendingRequestUserDetails(eventId, userId, adminUserId);
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Gets details of a user who is a player in an event
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string ErrorMessage, object UserDetails) GetPlayerDetails(int eventId, int userId, int adminUserId)
+        {
+            DBservices db = new DBservices();
+            return db.GetEventPlayerDetails(eventId, userId, adminUserId);
+        }
     }
 }
