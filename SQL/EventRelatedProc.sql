@@ -141,19 +141,19 @@ BEGIN
                     SET @playWatch = 1; -- Group participants are always players
                 END
             END
-            -- If not admin and not participant, check for pending request
-            ELSE
-            BEGIN
-                -- Check if user has a pending join request
-                IF EXISTS (
-                    SELECT 1 
-                    FROM EventJoinRequests 
-                    WHERE EventId = @eventId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
-                )
-                BEGIN
-                    SET @hasPendingRequest = 1;
-                END
-            END;
+            -- If not admin, not participant, AND not a team event, check for pending request
+			ELSE IF @requiresTeams = 0  -- Only check pending requests for non-team events
+			BEGIN
+				-- Check if user has a pending join request
+				IF EXISTS (
+					SELECT 1 
+					FROM EventJoinRequests 
+					WHERE EventId = @eventId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
+				)
+				BEGIN
+					SET @hasPendingRequest = 1;
+				END
+			END;
         END;
     END;
     
