@@ -3335,4 +3335,347 @@ public class DBservices
         return cmd;
     }
 
+    //---------------------------------------------------------------------------------
+    // This method is for joining a team event as a spectator
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) JoinTeamEventAsSpectator(int eventId, int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureJoinAsSpectator("SP_JoinTeamEventAsSpectator", con, eventId, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            dataReader.Close();
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for joining a team event as a spectator
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureJoinAsSpectator(string spName, SqlConnection con, int eventId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+        cmd.Connection = con;              // assign the connection to the command object
+        cmd.CommandText = spName;          // the stored procedure name
+        cmd.CommandTimeout = 10;           // Time to wait for the execution
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method cancels spectating in a team event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) CancelTeamEventSpectating(int eventId, int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureCancelSpectating("SP_CancelTeamEventSpectating", con, eventId, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            dataReader.Close();
+
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for canceling spectating in a team event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCancelSpectating(string spName, SqlConnection con, int eventId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+        cmd.Connection = con;              // assign the connection to the command object
+        cmd.CommandText = spName;          // the stored procedure name
+        cmd.CommandTimeout = 10;           // Time to wait for the execution
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method Gets paginated list of groups registered in a team event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage, List<object> Groups, bool HasMore) GetTeamEventGroups(int eventId, int page, int pageSize)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+        List<object> groups = new List<object>();
+        bool hasMore = false;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetTeamEventGroups("SP_GetTeamEventGroupsPaginated",
+            con, eventId, page, pageSize);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            // First result set - status information
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            // If successful, proceed to second result set with the group data
+            if (success && dataReader.NextResult())
+            {
+                int count = 0;
+                while (dataReader.Read())
+                {
+                    count++;
+
+                    // Only add actual page size number of records to result
+                    if (count <= pageSize)
+                    {
+                        groups.Add(new
+                        {
+                            GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                            GroupName = dataReader["GroupName"].ToString(),
+                            GroupImage = dataReader["GroupImage"].ToString()
+                        });
+                    }
+                }
+
+                // If we got more records than requested page size, there are more records
+                hasMore = (count > pageSize);
+            }
+
+            dataReader.Close();
+
+            return (success, errorMessage, groups, hasMore);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting paginated list of groups registered in a team event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetTeamEventGroups(string spName, SqlConnection con, int eventId, int page, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@page", page);
+        cmd.Parameters.AddWithValue("@pageSize", pageSize);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is for removing a group from the specified event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) RemoveGroupFromEvent(int eventId, int groupId, int adminUserId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureForAddingAndRemovingGroupFromAnEvent("SP_RemoveGroupFromEvent", con, eventId, groupId, adminUserId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            dataReader.Close();
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method is for adding a group for the specified event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string ErrorMessage) AddGroupToEvent(int eventId, int groupId, int adminUserId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool success = false;
+        string errorMessage = null;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureForAddingAndRemovingGroupFromAnEvent("SP_AddGroupToEvent", con, eventId, groupId, adminUserId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                success = Convert.ToBoolean(dataReader["Success"]);
+                errorMessage = dataReader["ErrorMessage"] != DBNull.Value ? dataReader["ErrorMessage"].ToString() : null;
+            }
+
+            dataReader.Close();
+            return (success, errorMessage);
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for adding/removing a group for/from the specified event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureForAddingAndRemovingGroupFromAnEvent(string spName, SqlConnection con, int eventId, int groupId, int adminUserId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@eventId", eventId);
+        cmd.Parameters.AddWithValue("@groupId", groupId);
+        cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+        return cmd;
+    }
 }
