@@ -214,7 +214,7 @@ BEGIN
                 JOIN GroupMembers gm ON et.GroupId = gm.GroupId
                 WHERE et.EventId = e.EventId AND gm.UserId = @userId
             ) THEN 1  -- Set to TRUE(1) for group participation
-            ELSE NULL  -- Should never reach here
+            ELSE NULL
         END AS PlayWatch
     FROM [Events] e
     LEFT JOIN EventParticipants ep ON e.EventId = ep.EventId AND ep.UserId = @userId
@@ -231,6 +231,13 @@ BEGIN
         FROM EventTeams et
         JOIN GroupMembers gm ON et.GroupId = gm.GroupId
         WHERE gm.UserId = @userId
+
+		UNION
+        
+        -- Admin of event
+        SELECT ea.EventId
+        FROM EventAdmins ea
+        WHERE ea.CityOrganizerId = @userId
     )
     AND (
         -- First page or continuation condition

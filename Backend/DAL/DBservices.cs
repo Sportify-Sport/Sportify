@@ -1152,11 +1152,7 @@ public class DBservices
     //--------------------------------------------------------------------------------------------------
     // This method retrieves paginated events a user is registered for
     //--------------------------------------------------------------------------------------------------
-    public (List<object> Events, bool HasMore) GetUserEventsPaginated(
-        int userId,
-        DateTime? lastEventDate,
-        int? lastEventId,
-        int pageSize)
+    public (List<object> Events, bool HasMore) GetUserEventsPaginated(int userId, DateTime? lastEventDate, int? lastEventId, int pageSize)
     {
         SqlConnection con = null;
         List<object> userEventsList = new List<object>();
@@ -1165,8 +1161,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB");
-            SqlCommand cmd = CreateCommandWithStoredProcedureUserEventsPaginated(
-                "SP_GetUserEventsPaginated", con, userId, lastEventDate, lastEventId, pageSize + 1); // Request one extra to check for more
+            SqlCommand cmd = CreateCommandWithStoredProcedureUserEventsPaginated("SP_GetUserEventsPaginated", con, userId, lastEventDate, lastEventId, pageSize + 1); // Request one extra to check for more
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
             int count = 0;
@@ -1178,6 +1173,8 @@ public class DBservices
                 // Skip the last item if we got more than requested
                 if (count <= pageSize)
                 {
+                    bool? playWatchValue = dataReader["PlayWatch"] != DBNull.Value ? (bool?)Convert.ToBoolean(dataReader["PlayWatch"]) : null;
+
                     var eventInfo = new
                     {
                         EventId = Convert.ToInt32(dataReader["EventId"]),
@@ -1185,7 +1182,7 @@ public class DBservices
                         StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
                         SportId = Convert.ToInt32(dataReader["SportId"]),
                         EventImage = dataReader["ProfileImage"].ToString(),
-                        PlayWatch = dataReader["PlayWatch"] != DBNull.Value ? Convert.ToBoolean(dataReader["PlayWatch"]) : true
+                        PlayWatch = playWatchValue
                     };
 
                     userEventsList.Add(eventInfo);
@@ -1213,13 +1210,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // Create the SqlCommand for getting paginated user events
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureUserEventsPaginated(
-        string spName,
-        SqlConnection con,
-        int userId,
-        DateTime? lastEventDate,
-        int? lastEventId,
-        int pageSize)
+    private SqlCommand CreateCommandWithStoredProcedureUserEventsPaginated(string spName, SqlConnection con, int userId, DateTime? lastEventDate, int? lastEventId, int pageSize)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
