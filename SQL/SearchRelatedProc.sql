@@ -7,7 +7,8 @@ CREATE PROCEDURE SP_SearchGroups
     @name NVARCHAR(100) = NULL,
     @sportId INT = NULL,
     @cityId INT = NULL,
-    @age VARCHAR(10) = NULL,
+    @minAge INT = NULL,
+    @maxAge INT = NULL,
     @gender VARCHAR(10) = NULL,
     @page INT = 1,
     @pageSize INT = 10
@@ -29,14 +30,13 @@ BEGIN
         AND (@sportId IS NULL OR g.SportId = @sportId)
         AND (@cityId IS NULL OR g.CityId = @cityId)
         AND (@gender IS NULL OR g.Gender = @gender)
-        AND (@age IS NULL OR 
-            (@age = '13-18' AND g.MinAge >= 13 AND g.MinAge <= 18) OR
-            (@age = '18-30' AND g.MinAge >= 18 AND g.MinAge <= 30) OR
-            (@age = '30+' AND g.MinAge >= 30))
+        AND (@minAge IS NULL OR g.MinAge >= @minAge)
+        AND (@maxAge IS NULL OR g.MinAge <= @maxAge)
     ORDER BY g.GroupName
     OFFSET @skip ROWS
     FETCH NEXT @pageSize + 1 ROWS ONLY;
 END
+GO
 
 -- =============================================
 -- Author:		<Mohamed Abo Full>
@@ -47,9 +47,11 @@ CREATE PROCEDURE SP_SearchEvents
     @name NVARCHAR(100) = NULL,
     @sportId INT = NULL,
     @cityId INT = NULL,
-    @age VARCHAR(10) = NULL,
+    @minAge INT = NULL,
+    @maxAge INT = NULL,
     @gender VARCHAR(10) = NULL,
     @startDate DATETIME = NULL,
+	@endDate DATETIME = NULL,
     @page INT = 1,
     @pageSize INT = 10
 AS
@@ -72,14 +74,14 @@ BEGIN
         AND (@sportId IS NULL OR e.SportId = @sportId)
         AND (@cityId IS NULL OR e.CityId = @cityId)
         AND (@gender IS NULL OR e.Gender = @gender)
-        AND (@age IS NULL OR 
-            (@age = '13-18' AND e.MinAge >= 13 AND e.MinAge <= 18) OR
-            (@age = '18-30' AND e.MinAge >= 18 AND e.MinAge <= 30) OR
-            (@age = '30+' AND e.MinAge >= 30))
+        AND (@minAge IS NULL OR e.MinAge >= @minAge)
+        AND (@maxAge IS NULL OR e.MinAge <= @maxAge)
         AND (@startDate IS NULL OR e.StartDatetime >= @startDate)
+        AND (@endDate IS NULL OR e.EndDatetime <= @endDate)
     ORDER BY 
     CASE WHEN e.EndDatetime >= GETDATE() THEN 0 ELSE 1 END,
     e.StartDatetime ASC
     OFFSET @skip ROWS
     FETCH NEXT @pageSize + 1 ROWS ONLY;
 END
+GO

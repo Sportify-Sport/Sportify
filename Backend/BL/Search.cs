@@ -9,7 +9,8 @@
             string name = null,
             int? sportId = null,
             int? cityId = null,
-            string age = null,
+            int? minAge = null,
+            int? maxAge = null,
             string gender = null,
             int page = 1,
             int pageSize = 10)
@@ -17,7 +18,7 @@
             try
             {
                 DBservices dBservices = new DBservices();
-                return dBservices.SearchGroups(name, sportId, cityId, age, gender, page, pageSize);
+                return dBservices.SearchGroups(name, sportId, cityId, minAge, maxAge, gender, page, pageSize);
             }
             catch (Exception ex)
             {
@@ -32,16 +33,18 @@
             string name = null,
             int? sportId = null,
             int? cityId = null,
-            string age = null,
+            int? minAge = null,
+            int? maxAge = null,
             string gender = null,
             DateTime? startDate = null,
+            DateTime? endDate = null,
             int page = 1,
             int pageSize = 10)
         {
             try
             {
                 DBservices dBservices = new DBservices();
-                return dBservices.SearchEvents(name, sportId, cityId, age, gender, startDate, page, pageSize);
+                return dBservices.SearchEvents(name, sportId, cityId, minAge, maxAge, gender, startDate, endDate, page, pageSize);
             }
             catch (Exception ex)
             {

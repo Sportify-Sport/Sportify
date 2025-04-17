@@ -16,9 +16,11 @@ namespace Backend.Controllers
             [FromQuery] string? name = null,
             [FromQuery] int? sportId = null,
             [FromQuery] int? cityId = null,
-            [FromQuery] string? age = null,
+            [FromQuery] int? minAge = null,
+            [FromQuery] int? maxAge = null,
             [FromQuery] string? gender = null,
             [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
@@ -31,10 +33,99 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Type parameter must be either 'group' or 'event'" });
                 }
 
-                if (!string.IsNullOrEmpty(age) && age != "13-18" && age != "18-30" && age != "30+")
+                // Name length validation
+                if (!string.IsNullOrEmpty(name) && name.Length > 100)
                 {
-                    return BadRequest(new { success = false, message = "Age parameter must be '13-18', '18-30', or '30+'" });
+                    return BadRequest(new { success = false, message = "Search name cannot exceed 100 characters" });
                 }
+
+                // Validate IDs are positive
+                if (sportId.HasValue && sportId.Value <= 0)
+                {
+                    return BadRequest(new { success = false, message = "sportId must be a positive number" });
+                }
+
+                if (cityId.HasValue && cityId.Value <= 0)
+                {
+                    return BadRequest(new { success = false, message = "cityId must be a positive number" });
+                }
+
+                // Age validation
+                if (minAge.HasValue)
+                {
+                    if (minAge.Value < 0)
+                    {
+                        return BadRequest(new { success = false, message = "minAge must be a non-negative value" });
+                    }
+
+                    if (minAge.Value > 120)
+                    {
+                        return BadRequest(new { success = false, message = "minAge must be less than or equal to 120" });
+                    }
+                }
+
+                if (maxAge.HasValue)
+                {
+                    if (maxAge.Value < 0)
+                    {
+                        return BadRequest(new { success = false, message = "maxAge must be a non-negative value" });
+                    }
+
+                    if (maxAge.Value > 120)
+                    {
+                        return BadRequest(new { success = false, message = "maxAge must be less than or equal to 120" });
+                    }
+                }
+
+                if (minAge.HasValue && maxAge.HasValue && minAge.Value > maxAge.Value)
+                {
+                    return BadRequest(new { success = false, message = "minAge cannot be greater than maxAge" });
+                }
+
+                // Check if date parameters are used with groups (not allowed)
+                if (type.ToLower() == "group" && (startDate.HasValue || endDate.HasValue))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "startDate and endDate parameters are only applicable for event searches"
+                    });
+                }
+
+                // Date validation
+                if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "startDate cannot be later than endDate"
+                    });
+                }
+
+                // Date validation
+                if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "startDate cannot be later than endDate"
+                    });
+                }
+
+                // Validate date ranges aren't too extreme
+                DateTime minAllowedDate = new DateTime(2000, 1, 1);
+                DateTime maxAllowedDate = DateTime.Now.AddYears(5);
+
+                if ((startDate.HasValue && (startDate < minAllowedDate || startDate > maxAllowedDate)) ||
+                    (endDate.HasValue && (endDate < minAllowedDate || endDate > maxAllowedDate)))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Date values must be between 2000-01-01 and 5 years from today"
+                    });
+                }
+
 
                 if (!string.IsNullOrEmpty(gender))
                 {
@@ -67,12 +158,12 @@ namespace Backend.Controllers
                 if (type.ToLower() == "group")
                 {
                     (results, hasMore) = BL.Search.SearchGroups(
-                        name, sportId, cityId, age, gender, page, pageSize);
+                        name, sportId, cityId, minAge, maxAge, gender, page, pageSize);
                 }
                 else if(type.ToLower() == "event")
                 {
                     (results, hasMore) = BL.Search.SearchEvents(
-                        name, sportId, cityId, age, gender, startDate, page, pageSize);
+                        name, sportId, cityId, minAge, maxAge, gender, startDate, endDate, page, pageSize);
                 } 
                 else
                 {

@@ -1663,7 +1663,8 @@ public class DBservices
         string name = null,
         int? sportId = null,
         int? cityId = null,
-        string age = null,
+        int? minAge = null,
+        int? maxAge = null,
         string gender = null,
         int page = 1,
         int pageSize = 10)
@@ -1675,8 +1676,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB"); // create the connection
-            SqlCommand cmd = CreateCommandWithStoredProcedureSearchGroups(
-                "SP_SearchGroups", con, name, sportId, cityId, age, gender, page, pageSize);
+            SqlCommand cmd = CreateCommandWithStoredProcedureSearchGroups("SP_SearchGroups", con, name, sportId, cityId, minAge, maxAge, gender, page, pageSize);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
@@ -1723,9 +1723,11 @@ public class DBservices
         string name = null,
         int? sportId = null,
         int? cityId = null,
-        string age = null,
+        int? minAge = null,
+        int? maxAge = null,
         string gender = null,
         DateTime? startDate = null,
+        DateTime? endDate = null,
         int page = 1,
         int pageSize = 10)
     {
@@ -1736,8 +1738,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB"); // create the connection
-            SqlCommand cmd = CreateCommandWithStoredProcedureSearchEvents(
-                "SP_SearchEvents", con, name, sportId, cityId, age, gender, startDate, page, pageSize);
+            SqlCommand cmd = CreateCommandWithStoredProcedureSearchEvents("SP_SearchEvents", con, name, sportId, cityId, minAge, maxAge, gender, startDate, endDate, page, pageSize);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
@@ -1787,7 +1788,8 @@ public class DBservices
         string name,
         int? sportId,
         int? cityId,
-        string age,
+        int? minAge,
+        int? maxAge,
         string gender,
         int page,
         int pageSize)
@@ -1814,10 +1816,15 @@ public class DBservices
         else
             cmd.Parameters.AddWithValue("@cityId", DBNull.Value);
 
-        if (!string.IsNullOrEmpty(age))
-            cmd.Parameters.AddWithValue("@age", age);
+        if (minAge.HasValue)
+            cmd.Parameters.AddWithValue("@minAge", minAge.Value);
         else
-            cmd.Parameters.AddWithValue("@age", DBNull.Value);
+            cmd.Parameters.AddWithValue("@minAge", DBNull.Value);
+
+        if (maxAge.HasValue)
+            cmd.Parameters.AddWithValue("@maxAge", maxAge.Value);
+        else
+            cmd.Parameters.AddWithValue("@maxAge", DBNull.Value);
 
         if (!string.IsNullOrEmpty(gender))
             cmd.Parameters.AddWithValue("@gender", gender);
@@ -1839,9 +1846,11 @@ public class DBservices
         string name,
         int? sportId,
         int? cityId,
-        string age,
+        int? minAge,
+        int? maxAge,
         string gender,
         DateTime? startDate,
+        DateTime? endDate,
         int page,
         int pageSize)
     {
@@ -1866,10 +1875,15 @@ public class DBservices
         else
             cmd.Parameters.AddWithValue("@cityId", DBNull.Value);
 
-        if (!string.IsNullOrEmpty(age))
-            cmd.Parameters.AddWithValue("@age", age);
+        if (minAge.HasValue)
+            cmd.Parameters.AddWithValue("@minAge", minAge.Value);
         else
-            cmd.Parameters.AddWithValue("@age", DBNull.Value);
+            cmd.Parameters.AddWithValue("@minAge", DBNull.Value);
+
+        if (maxAge.HasValue)
+            cmd.Parameters.AddWithValue("@maxAge", maxAge.Value);
+        else
+            cmd.Parameters.AddWithValue("@maxAge", DBNull.Value);
 
         if (!string.IsNullOrEmpty(gender))
             cmd.Parameters.AddWithValue("@gender", gender);
@@ -1880,6 +1894,11 @@ public class DBservices
             cmd.Parameters.AddWithValue("@startDate", startDate.Value);
         else
             cmd.Parameters.AddWithValue("@startDate", DBNull.Value);
+
+        if (endDate.HasValue)
+            cmd.Parameters.AddWithValue("@endDate", endDate.Value);
+        else
+            cmd.Parameters.AddWithValue("@endDate", DBNull.Value);
 
         cmd.Parameters.AddWithValue("@page", page);
         cmd.Parameters.AddWithValue("@pageSize", pageSize);
