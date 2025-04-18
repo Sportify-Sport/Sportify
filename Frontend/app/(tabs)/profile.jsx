@@ -532,6 +532,320 @@ const uploadProfileImage = async (imageUri) => {
 
 
 
+
+
+
+
+
+// import React, { useState, useEffect } from 'react';
+// import { 
+//   View, 
+//   Text, 
+//   Image, 
+//   StyleSheet, 
+//   TouchableOpacity, 
+//   TextInput, 
+//   Alert, 
+//   ScrollView, 
+//   FlatList
+// } from 'react-native';
+// import * as ImagePicker from 'expo-image-picker';
+// import { Ionicons } from '@expo/vector-icons';
+// import { Picker } from '@react-native-picker/picker';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { useRouter } from "expo-router";
+// import styles from '../../styles/ProfileStyles';
+// import getApiBaseUrl from "../config/apiConfig";
+
+// export default function Profile() {
+//   const router = useRouter();
+
+//   // State variables
+//   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
+//   const [name, setName] = useState('Loading...');
+//   const [bio, setBio] = useState('');
+//   const [email, setEmail] = useState('');
+//   const [birthdate, setBirthdate] = useState('');
+//   const [prevBirthdate, setPrevBirthdate] = useState('');
+//   const [city, setCity] = useState('');
+//   const [cityId, setCityId] = useState('');
+//   const [citySuggestions, setCitySuggestions] = useState([]);
+//   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+//   const [gender, setGender] = useState('M');
+//   const [favoriteSport, setFavoriteSport] = useState('');
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [age, setAge] = useState('Calculating...');
+//   const apiUrl = getApiBaseUrl();
+
+//   // Calculate age based on birthdate
+//   const calculateAge = (dateString) => {
+//     if (!dateString) return 'Not set';
+    
+//     const today = new Date();
+//     const birthDate = new Date(dateString);
+    
+//     // Check if date is valid
+//     if (isNaN(birthDate.getTime())) return 'Invalid date';
+    
+//     let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+//     const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+//     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+//       calculatedAge--;
+//     }
+    
+//     return calculatedAge > 0 ? calculatedAge.toString() : 'Invalid date';
+//   };
+
+//   // Fetch the user profile
+//   const fetchUserProfile = async () => {
+//     try {
+//       const token = await AsyncStorage.getItem('token');
+//       if (!token) {
+//         router.replace('/screens/Login');
+//         return;
+//       }
+
+//       const profileResponse = await fetch(`${apiUrl}/api/Users/GetUserProfile`, {
+//         method: 'GET',
+//         headers: {
+//           'accept': '*/*',
+//           'Authorization': 'Bearer ' + token
+//         }
+//       });
+
+//       if (!profileResponse.ok) {
+//         throw new Error('Failed to fetch profile');
+//       }
+
+//       const profileData = await profileResponse.json();
+
+//       // Update state with fetched data
+//       setName(`${profileData.firstName} ${profileData.lastName}`);
+//       setEmail(profileData.email);
+      
+//       const formattedBirthdate = profileData.birthDate ? profileData.birthDate.split('T')[0] : '';
+//       setBirthdate(formattedBirthdate);
+//       setPrevBirthdate(formattedBirthdate);
+//       setAge(calculateAge(formattedBirthdate));
+      
+//       setBio(profileData.bio || '');
+//       setGender(profileData.gender || 'M');
+      
+//       // Map favorite sport id to string
+//       let sport;
+//       switch(profileData.favSportId) {
+//         case 1: sport = 'Football'; break;
+//         case 2: sport = 'Basketball'; break;
+//         case 3: sport = 'Marathon'; break;
+//         default: sport = 'Not set';
+//       }
+//       setFavoriteSport(sport);
+
+//       // Update profile image
+//       if (profileData.profileImage) {
+//         setProfileImage(`${apiUrl}/Images/${profileData.profileImage}`);
+//       }
+
+//       // Save cityId from the response
+//       setCityId(profileData.cityId || '');
+
+//       // Fetch the city name if cityId exists
+//       if (profileData.cityId) {
+//         const cityResponse = await fetch(
+//           `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${profileData.cityId}}`
+//         );
+//         const cityData = await cityResponse.json();
+//         if (cityData.success && cityData.result?.records) {
+//           const record = cityData.result.records.find(r => 
+//             r._id.toString() === profileData.cityId.toString()
+//           );
+//           if (record) {
+//             setCity(record['city_name_en'] || '');
+//           }
+//         }
+//       }
+//     } catch (error) {
+//       console.error('Error fetching user profile:', error);
+//       Alert.alert('Error', 'Could not load profile data.');
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchUserProfile();
+//   }, []);
+
+//   // City search function
+//   const searchCities = async (query) => {
+//     if (!query) {
+//       setCitySuggestions([]);
+//       setShowCitySuggestions(false);
+//       return;
+//     }
+    
+//     setShowCitySuggestions(true);
+    
+//     const apiUrl = `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&q=${encodeURIComponent(query)}&limit=5`;
+    
+//     try {
+//       const response = await fetch(apiUrl);
+//       const data = await response.json();
+      
+//       if (data.success && data.result?.records) {
+//         const suggestions = data.result.records
+//           .filter(record => record['city_name_en']?.trim())
+//           .map(record => ({
+//             id: record._id,
+//             name: record['city_name_en']
+//           }));
+//         setCitySuggestions(suggestions);
+//       } else {
+//         setCitySuggestions([]);
+//       }
+//     } catch (error) {
+//       console.error('Error fetching cities:', error);
+//       setCitySuggestions([]);
+//     }
+//   };
+
+//   const handleCitySelect = (selectedCity) => {
+//     setCity(selectedCity.name);
+//     setCityId(selectedCity.id);
+//     setCitySuggestions([]);
+//     setShowCitySuggestions(false);
+//   };
+
+//   const handleBirthdateChange = (text) => {
+//     setBirthdate(text);
+//     setAge(calculateAge(text));
+//   };
+
+//   const handleBirthdateBlur = () => {
+//     const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+    
+//     if (!regex.test(birthdate)) {
+//       Alert.alert('Invalid Format', 'Please use yyyy-mm-dd format');
+//       setBirthdate(prevBirthdate);
+//       setAge(calculateAge(prevBirthdate));
+//       return;
+//     }
+
+//     const ageValue = calculateAge(birthdate);
+//     if (ageValue === 'Invalid date' || parseInt(ageValue) < 13 || parseInt(ageValue) > 90) {
+//       Alert.alert('Invalid Age', 'Age must be between 13 and 90');
+//       setBirthdate(prevBirthdate);
+//       setAge(calculateAge(prevBirthdate));
+//       return;
+//     }
+
+//     setPrevBirthdate(birthdate);
+//   };
+
+//   // Rest of your functions (handleChangeImage, uploadProfileImage, handleSaveProfile, etc.) remain the same
+//   // ... [Keep all your existing functions unchanged]
+
+//   return (
+//     <ScrollView contentContainerStyle={styles.container}>
+//       <TouchableOpacity style={styles.imageContainer} onPress={handleChangeImage}>
+//         <Image source={{ uri: profileImage }} style={styles.profileImage} />
+//       </TouchableOpacity>
+
+//       <Text style={styles.name}>{name}</Text>
+
+//       <View style={styles.infoContainer}>
+//         <Text style={styles.label}>Bio:</Text>
+//         {isEditing ? (
+//           <TextInput
+//             style={[styles.input, { height: 80 }]}
+//             multiline
+//             maxLength={255}
+//             value={bio}
+//             onChangeText={setBio}
+//           />
+//         ) : (
+//           <Text style={styles.infoText}>{bio || 'Not set'}</Text>
+//         )}
+//       </View>
+
+//       <View style={styles.infoContainer}>
+//         <Text style={styles.label}>Email:</Text>
+//         <Text style={styles.infoText}>{email}</Text>
+//       </View>
+
+//       <View style={styles.infoRow}>
+//         <View style={[styles.infoContainer, styles.halfWidth]}>
+//           <Text style={styles.label}>Birthdate:</Text>
+//           {isEditing ? (
+//             <TextInput
+//               style={styles.input}
+//               value={birthdate}
+//               onChangeText={handleBirthdateChange}
+//               onBlur={handleBirthdateBlur}
+//               placeholder="yyyy-mm-dd"
+//             />
+//           ) : (
+//             <Text style={styles.infoText}>{birthdate || 'Not set'}</Text>
+//           )}
+//         </View>
+//         <View style={[styles.infoContainer, styles.halfWidth]}>
+//           <Text style={styles.label}>Age:</Text>
+//           <Text style={styles.infoText}>{age}</Text>
+//         </View>
+//       </View>
+
+//       <View style={styles.infoContainer}>
+//         <Text style={styles.label}>City</Text>
+//         {isEditing ? (
+//           <View style={{ zIndex: 1 }}>
+//             <TextInput
+//               style={styles.input}
+//               placeholder="Search city..."
+//               value={city}
+//               onChangeText={(text) => {
+//                 setCity(text);
+//                 searchCities(text);
+//               }}
+//               onFocus={() => setShowCitySuggestions(true)}
+//               onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+//             />
+//             {showCitySuggestions && citySuggestions.length > 0 && (
+//               <View style={styles.suggestionsContainer}>
+//                 <FlatList
+//                   data={citySuggestions}
+//                   keyExtractor={(item) => item.id.toString()}
+//                   renderItem={({ item }) => (
+//                     <TouchableOpacity
+//                       onPress={() => handleCitySelect(item)}
+//                       style={styles.suggestionItem}
+//                     >
+//                       <Text style={styles.suggestionText}>{item.name}</Text>
+//                     </TouchableOpacity>
+//                   )}
+//                 />
+//               </View>
+//             )}
+//           </View>
+//         ) : (
+//           <Text style={styles.infoText}>{city || 'Not set'}</Text>
+//         )}
+//       </View>
+
+//       {/* Rest of your component remains the same */}
+//       {/* ... [Keep all your existing JSX unchanged] */}
+
+//     </ScrollView>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
 // import React, { useState, useEffect } from 'react';
 // import { 
 //   View, 

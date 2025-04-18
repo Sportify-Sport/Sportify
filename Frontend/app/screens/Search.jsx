@@ -12,13 +12,15 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
+import { useRouter, useNavigation, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useFilters } from "../context/FilterContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import getApiBaseUrl from "../config/apiConfig";
 import Voice from '@react-native-voice/voice';
 const apiUrl = getApiBaseUrl();
-
+const isVoiceAvailable = () => {
+  return !!Voice && typeof Voice.start === "function" && typeof Voice.destroy === "function";
+};
 export default function SearchScreen() {
   const [search, setSearch] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -38,9 +40,6 @@ export default function SearchScreen() {
   const limit = 10;
   const [searchTimeout, setSearchTimeout] = useState(null);
 
-
-
-  
   // Load sports map from storage
   useEffect(() => {
     const loadSportsMap = async () => {
@@ -93,21 +92,34 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch items from the API
   const fetchItemsFromApi = async (itemType, searchQuery, currentPage, pageSize, filters) => {
     try {
       const token = await AsyncStorage.getItem('token');
 
       // Build the query string with mandatory parameters
-      let query = `?type=${itemType}&name=${encodeURIComponent(searchQuery)}&page=${currentPage}&pageSize=${pageSize}`;
+      let query = `?type=${itemType}&page=${currentPage}&pageSize=${pageSize}`;
+
+      // Add search query if provided (now optional)
+      if (searchQuery && searchQuery.trim().length > 0) {
+        query += `&name=${encodeURIComponent(searchQuery.trim())}`;
+      }
 
       // Add optional parameters only if they have real values (not null or undefined)
-      console.log(filters);
       if (filters) {
-        console.log(filters);
         if (filters.sport != null) query += `&sportId=${filters.sport}`;
         if (filters.city != null) query += `&cityId=${filters.city}`;
-        if (filters.age != null) query += `&age=${filters.age}`;
+        
+        // Handle age filter conversion
+        if (filters.age != null) {
+          if (filters.age === '13-18') {
+            query += '&minAge=13&maxAge=18';
+          } else if (filters.age === '18-30') {
+            query += '&minAge=18&maxAge=30';
+          } else if (filters.age === '30+') {
+            query += '&minAge=30';
+          }
+        }
+        
         if (filters.gender != null) query += `&gender=${filters.gender}`;
         if (itemType === "event" && filters.startDate != null) {
           // Format startDate as MM/DD/YYYY for the API
@@ -164,12 +176,69 @@ export default function SearchScreen() {
     }
   };
 
+  // Fetch data when filters change (e.g., after applying filters)
+  useEffect(() => {
+    const fetchOnFilterApply = async () => {
+      // Check if all filters are null
+      const allFiltersNull = Object.values(filters).every(value => value == null);
+
+      if (allFiltersNull && search.length < 2) {
+        // Clear results and hide main list if no filters and no valid search query
+        setFilteredItems([]);
+        setShowMainList(false);
+        setPage(1);
+        setHasMore(true);
+        setSuggestions([]);
+        return;
+      }
+
+      try {
+        const itemType = type || "event";
+        const results = await fetchItemsFromApi(itemType, search, 1, limit, filters);
+        setFilteredItems(results.items);
+        setShowMainList(true);
+        setPage(2); // Start at page 2 for the next fetch (infinite scroll)
+        setHasMore(results.hasMore);
+      } catch (error) {
+        console.error("Error fetching items on filter apply:", error);
+      }
+    };
+
+    fetchOnFilterApply();
+  }, [filters, type, search]);
+
+  // Re-fetch data when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const fetchOnFocus = async () => {
+        if (search.length >= 2 || Object.values(filters).some(value => value != null)) {
+          try {
+            const itemType = type || "event";
+            const results = await fetchItemsFromApi(itemType, search, 1, limit, filters);
+            setFilteredItems(results.items);
+            setShowMainList(true);
+            setPage(2); // Start at page 2 for the next fetch (infinite scroll)
+            setHasMore(results.hasMore);
+          } catch (error) {
+            console.error("Error fetching items on screen focus:", error);
+          }
+        }
+      };
+
+      fetchOnFocus();
+
+      // No cleanup needed since we want to re-fetch on every focus
+    }, [search, filters, type])
+  );
+
   // Debounced search handler
   const handleSearch = useCallback(async () => {
-    if (search.length < 2) {
+    if (search.length < 2 && !Object.values(filters).some(value => value != null)) {
       setSuggestions([]);
       setShowMainList(false);
       setFilteredItems([]);
+      setPage(1);
+      setHasMore(true);
       return;
     }
 
@@ -188,7 +257,7 @@ export default function SearchScreen() {
 
   // Load more items (infinite scroll)
   const loadItems = useCallback(async () => {
-    if (loading || !hasMore || search.length < 2) return;
+    if (loading || !hasMore) return;
 
     setLoading(true);
     try {
@@ -300,38 +369,46 @@ export default function SearchScreen() {
     Keyboard.dismiss();
   };
 
-
   useEffect(() => {
-    Voice.onSpeechResults = (result) => {
+    if (Platform.OS === "web" || !isVoiceAvailable()) {
+      console.warn("Voice recognition is not supported or Voice module is unavailable.");
+      return;
+    }
+
+    const onSpeechResults = (result) => {
       const text = result.value[0];
       setSearch(text); // update the input field
-      handleSearch();  // optionally trigger the search
+      handleSearch(); // optionally trigger the search
     };
-  
+
+    Voice.onSpeechResults = onSpeechResults;
+
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+      Voice.onSpeechResults = null;
+      Voice.destroy().catch((error) => {
+        console.error("Error destroying Voice module:", error);
+      });
     };
-  }, []);
-  
+  }, [handleSearch]);
+
   const startVoiceRecognition = async () => {
+    if (Platform.OS === "web") {
+      console.warn("Voice recognition is not supported on the web.");
+      return;
+    }
+
+    if (!isVoiceAvailable()) {
+      console.warn("Voice module is not available.");
+      return;
+    }
+
     try {
-      await Voice.start('en-US'); // Or 'he-IL' for Hebrew, etc.
-    } catch (e) {
-      console.error('Voice start error:', e);
+      await Voice.start("en-US"); // Or 'he-IL' for Hebrew, etc.
+    } catch (error) {
+      console.error("Voice start error:", error);
     }
   };
-  // const startVoiceRecognition = async () => {
-  //   if (Platform.OS === "web") {
-  //     alert("Voice recognition is not supported on web.");
-  //     return;
-  //   }
-  
-  //   try {
-  //     await Voice.start('en-US');
-  //   } catch (e) {
-  //     console.error('Voice start error:', e);
-  //   }
-  // };
+
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View className="flex-1 bg-gray-100 p-4">
@@ -366,9 +443,11 @@ export default function SearchScreen() {
                 <Ionicons name="close-circle" size={20} color="gray" className="mr-2" />
               </TouchableOpacity>
             )}
+            {Platform.OS !== "web" && (
               <TouchableOpacity onPress={startVoiceRecognition}>
                 <Ionicons name="mic" size={20} color="gray" className="mr-2" />
               </TouchableOpacity>
+            )}
             <TouchableOpacity
               onPress={() =>
                 router.push({

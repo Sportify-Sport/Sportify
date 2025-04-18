@@ -24,7 +24,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import "../global.css";
-import { AuthProvider } from "./context/AuthContext";
+// import { AuthProvider } from "./context/AuthContext";
 import { FilterProvider } from "./context/FilterContext"; // Import FilterProvider
 
 export default function RootLayout() {

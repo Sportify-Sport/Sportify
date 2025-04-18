@@ -40,14 +40,12 @@ export default function ExploreScreen() {
       try {
         // Check if user is logged in
         const token = await AsyncStorage.getItem('token');
-        console.log('loadInitialData: Token from AsyncStorage:', token);
         setIsLoggedIn(!!token);
 
         // Load sports map
         const storedSports = await AsyncStorage.getItem('sportsMap');
         if (storedSports) {
           const parsedSportsMap = JSON.parse(storedSports);
-          console.log('loadInitialData: Sports map loaded:', parsedSportsMap);
           setSportsMap(parsedSportsMap);
         } else {
           console.warn('loadInitialData: No sports map found in AsyncStorage');
@@ -165,7 +163,6 @@ export default function ExploreScreen() {
       const response = await fetch(`${apiUrl}/api/Events/GetEvents${query}`, { headers });
       if (!response.ok) {
         if (response.status === 401 && !token) {
-          console.log('loadEvents: Unauthorized - redirecting to login');
           router.replace('/screens/Login');
           return;
         }
@@ -173,7 +170,6 @@ export default function ExploreScreen() {
       }
 
       const result = await response.json();
-      console.log('loadEvents: API response:', result);
 
       if (result.success && Array.isArray(result.data)) {
         const enhancedEvents = await Promise.all(
@@ -380,4 +376,3 @@ export default function ExploreScreen() {
     </View>
   );
 }
-

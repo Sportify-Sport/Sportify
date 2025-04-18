@@ -10,9 +10,10 @@
 //     gender: null,
 //     date: null,
 //   });
+//   const [filteredNames, setFilteredNames] = useState([]); // Store filtered names
 
 //   return (
-//     <FilterContext.Provider value={{ filters, setFilters }}>
+//     <FilterContext.Provider value={{ filters, setFilters, filteredNames, setFilteredNames }}>
 //       {children}
 //     </FilterContext.Provider>
 //   );
@@ -34,7 +35,7 @@ export const FilterProvider = ({ children }) => {
     gender: null,
     date: null,
   });
-  const [filteredNames, setFilteredNames] = useState([]); // Store filtered names
+  const [filteredNames, setFilteredNames] = useState([]);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, filteredNames, setFilteredNames }}>
@@ -44,3 +45,6 @@ export const FilterProvider = ({ children }) => {
 };
 
 export const useFilters = () => useContext(FilterContext);
+
+// Add this default export if you actually want to use this file as a route
+export default FilterProvider;
