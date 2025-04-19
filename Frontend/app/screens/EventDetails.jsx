@@ -10,11 +10,14 @@ import {
   TextInput,
   Alert,
   FlatList,
+  Platform,
+  Linking
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import getApiBaseUrl from '../config/apiConfig';
+import * as Calendar from 'expo-calendar';
 
 const apiUrl = getApiBaseUrl();
 const PAGE_SIZE = 5;
@@ -59,8 +62,7 @@ export default function EventDetails() {
   // Modal state for user details
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-
-
+  const [calendarId, setCalendarId] = useState(null);
 
   // Load sports map, login, user profile, and persisted event state
   useEffect(() => {
@@ -82,7 +84,7 @@ export default function EventDetails() {
 
         if (token) {
           const headers = { Authorization: `Bearer ${token}` };
-          const resp = await fetch('https://localhost:7059/api/Users/GetUserProfile', { headers });
+          const resp = await fetch(`${apiUrl}/api/Users/GetUserProfile`, { headers });
           if (!resp.ok) throw new Error('Failed to fetch user profile');
           const userData = await resp.json();
           setUserProfile(userData);
@@ -128,6 +130,22 @@ export default function EventDetails() {
       }
     })();
   }, [eventId]);
+
+  // Request permissions and get a default calendar
+  useEffect(() => {
+    (async () => {
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      if (status === 'granted') {
+        const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+        // Pick owner-level calendar or first available
+        const defaultCal = calendars.find(cal => cal.accessLevel === Calendar.CalendarAccessLevel.OWNER)
+          || calendars[0];
+        setCalendarId(defaultCal.id);
+      } else {
+        Alert.alert('Permission required', 'Calendar permission is needed to add events.');
+      }
+    })();
+  }, []);
 
   // Fetch city name
   const getCityNameById = async (id) => {
@@ -290,12 +308,66 @@ export default function EventDetails() {
       { text: 'OK', onPress: onOk }
     ]);
 
-  // Handlers
-  const handleAddToCalendar = () => console.log('Add to calendar');
+  //Add to calender handler
+  const handleAddToCalendar = async () => {
+    if (!calendarId) {
+      Alert.alert('No calendar found', 'Unable to locate a calendar to add the event.');
+      return;
+    }
+
+    try {
+      const startDate = new Date(event.startDatetime);
+      const endDate = new Date(event.endDatetime); // default duration: 1h
+
+      const createdId = await Calendar.createEventAsync(calendarId, {
+        title: event.eventName,
+        startDate,
+        endDate,
+        location: event.locationName,
+        timeZone: Calendar.TimeZone || undefined,
+      });
+
+      console.log('Event added to calendar, id:', createdId);
+      Alert.alert('Success', 'Event added to your calendar!');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      Alert.alert('Error', 'Could not add event to calendar.');
+    }
+  };
+
+  //handle Location Press
+  const handleLocationPress = async () => {
+    if (!event?.locationName) {
+      Alert.alert('No location', 'Location name is not available.');
+      return;
+    }
+
+    // Try geo: URI (Android → any maps; iOS → Apple Maps), fallback to Google Maps web
+    const geoScheme =
+      Platform.OS === 'ios'
+        ? `maps:0,0?q=${encodeURIComponent(event.locationName)}`
+        : `geo:0,0?q=${encodeURIComponent(event.locationName)}`;
+    const webUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      event.locationName
+    )}`;
+
+    // choose which URL we can open
+    const urlToOpen = await Linking.canOpenURL(geoScheme) ? geoScheme : webUrl;
+
+    try {
+      await Linking.openURL(urlToOpen);
+    } catch (err) {
+      console.error('Error opening maps:', err);
+      Alert.alert(
+        'Cannot open map',
+        `Tried to open ${urlToOpen} but failed.`
+      );
+    }
+  };
 
   const handleRequestPlayer = async () => {
-    console.log("test button1",event);
-    if (!userProfile || !event) {console.log("faied"); return;}
+    console.log("test button1", event);
+    if (!userProfile || !event) { console.log("faied"); return; }
     const birthDate = new Date(userProfile.birthDate);
     const today = new Date();
     let userAge = today.getFullYear() - birthDate.getFullYear();
@@ -521,20 +593,20 @@ export default function EventDetails() {
 
   const handleSearchGroups = async (reset = false) => {
     if (isLoadingGroups || (!hasMoreGroups && !reset) || !addGroupSearch.trim()) return;
-  
+
     setIsLoadingGroups(true);
     const currentPage = reset ? 1 : page;
-  
+
     try {
       const token = await AsyncStorage.getItem('token');
       // Build the query string in the correct order
       let query = `?type=group`;
-  
+
       // Add name parameter first, if provided
       if (addGroupSearch.trim()) {
         query += `&name=${encodeURIComponent(addGroupSearch.trim())}`;
       }
-  
+
       // Add event-specific parameters from the event state
       if (event) {
         if (event.sportId) {
@@ -548,7 +620,7 @@ export default function EventDetails() {
           query += `&gender=${encodeURIComponent(event.gender.toLowerCase())}`;
         }
       }
-  
+
       // Add pagination parameters last
       query += `&page=${currentPage}&pageSize=10`;
       console.log(query);
@@ -560,17 +632,17 @@ export default function EventDetails() {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (!response.ok) throw new Error(`Failed to fetch groups: ${response.status}`);
       const result = await response.json();
       if (!result.success) throw new Error('API returned success: false');
-  
+
       const groups = result.data.map(group => ({
         id: group.groupId || group.id,
         name: group.groupName || group.name || 'Unnamed Group',
         groupImage: `${apiUrl}/Images/${group.groupImage || 'default_group.png'}`,
       }));
-  
+
       if (reset) {
         setAddGroupResults(groups);
         setPage(2);
@@ -785,9 +857,9 @@ export default function EventDetails() {
   const renderDetails = () => (
     <>
       <View className="flex-row justify-between items-center mb-4">
-      <TouchableOpacity onPress={() => router.back()}>
-           <Ionicons name="arrow-back" size={28} color="#333" />
-         </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={28} color="#333" />
+        </TouchableOpacity>
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900">{event.eventName}</Text>
         </View>
@@ -866,10 +938,15 @@ export default function EventDetails() {
         )}
 
         <View className="items-center mb-4">
-          <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={handleLocationPress}
+            className="flex-row items-center"
+          >
             <Ionicons name="location" size={24} color="red" />
-            <Text className="text-base text-gray-900 ml-2">{event.locationName || 'Unknown'}</Text>
-          </View>
+            <Text className="text-base text-gray-900 ml-2">
+              {event.locationName || 'Unknown'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </>
@@ -920,9 +997,7 @@ export default function EventDetails() {
                         </View>
                       </View>
                       <TouchableOpacity onPress={() => handleShowMemberDetails(m)}>
-                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full hover:bg-blue-600 hover:text-white transition duration-200">
-                          Details
-                        </Text>
+                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
                       </TouchableOpacity>
                     </View>
                   ))
@@ -998,27 +1073,27 @@ export default function EventDetails() {
               />
               <FlatList
                 data={addGroupResults || []}
-                keyExtractor={(item, index) => 
+                keyExtractor={(item, index) =>
                   item.id ? item.id.toString() : `fallback-${index}`
                 }
                 renderItem={({ item }) => (
                   <View className="flex-row justify-between items-center mb-2">
                     <View className="flex-row items-center">
-                      <Image 
-                        source={{ uri: item.groupImage || 'https://via.placeholder.com/150' }} 
-                        className="w-8 h-8 rounded-full mr-2" 
+                      <Image
+                        source={{ uri: item.groupImage || 'https://via.placeholder.com/150' }}
+                        className="w-8 h-8 rounded-full mr-2"
                       />
                       <Text className="text-base text-gray-700">{item.name}</Text>
                     </View>
                     <View className="flex-row">
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => handleGroupDetails(item.id)}
                         className="bg-gray-500 py-1 px-3 rounded-lg mr-2"
                       >
                         <Text className="text-white">Details</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        onPress={() => handleAddGroup(item)} 
+                      <TouchableOpacity
+                        onPress={() => handleAddGroup(item)}
                         className="bg-blue-500 py-1 px-3 rounded-lg"
                       >
                         <Text className="text-white">Add</Text>
@@ -1083,106 +1158,106 @@ export default function EventDetails() {
     );
   }
 
-// Logged-in, non-admin
-if (isLoggedIn && !isAdmin) {
-  return (
-    <ScrollView className="p-4 bg-gray-100">
-      {renderDetails()}
+  // Logged-in, non-admin
+  if (isLoggedIn && !isAdmin) {
+    return (
+      <ScrollView className="p-4 bg-gray-100">
+        {renderDetails()}
 
-      {!requiresTeams ? (
-        <>
-          {isParticipant ? (
-            <>
-              {/* Case 1: Accepted as player */}
+        {!requiresTeams ? (
+          <>
+            {isParticipant ? (
+              <>
+                {/* Case 1: Accepted as player */}
+                <TouchableOpacity
+                  onPress={handleLeaveEvent}
+                  className="bg-red-500 py-3 rounded-lg mb-2"
+                >
+                  <Text className="text-white text-center font-bold">Leave Event</Text>
+                </TouchableOpacity>
+              </>
+            ) : isPlayerRequestPending && !isSpectator ? (
+              <>
+                {/* Case 2: Player request pending, not spectator */}
+                <TouchableOpacity
+                  onPress={handleCancelPlayer}
+                  className="bg-red-500 py-3 rounded-lg mb-2"
+                >
+                  <Text className="text-white text-center font-bold">Cancel Request</Text>
+                </TouchableOpacity>
+              </>
+            ) : (isPlayerRequestPending || isSpectator) ? (
+              <>
+                {/* Case 3: Player request pending or is spectator */}
+                <TouchableOpacity
+                  disabled={true}
+                  className="bg-gray-500 py-3 rounded-lg mb-2 opacity-50"
+                >
+                  <Text className="text-white text-center font-bold">Cant Request to Join as Player</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                {/* Case 4: No participation or pending request */}
+                <TouchableOpacity
+                  onPress={handleRequestPlayer}
+                  className="bg-green-500 py-3 rounded-lg mb-2"
+                >
+                  <Text className="text-white text-center font-bold">Request to Join as Player</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {/* Spectator button */}
+            {isSpectator ? (
               <TouchableOpacity
                 onPress={handleLeaveEvent}
-                className="bg-red-500 py-3 rounded-lg mb-2"
+                className="bg-red-500 py-3 rounded-lg mb-4"
               >
                 <Text className="text-white text-center font-bold">Leave Event</Text>
               </TouchableOpacity>
-            </>
-          ) : isPlayerRequestPending && !isSpectator ? (
-            <>
-              {/* Case 2: Player request pending, not spectator */}
-              <TouchableOpacity
-                onPress={handleCancelPlayer}
-                className="bg-red-500 py-3 rounded-lg mb-2"
-              >
-                <Text className="text-white text-center font-bold">Cancel Request</Text>
-              </TouchableOpacity>
-            </>
-          ) : (isPlayerRequestPending || isSpectator) ? (
-            <>
-              {/* Case 3: Player request pending or is spectator */}
+            ) : isPlayerRequestPending ? (
               <TouchableOpacity
                 disabled={true}
-                className="bg-gray-500 py-3 rounded-lg mb-2 opacity-50"
+                className="bg-gray-500 py-3 rounded-lg mb-4 opacity-50"
               >
-                <Text className="text-white text-center font-bold">Cant Request to Join as Player</Text> 
+                <Text className="text-white text-center font-bold">Cant Join as Spectator</Text>
               </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              {/* Case 4: No participation or pending request */}
+            ) : (
               <TouchableOpacity
-                onPress={handleRequestPlayer}
-                className="bg-green-500 py-3 rounded-lg mb-2"
+                onPress={handleJoinSpectator}
+                className="bg-green-500 py-3 rounded-lg mb-4"
               >
-                <Text className="text-white text-center font-bold">Request to Join as Player</Text>
+                <Text className="text-white text-center font-bold">Join as Spectator</Text>
               </TouchableOpacity>
-            </>
-          )}
-          {/* Spectator button */}
-          {isSpectator ? (
+            )}
+          </>
+        ) : (
+          // Team-based event logic
+          isGroupParticipant ? (
+            <TouchableOpacity
+              onPress={handleAddToCalendar}
+              className="bg-green-500 py-3 rounded-lg mb-4"
+            >
+              <Text className="text-white text-center font-bold">You are signed — Add to Calendar</Text>
+            </TouchableOpacity>
+          ) : isParticipant && !isSpectator ? (
             <TouchableOpacity
               onPress={handleLeaveEvent}
               className="bg-red-500 py-3 rounded-lg mb-4"
             >
               <Text className="text-white text-center font-bold">Leave Event</Text>
             </TouchableOpacity>
-          ) : isPlayerRequestPending ? (
-            <TouchableOpacity
-              disabled={true}
-              className="bg-gray-500 py-3 rounded-lg mb-4 opacity-50"
-            >
-              <Text className="text-white text-center font-bold">Cant Join as Spectator</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handleJoinSpectator}
-              className="bg-green-500 py-3 rounded-lg mb-4"
-            >
-              <Text className="text-white text-center font-bold">Join as Spectator</Text>
-            </TouchableOpacity>
-          )}
-        </>
-      ) : (
-        // Team-based event logic
-        isGroupParticipant ? (
-          <TouchableOpacity
-            onPress={handleAddToCalendar}
-            className="bg-green-500 py-3 rounded-lg mb-4"
-          >
-            <Text className="text-white text-center font-bold">You are signed — Add to Calendar</Text>
-          </TouchableOpacity>
-        ) : isParticipant && !isSpectator ? (
-        <TouchableOpacity
-            onPress={handleLeaveEvent}
-            className="bg-red-500 py-3 rounded-lg mb-4"
-          >
-            <Text className="text-white text-center font-bold">Leave Event</Text>
-          </TouchableOpacity>
           )
-          : (
-          <TouchableOpacity
-            onPress={handleJoinSpectator}
-            className="bg-green-500 py-3 rounded-lg mb-4"
-          >
-            <Text className="text-white text-center font-bold">Join as Spectator</Text>
-          </TouchableOpacity>
-          )
-      )}
-    </ScrollView>
-  );
-}
+            : (
+              <TouchableOpacity
+                onPress={handleJoinSpectator}
+                className="bg-green-500 py-3 rounded-lg mb-4"
+              >
+                <Text className="text-white text-center font-bold">Join as Spectator</Text>
+              </TouchableOpacity>
+            )
+        )}
+      </ScrollView>
+    );
+  }
 }

@@ -186,7 +186,7 @@ export default function Index() {
         {!token && (
           <TouchableOpacity
             className="bg-[#65DA84] px-4 py-2 rounded-full"
-            onPress={() => router.replace('/screens/Login')}
+            onPress={() => router.push('/screens/Login')}
           >
             <Text className="text-white">Login</Text>
           </TouchableOpacity>
@@ -231,7 +231,7 @@ export default function Index() {
       <View className="mb-6">
         <TouchableOpacity
           className="flex-row items-center mb-2"
-          onPress={() => token && router.replace('../screens/MyEvents')}
+          onPress={() => token && router.push('../screens/MyEvents')}
           disabled={!token}
         >
           <Text className={`text-xl font-semibold ${token ? '' : 'text-gray-400'}`}>My Events</Text>
@@ -254,7 +254,7 @@ export default function Index() {
       <View className="mb-6">
         <TouchableOpacity
           className="flex-row items-center mb-2"
-          onPress={() => token && router.replace('../screens/MyGroups')}
+          onPress={() => token && router.push('../screens/MyGroups')}
           disabled={!token}
         >
           <Text className={`text-xl font-semibold ${token ? '' : 'text-gray-400'}`}>My Groups</Text>
