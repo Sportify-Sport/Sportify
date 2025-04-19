@@ -66,9 +66,27 @@ BEGIN
     DECLARE @isPublic BIT;
     DECLARE @requiresTeams BIT;
     DECLARE @oneDayAgo DATE = DATEADD(DAY, -1, CAST(GETDATE() AS DATE));
-    
+    DECLARE @startDatetime DATETIME;
+    DECLARE @endDatetime DATETIME;
+    DECLARE @currentDateTime DATETIME = GETDATE();
+    DECLARE @minAge INT;
+    DECLARE @eventGender NVARCHAR(6);
+    DECLARE @maxParticipants INT;
+    DECLARE @currentParticipants INT;
+    DECLARE @userBirthDate DATE;
+    DECLARE @userGender NVARCHAR(1);
+    DECLARE @userAge INT;
+
     -- Check if event exists and get event properties
-    SELECT @isPublic = IsPublic, @requiresTeams = RequiresTeams
+    SELECT 
+        @isPublic = IsPublic, 
+        @requiresTeams = RequiresTeams,
+        @startDatetime = StartDatetime,
+        @endDatetime = EndDatetime,
+        @minAge = MinAge,
+        @eventGender = Gender,
+        @maxParticipants = MaxParticipants,
+        @currentParticipants = ParticipantsNum
     FROM [Events]
     WHERE EventId = @eventId;
     
@@ -78,6 +96,13 @@ BEGIN
 		SET @result = 'EventNotFound';
 		GOTO ReturnResult;
 	END
+
+	-- Check if user is an admin
+    IF EXISTS (SELECT 1 FROM EventAdmins WHERE EventId = @eventId AND CityOrganizerId = @userId)
+    BEGIN
+        SET @result= 'Admins of this event cannot join';
+        GOTO ReturnResult;
+    END
 
     -- Check if event requires teams
     IF @requiresTeams = 1
@@ -118,6 +143,13 @@ BEGIN
     -- WATCH request processing (PlayWatch = 0)
     IF @playWatch = 0
     BEGIN
+		 -- Check if event has already ended for spectators
+        IF @currentDateTime > @endDatetime
+        BEGIN
+            SET @result = 'EventAlreadyEnded';
+            GOTO ReturnResult;
+        END
+
         -- Add user as watcher immediately
         INSERT INTO EventParticipants (UserId, EventId, PlayWatch)
         VALUES (@userId, @eventId, 0);
@@ -129,6 +161,51 @@ BEGIN
     -- PLAY request processing (PlayWatch = 1)
     ELSE
     BEGIN
+		-- Check if event has already started or ended for players
+        IF @currentDateTime > @startDatetime
+        BEGIN
+            SET @result = 'EventAlreadyStarted';
+            GOTO ReturnResult;
+        END
+        
+        -- Get user details for age and gender checks
+        SELECT 
+            @userBirthDate = BirthDate,
+            @userGender = Gender
+        FROM Users
+        WHERE UserId = @userId;
+        
+        -- Calculate user age
+        SET @userAge = DATEDIFF(YEAR, @userBirthDate, @currentDateTime) - 
+            CASE 
+                WHEN DATEADD(YEAR, DATEDIFF(YEAR, @userBirthDate, @currentDateTime), @userBirthDate) > @currentDateTime 
+                THEN 1 
+                ELSE 0 
+            END;
+            
+        -- Check age requirement
+        IF @userAge < @minAge
+        BEGIN
+            SET @result = 'AgeTooLow';
+            GOTO ReturnResult;
+        END
+        
+        -- Check gender requirement
+        IF (@eventGender = 'Male' AND @userGender <> 'M') OR 
+           (@eventGender = 'Female' AND @userGender <> 'F')
+           -- No check for Mixed, as it allows all genders
+        BEGIN
+            SET @result = 'GenderMismatch';
+            GOTO ReturnResult;
+        END
+        
+        -- Check if event is full
+        IF @maxParticipants IS NOT NULL AND @currentParticipants >= @maxParticipants
+        BEGIN
+            SET @result = 'EventFull';
+            GOTO ReturnResult;
+        END
+
         -- Check for recent rejection/removal/left (only for play requests)
         IF EXISTS (
             SELECT 1 
@@ -187,9 +264,13 @@ BEGIN
     DECLARE @success BIT = 0;
     DECLARE @errorMessage NVARCHAR(100) = NULL;
     DECLARE @requiresTeams BIT;
+	DECLARE @startDatetime DATETIME;
+	DECLARE @currentDateTime DATETIME = GETDATE();
     
     -- Check if the event exists and requires teams
-    SELECT @requiresTeams = RequiresTeams
+    SELECT 
+		@requiresTeams = RequiresTeams,
+		@startDatetime = StartDatetime
     FROM [Events]
     WHERE EventId = @eventId;
     
@@ -202,6 +283,13 @@ BEGIN
     IF @requiresTeams = 1
     BEGIN
         SET @errorMessage = 'This procedure is only for non-team events';
+        GOTO ReturnResult;
+    END
+
+	-- Check if event has already started
+    IF @currentDateTime > @startDatetime
+    BEGIN
+        SET @errorMessage = 'Cannot cancel request for an event that has already started';
         GOTO ReturnResult;
     END
     
@@ -245,9 +333,15 @@ BEGIN
     DECLARE @requiresTeams BIT;
     DECLARE @isPlayer BIT;
     DECLARE @participantExists BIT = 0;
-    
+    DECLARE @startDatetime DATETIME;
+    DECLARE @endDatetime DATETIME;
+    DECLARE @currentDateTime DATETIME = GETDATE();
+
     -- Check if the event exists and get properties
-    SELECT @requiresTeams = RequiresTeams
+    SELECT 
+		@requiresTeams = RequiresTeams,
+        @startDatetime = StartDatetime,
+        @endDatetime = EndDatetime
     FROM [Events]
     WHERE EventId = @eventId;
     
@@ -275,6 +369,26 @@ BEGIN
         GOTO ReturnResult;
     END
     
+	-- Check timing constraints based on participant type
+    IF @isPlayer = 1 -- Player
+    BEGIN
+        -- Check if event has started or ended
+        IF @currentDateTime > @startDatetime
+        BEGIN
+            SET @errorMessage = 'Players cannot leave an event that has already started';
+            GOTO ReturnResult;
+        END
+    END
+    ELSE -- Spectator
+    BEGIN
+        -- Check if event has ended
+        IF @currentDateTime > @endDatetime
+        BEGIN
+            SET @errorMessage = 'Spectators cannot leave an event that has already ended';
+            GOTO ReturnResult;
+        END
+    END
+
     BEGIN TRANSACTION;
     
     -- Common action: Remove from EventParticipants
@@ -340,9 +454,13 @@ BEGIN
     DECLARE @requiresTeams BIT;
     DECLARE @isPlayer BIT = 0;
     DECLARE @isAdmin BIT = 0;
+	DECLARE @startDatetime DATETIME;
+    DECLARE @currentDateTime DATETIME = GETDATE();
     
     -- Check if the event exists and get properties
-    SELECT @requiresTeams = RequiresTeams
+    SELECT 
+		@requiresTeams = RequiresTeams,
+        @startDatetime = StartDatetime
     FROM [Events]
     WHERE EventId = @eventId;
     
@@ -359,6 +477,13 @@ BEGIN
         GOTO ReturnResult;
     END
     
+	-- Check if the event has already started or ended
+    IF @currentDateTime > @startDatetime
+    BEGIN
+        SET @errorMessage = 'Cannot remove player from an event that has already started or ended';
+        GOTO ReturnResult;
+    END
+
     -- Check if the user making the request is an admin for this event
     SELECT @isAdmin = COUNT(*)
     FROM EventAdmins
@@ -455,6 +580,8 @@ BEGIN
     DECLARE @userGender NVARCHAR(1);
     DECLARE @userAge INT;
     DECLARE @requestStatus NVARCHAR(20) = NULL;
+	DECLARE @startDatetime DATETIME;
+	DECLARE @currentDateTime DATETIME = GETDATE();
     
     -- Check if the event exists and get properties
     SELECT 
@@ -462,7 +589,8 @@ BEGIN
         @maxParticipants = MaxParticipants,
         @currentParticipants = ParticipantsNum,
         @minAge = MinAge,
-        @eventGender = Gender
+        @eventGender = Gender,
+		@startDatetime = StartDatetime
     FROM [Events]
     WHERE EventId = @eventId;
     
@@ -507,6 +635,12 @@ BEGIN
         GOTO ReturnResult;
     END
     
+	IF @currentDateTime > @startDatetime
+	BEGIN
+		SET @errorMessage = 'Cannot approve requests for events that have already started';
+		GOTO ReturnResult;
+	END
+
     -- If approving, do additional checks
     IF @approve = 1
     BEGIN

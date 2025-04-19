@@ -92,7 +92,8 @@ BEGIN
         u.Email,
         u.CityId,
         u.Bio,
-        u.Gender
+        u.Gender,
+		u.ProfileImage AS UserImage
     FROM Users u
     INNER JOIN GroupMembers gm ON u.UserId = gm.UserId
     WHERE gm.GroupId = @groupId AND u.UserId = @userId;
@@ -151,9 +152,24 @@ BEGIN
     DECLARE @rejectionDate DATE = NULL;
     DECLARE @oneWeekAgo DATE = DATEADD(WEEK, -1, CAST(GETDATE() AS DATE)); 
     DECLARE @result NVARCHAR(100) = 'Success';
-    
+	DECLARE @groupMinAge INT;
+    DECLARE @groupGender NVARCHAR(6);
+    DECLARE @groupMaxMembers INT;
+    DECLARE @groupCurrentMembers INT;
+    DECLARE @userBirthDate DATE;
+    DECLARE @userGender NVARCHAR(1);
+    DECLARE @userAge INT;
+    DECLARE @currentDate DATETIME = GETDATE();
+
     -- Get the sport ID for this group
-    SELECT @sportId = SportId FROM Groups WHERE GroupId = @groupId;
+    SELECT
+		@sportId = SportId,
+        @groupMinAge = MinAge,
+        @groupGender = Gender,
+        @groupMaxMembers = MaxMemNum,
+        @groupCurrentMembers = TotalMembers
+	FROM Groups 
+	WHERE GroupId = @groupId;
     
 	-- Check if group exists
 	IF @sportId IS NULL
@@ -161,6 +177,44 @@ BEGIN
 		SET @result = 'GroupNotFound';
 		GOTO ReturnResult;
 	END
+
+	-- Get user information
+    SELECT 
+        @userBirthDate = BirthDate,
+        @userGender = Gender
+    FROM Users
+    WHERE UserId = @userId;
+
+	-- Calculate user's age
+    SET @userAge = DATEDIFF(YEAR, @userBirthDate, @currentDate) -
+        CASE
+            WHEN DATEADD(YEAR, DATEDIFF(YEAR, @userBirthDate, @currentDate), @userBirthDate) > @currentDate
+            THEN 1
+            ELSE 0
+        END;
+    
+    -- Check if group is full
+    IF @groupCurrentMembers >= @groupMaxMembers
+    BEGIN
+        SET @result = 'GroupFull';
+        GOTO ReturnResult;
+    END
+
+	-- Check age requirement
+    IF @userAge < @groupMinAge
+    BEGIN
+        SET @result = 'AgeTooLow';
+        GOTO ReturnResult;
+    END
+    
+    -- Check gender requirement
+    IF (@groupGender = 'Male' AND @userGender <> 'M') OR 
+       (@groupGender = 'Female' AND @userGender <> 'F')
+       -- No check needed for 'Mixed' as it accepts both genders
+    BEGIN
+        SET @result = 'GenderMismatch';
+        GOTO ReturnResult;
+    END
 
     -- Check if user is already a member
     IF EXISTS (SELECT 1 FROM GroupMembers WHERE GroupId = @groupId AND UserId = @userId)
@@ -257,7 +311,12 @@ BEGIN
     DECLARE @currentStatus NVARCHAR(20);
     DECLARE @maxMembers INT;
     DECLARE @currentMembers INT;
-    
+    DECLARE @groupMinAge INT;
+    DECLARE @groupGender NVARCHAR(6);
+    DECLARE @userBirthDate DATE;
+    DECLARE @userGender NVARCHAR(1);
+    DECLARE @userAge INT;
+
     -- Get the request information
     SELECT 
         @requesterUserId = RequesterUserId,
@@ -283,10 +342,12 @@ BEGIN
         RETURN;
     END
     
-    -- Get group capacity information
+    -- Get group information
     SELECT 
         @maxMembers = MaxMemNum,
-        @currentMembers = TotalMembers
+        @currentMembers = TotalMembers,
+        @groupMinAge = MinAge,
+        @groupGender = Gender
     FROM Groups
     WHERE GroupId = @groupId;
     
@@ -295,6 +356,41 @@ BEGIN
     BEGIN
         SET @Success = 0;
         SET @Message = 'Group is already at maximum capacity';
+        ROLLBACK;
+        RETURN;
+    END
+    
+	-- Get user information
+    SELECT 
+        @userBirthDate = BirthDate,
+        @userGender = Gender
+    FROM Users
+    WHERE UserId = @requesterUserId;
+    
+    -- Calculate user age
+    SET @userAge = DATEDIFF(YEAR, @userBirthDate, GETDATE()) - 
+        CASE 
+            WHEN DATEADD(YEAR, DATEDIFF(YEAR, @userBirthDate, GETDATE()), @userBirthDate) > GETDATE() 
+            THEN 1 
+            ELSE 0 
+        END;
+    
+    -- Check age requirement
+    IF @userAge < @groupMinAge
+    BEGIN
+        SET @Success = 0;
+        SET @Message = 'User does not meet the minimum age requirement';
+        ROLLBACK;
+        RETURN;
+    END
+    
+    -- Check gender requirement
+    IF (@groupGender = 'Male' AND @userGender <> 'M') OR 
+       (@groupGender = 'Female' AND @userGender <> 'F')
+       -- No check needed for 'Mixed' as it accepts both genders
+    BEGIN
+        SET @Success = 0;
+        SET @Message = 'User gender does not match group requirements';
         ROLLBACK;
         RETURN;
     END
@@ -636,7 +732,7 @@ BEGIN
     )
     BEGIN
         -- User has a pending request, return their details
-        SELECT u.FirstName + ' ' + u.LastName AS FullName, DATEDIFF(YEAR, u.BirthDate, GETDATE()) AS Age, u.Email, u.CityId, u.Bio, u.Gender
+        SELECT u.FirstName + ' ' + u.LastName AS FullName, DATEDIFF(YEAR, u.BirthDate, GETDATE()) AS Age, u.Email, u.CityId, u.Bio, u.Gender, u.ProfileImage AS UserImage
         FROM Users u
         WHERE u.UserId = @userId;
     END

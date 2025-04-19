@@ -102,6 +102,15 @@
                     case "GroupNotFound":
                         return "The group you're trying to join doesn't exist.";
 
+                    case "GroupFull":
+                        return "This group has reached its maximum capacity and cannot accept new members at this time.";
+
+                    case "AgeTooLow":
+                        return "You do not meet the minimum age requirement for this group.";
+
+                    case "GenderMismatch":
+                        return "This group is specifically for a different gender.";
+
                     default:
                         return "An error occurred while processing your request.";
                 }

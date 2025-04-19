@@ -2177,7 +2177,8 @@ public class DBservices
                     Email = dataReader["Email"].ToString(),
                     CityId = Convert.ToInt32(dataReader["CityId"]),
                     Bio = dataReader["Bio"].ToString(),
-                    Gender = dataReader["Gender"].ToString()
+                    Gender = dataReader["Gender"].ToString(),
+                    UserImage = dataReader["UserImage"].ToString()
                 };
             }
 
@@ -2336,11 +2337,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // Create the SqlCommand for approving a join request
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureApproveJoinRequest(
-        string spName,
-        SqlConnection con,
-        int requestId,
-        int groupId)
+    private SqlCommand CreateCommandWithStoredProcedureApproveJoinRequest(string spName, SqlConnection con, int requestId, int groupId)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -2553,7 +2550,8 @@ public class DBservices
                     Email = dataReader["Email"].ToString(),
                     CityId = Convert.ToInt32(dataReader["CityId"]),
                     Bio = dataReader["Bio"].ToString(),
-                    Gender = dataReader["Gender"].ToString()
+                    Gender = dataReader["Gender"].ToString(),
+                    UserImage = dataReader["UserImage"].ToString()
                 };
             }
 
