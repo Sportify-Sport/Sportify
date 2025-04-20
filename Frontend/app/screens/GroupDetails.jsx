@@ -249,18 +249,39 @@ export default function GroupDetails() {
     }
   };
 
-  const handleLeaveGroup = async () => {
-    const token = await AsyncStorage.getItem('token');
-    try {
-      const resp = await fetch(
-        `${apiUrl}/api/GroupMembers/${group.groupId}/leave`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
-      );
-      const json = await resp.json();
-      if (json.success) router.back(); else Alert.alert('Error', json.message);
-    } catch {
-      Alert.alert('Error', 'Failed to leave group');
-    }
+  const handleLeaveGroup = async (group) => {
+    Alert.alert(
+      'Leave Group',
+      'Are you sure you want to leave this group?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              const resp = await fetch(
+                `${apiUrl}/api/GroupMembers/${group.groupId}/leave`,
+                {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
+              const json = await resp.json();
+              if (json.success) {
+                router.back();
+              } else {
+                Alert.alert('Error', json.message || 'Failed to leave group.');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to leave group.');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleRemoveMember = async (member) => {
