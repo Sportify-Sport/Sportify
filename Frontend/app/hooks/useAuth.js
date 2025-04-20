@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function useAuth() {
@@ -6,22 +6,31 @@ export default function useAuth() {
   const [profileName, setProfileName] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadToken() {
-      try {
-        const savedToken = await AsyncStorage.getItem('token');
-        setToken(savedToken);
-        return savedToken;
-      } catch (error) {
-        console.error('Failed to load token:', error);
-        return null;
-      } finally {
-        setLoading(false);
-      }
+  // Create a reusable function to load token
+  const refreshAuth = useCallback(async () => {
+    try {
+      const savedToken = await AsyncStorage.getItem('token');
+      setToken(savedToken);
+      return savedToken;
+    } catch (error) {
+      console.error('Failed to load token:', error);
+      return null;
+    } finally {
+      setLoading(false);
     }
-    
-    loadToken();
   }, []);
 
-  return { token, setToken, profileName, setProfileName, loading };
+  // Initial load on component mount
+  useEffect(() => {
+    refreshAuth();
+  }, [refreshAuth]);
+
+  return { 
+    token, 
+    setToken, 
+    profileName, 
+    setProfileName, 
+    loading,
+    refreshAuth // Export the refresh function 
+  };
 }

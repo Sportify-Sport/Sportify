@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Buffer } from 'buffer'; // For token decoding
 import getApiBaseUrl from '../config/apiConfig';
 
 export default function useHomeData(token) {
@@ -10,49 +11,83 @@ export default function useHomeData(token) {
   
   const apiUrl = getApiBaseUrl();
   
-  // fetch public data: recommendations
-  useEffect(() => {
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-    // recommended events
-    fetch(`${apiUrl}/api/Events/events/random?count=5`, { headers })
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && Array.isArray(json.data)) {
-          setRecommendedEvents(json.data);
-        }
-      })
-      .catch((error) => console.error('Error fetching recommended events:', error));
-  }, [token, apiUrl]);
-
-  // fetch user-specific data and profile
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  // Create a reusable function to refresh all data
+  const refreshData = useCallback(async () => {
+    setLoading(true);
     
-    const headers = { Authorization: `Bearer ${token}` };
-
-    Promise.all([
-      fetch(`${apiUrl}/api/Users/GetUserProfile`, { headers }).then((res) => res.json()),
-      fetch(`${apiUrl}/api/Users/events/paginated?pageSize=4`, { headers }).then((res) => res.json()),
-      fetch(`${apiUrl}/api/Users/groups/top4`, { headers }).then((res) => res.json()),
-    ])
-      .then(([profileJson, eventsJson, groupsJson]) => {
-        if (profileJson.firstName) {
-          setProfileName(`${profileJson.firstName} ${profileJson.lastName}`);
+    try {
+      // Extract name from token
+      if (token) {
+        try {
+          // Split the token into its parts
+          const parts = token.split('.');
+          
+          if (parts.length === 3) {
+            // The payload is the second part
+            const payload = parts[1];
+            
+            // Replace characters for base64 encoding
+            const normalizedPayload = payload
+              .replace(/-/g, '+')
+              .replace(/_/g, '/');
+            
+            // Decode base64
+            const decodedPayload = Buffer.from(normalizedPayload, 'base64').toString();
+            
+            // Parse JSON
+            const claims = JSON.parse(decodedPayload);
+            
+            // Set profile name from token
+            if (claims.name) {
+              setProfileName(claims.name);
+            }
+          }
+        } catch (error) {
+          console.error('Error decoding JWT token:', error);
         }
+      }
+      
+      // Fetch recommendations
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      const recommendationsResponse = await fetch(`${apiUrl}/api/Events/events/random?count=5`, { headers });
+      const recommendationsJson = await recommendationsResponse.json();
+      if (recommendationsJson.success && Array.isArray(recommendationsJson.data)) {
+        setRecommendedEvents(recommendationsJson.data);
+      }
+      
+      // Fetch user-specific data if logged in
+      if (token) {
+        const [eventsResponse, groupsResponse] = await Promise.all([
+          fetch(`${apiUrl}/api/Users/events/paginated?pageSize=4`, { headers }),
+          fetch(`${apiUrl}/api/Users/groups/top4`, { headers })
+        ]);
+        
+        const eventsJson = await eventsResponse.json();
         if (eventsJson.success && Array.isArray(eventsJson.data)) {
           setMyEventsList(eventsJson.data);
         }
+        
+        const groupsJson = await groupsResponse.json();
         if (Array.isArray(groupsJson)) {
           setMyGroupsList(groupsJson);
         }
-      })
-      .catch((error) => console.error('Error fetching user data:', error))
-      .finally(() => setLoading(false));
+      } else {
+        // Reset user data if not logged in
+        setMyEventsList([]);
+        setMyGroupsList([]);
+      }
+    } catch (error) {
+      console.error('Error fetching home data:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [token, apiUrl]);
+  
+  // Initial load on component mount
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
   
   return {
     recommendedEvents,
@@ -60,5 +95,6 @@ export default function useHomeData(token) {
     myGroupsList,
     profileName,
     loading,
+    refreshData // Export the refresh function
   };
 }
