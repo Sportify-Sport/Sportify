@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import getApiBaseUrl from '../config/apiConfig';
+import { BlurView } from 'expo-blur';
 
 const apiUrl = getApiBaseUrl();
 const PAGE_SIZE = 3;
@@ -382,7 +383,7 @@ export default function GroupDetails() {
           </TouchableOpacity>
           <Text className="text-3xl font-extrabold text-gray-900 flex-1 text-center">{group.groupName}</Text>
           <View className="flex-row items-center space-x-3">
-          <Image source={{ uri: `${apiUrl}/Images/${group.groupImage}` }} style={{ width: 48, height: 48, borderRadius: 24 }} />
+            <Image source={{ uri: `${apiUrl}/Images/${group.groupImage}` }} style={{ width: 48, height: 48, borderRadius: 24 }} />
 
           </View>
         </View>
@@ -423,10 +424,10 @@ export default function GroupDetails() {
                 <View key={m.userId} className="flex-row justify-between items-center py-3 border-b border-gray-200">
                   <View className="flex-row items-center space-x-3">
                     <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
-                    <Image
-                      source={{ uri: `${apiUrl}/Images/${m.groupMemberImage}` }}
-                      className="w-10 h-10 rounded-full"
-                    />
+                      <Image
+                        source={{ uri: `${apiUrl}/Images/${m.groupMemberImage}` }}
+                        className="w-10 h-10 rounded-full"
+                      />
                     </View>
                     <View>
                       <Text className="text-gray-800 text-base font-medium">{m.groupMemberName}</Text>
@@ -436,9 +437,7 @@ export default function GroupDetails() {
                   {group.isAdmin && m.userId !== currentUserId && (
                     <View className="flex-row space-x-3 items-center">
                       <TouchableOpacity onPress={() => handleShowMemberDetails(m)}>
-                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full hover:bg-blue-600 hover:text-white transition duration-200">
-                          Details
-                        </Text>
+                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
                       </TouchableOpacity>
                       {!m.isAdmin && (
                         <TouchableOpacity onPress={() => handleRemoveMember(m)}>
@@ -500,18 +499,18 @@ export default function GroupDetails() {
               requests.slice(0, requestsDisplayCount).map((r) => (
                 <View key={r.requestId} className="flex-row justify-between items-center py-2">
                   <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
-                  <Image
-                    source={{ uri: `${apiUrl}/Images/${r.userPicture}` }}
-                    className="w-10 h-10 rounded-full"
-                  />
+                    <Image
+                      source={{ uri: `${apiUrl}/Images/${r.userPicture}` }}
+                      className="w-10 h-10 rounded-full"
+                    />
                   </View>
                   <View className="flex-1 ml-3">
                     <Text className="text-gray-700 text-lg">{r.fullName}</Text>
                     <Text className="text-gray-500 text-sm">{new Date(r.requestDate).toLocaleDateString('en-CA')}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleShowRequestUserDetails(r)}>
-                    <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full hover:bg-blue-600 hover:text-white cursor-pointer transition duration-200">Details</Text>
-                  </TouchableOpacity>
+                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
+                      </TouchableOpacity>
                   <View className="flex-row space-x-3 ml-3">
                     <TouchableOpacity onPress={() => handleAcceptRequest(r)}>
                       <Ionicons name="checkmark-circle" size={24} color="#38A169" />
@@ -616,26 +615,30 @@ export default function GroupDetails() {
 
       {/* User Details Modal */}
       <Modal visible={userModalVisible} animationType="slide" transparent>
-        <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
+        <BlurView
+          intensity={100}
+          tint="light"
+          style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }}
+        />
+        <View className="flex-1 justify-center items-center">
           <View className="bg-white w-11/12 p-6 rounded-2xl shadow-lg">
             {selectedUser && (
               <>
                 <View className="flex-row items-center mb-4 space-x-4">
+                  <Image
+                    source={{ uri: selectedUser.profileImage || 'https://via.placeholder.com/150' }}
+                    className="w-12 h-12 rounded-full"
+                  />
                   <Text className="text-2xl font-bold text-gray-800">{selectedUser.fullName}</Text>
                 </View>
-
                 <View className="space-y-2">
-                  <Text className="text-gray-700"><Text className="font-semibold">Bio:</Text> {selectedUser.bio}</Text>
                   <Text className="text-gray-700"><Text className="font-semibold">Email:</Text> {selectedUser.email}</Text>
-                  <Text className="text-gray-700"><Text className="font-semibold">Age:</Text> {selectedUser.age}</Text>
                   <Text className="text-gray-700"><Text className="font-semibold">City:</Text> {selectedUser.cityName}</Text>
-                  <Text className="text-gray-700">
-                    <Text className="font-semibold">Gender:</Text> {selectedUser.gender === 'M' ? 'Male' : selectedUser.gender === 'F' ? 'Female' : selectedUser.gender}
-                  </Text>
+                  <Text className="text-gray-700"><Text className="font-semibold">Bio:</Text> {selectedUser.bio}</Text>
+                  <Text className="text-gray-700"><Text className="font-semibold">Gender:</Text> {selectedUser.gender}</Text>
                 </View>
               </>
             )}
-
             <TouchableOpacity
               className="mt-6 bg-gray-100 py-2 px-6 rounded-full self-end shadow-sm"
               onPress={() => setUserModalVisible(false)}

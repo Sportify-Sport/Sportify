@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import getApiBaseUrl from '../config/apiConfig';
 import * as Calendar from 'expo-calendar';
+import { BlurView } from 'expo-blur';
 
 const apiUrl = getApiBaseUrl();
 const PAGE_SIZE = 5;
@@ -1126,7 +1127,12 @@ export default function EventDetails() {
         </ScrollView>
 
         <Modal visible={userModalVisible} animationType="slide" transparent>
-          <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
+          <BlurView
+            intensity={100}
+            tint="light" 
+            style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }}
+          />
+          <View className="flex-1 justify-center items-center">
             <View className="bg-white w-11/12 p-6 rounded-2xl shadow-lg">
               {selectedUser && (
                 <>

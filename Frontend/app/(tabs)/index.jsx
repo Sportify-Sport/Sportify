@@ -142,7 +142,7 @@ export default function Index() {
       disabled={!token}
     >
       <View className={`flex-row items-center rounded-lg shadow px-4 py-2 m-1 ${token ? 'bg-white' : 'bg-gray-100'}`}>
-        <Image source={{ uri: `${apiUrl}/Images/${item.eventImage}`}} className="w-12 h-12 rounded" />
+        <Image source={{ uri: `${apiUrl}/Images/${item.eventImage}` }} className="w-12 h-12 rounded" />
         <View className="ml-3">
           <Text className={`${token ? 'font-semibold text-black' : 'text-gray-500'}`}>{item.eventName}</Text>
           <Text className="text-gray-500 text-sm">{new Date(item.startDatetime).toLocaleDateString()}</Text>
@@ -159,7 +159,7 @@ export default function Index() {
       disabled={!token}
     >
       <View className={`flex-row items-center rounded-lg shadow px-4 py-2 m-1 ${token ? 'bg-white' : 'bg-gray-100'}`}>
-        <Image source={{ uri: `${apiUrl}/Images/${item.groupImage}`}} className="w-12 h-12 rounded" />
+        <Image source={{ uri: `${apiUrl}/Images/${item.groupImage}` }} className="w-12 h-12 rounded" />
         <View className="ml-3">
           <Text className={`${token ? 'font-semibold text-black' : 'text-gray-500'}`}>{item.groupName}</Text>
           <Text className="text-gray-500 text-sm">{sportsMap[item.sportId] || 'Unknown Sport'}</Text>
@@ -235,17 +235,28 @@ export default function Index() {
           disabled={!token}
         >
           <Text className={`text-xl font-semibold ${token ? '' : 'text-gray-400'}`}>My Events</Text>
-          <Text className={`${token ? 'text-[#65DA84]' : 'text-gray-400'} ml-1`}>›</Text>
+          <Text className={`${token ? 'text-[#65DA84]' : 'text-gray-400'} ml-1`}>››</Text>
         </TouchableOpacity>
         <View className="h-40">
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {token
-              ? (myEventsList.length > 0
-                  ? myEventsList.map(renderMyEvent)
-                  : <View className="flex-1 justify-center items-center py-8"><Text className="text-gray-500">You have no events</Text></View>
-                )
-              : <View className="flex-1 justify-center items-center py-8"><Text className="text-gray-500">Sign in to see your events</Text></View>
-            }
+          <ScrollView
+            nestedScrollEnabled      // ✅ enable nested scrolling on Android
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 8 }}  // give some breathing room
+          >
+            {token ? (
+              myEventsList.length > 0 ? (
+                myEventsList.map(renderMyEvent)
+              ) : (
+                // removed flex-1 here so it doesn’t try to fill the 160px container
+                <View className="justify-center items-center py-8">
+                  <Text className="text-gray-500">You have no events</Text>
+                </View>
+              )
+            ) : (
+              <View className="justify-center items-center py-8">
+                <Text className="text-gray-500">Sign in to see your events</Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -258,17 +269,27 @@ export default function Index() {
           disabled={!token}
         >
           <Text className={`text-xl font-semibold ${token ? '' : 'text-gray-400'}`}>My Groups</Text>
-          <Text className={`${token ? 'text-[#65DA84]' : 'text-gray-400'} ml-1`}>›</Text>
+          <Text className={`${token ? 'text-[#65DA84]' : 'text-gray-400'} ml-1`}>››</Text>
         </TouchableOpacity>
         <View className="h-40">
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {token
-              ? (myGroupsList.length > 0
-                  ? myGroupsList.map(renderMyGroup)
-                  : <View className="flex-1 justify-center items-center py-8"><Text className="text-gray-500">You have no groups</Text></View>
-                )
-              : <View className="flex-1 justify-center items-center py-8"><Text className="text-gray-500">Sign in to see your groups</Text></View>
-            }
+          <ScrollView
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 8 }}
+          >
+            {token ? (
+              myGroupsList.length > 0 ? (
+                myGroupsList.map(renderMyGroup)
+              ) : (
+                <View className="justify-center items-center py-8">
+                  <Text className="text-gray-500">You have no groups</Text>
+                </View>
+              )
+            ) : (
+              <View className="justify-center items-center py-8">
+                <Text className="text-gray-500">Sign in to see your groups</Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>

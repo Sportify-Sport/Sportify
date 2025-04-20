@@ -20,11 +20,11 @@ export default function TabLayout() {
         tabBarIcon: ({size, color}) => <Ionicons name="search" size={size} color={color}/>
       }}
       />
-      <Tabs.Screen name="chat"
+      {/* <Tabs.Screen name="chat"
         options={{
           tabBarIcon: ({ size , color }) => <Ionicons name="chatbubble" size={size} color={color}/>
         }}
-      />
+      /> */}
       <Tabs.Screen name="notifications"
       options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color}/>
