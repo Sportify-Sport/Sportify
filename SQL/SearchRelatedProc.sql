@@ -77,7 +77,7 @@ BEGIN
         AND (@minAge IS NULL OR e.MinAge >= @minAge)
         AND (@maxAge IS NULL OR e.MinAge <= @maxAge)
         AND (@startDate IS NULL OR e.StartDatetime >= @startDate)
-        AND (@endDate IS NULL OR e.EndDatetime <= @endDate)
+        AND (@endDate IS NULL OR e.EndDatetime <= DATEADD(DAY, 1, @endDate))
     ORDER BY 
     CASE WHEN e.EndDatetime >= GETDATE() THEN 0 ELSE 1 END,
     e.StartDatetime ASC

@@ -42,7 +42,7 @@ import { FilterProvider } from "./context/FilterContext"; // Import FilterProvid
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <FilterProvider> {/* Wrap with FilterProvider */}
+      <FilterProvider>
         <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
           {/* Optional: Add individual screens if needed */}
           {/* 
