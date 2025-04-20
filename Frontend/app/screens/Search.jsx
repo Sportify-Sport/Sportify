@@ -16,11 +16,8 @@ import { useRouter, useNavigation, useLocalSearchParams, useFocusEffect } from "
 import { useFilters } from "../context/FilterContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import getApiBaseUrl from "../config/apiConfig";
-import Voice from '@react-native-voice/voice';
 const apiUrl = getApiBaseUrl();
-const isVoiceAvailable = () => {
-  return !!Voice && typeof Voice.start === "function" && typeof Voice.destroy === "function";
-};
+
 export default function SearchScreen() {
   const [search, setSearch] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -369,46 +366,6 @@ export default function SearchScreen() {
     Keyboard.dismiss();
   };
 
-  useEffect(() => {
-    if (Platform.OS === "web" || !isVoiceAvailable()) {
-      console.warn("Voice recognition is not supported or Voice module is unavailable.");
-      return;
-    }
-
-    const onSpeechResults = (result) => {
-      const text = result.value[0];
-      setSearch(text); // update the input field
-      handleSearch(); // optionally trigger the search
-    };
-
-    Voice.onSpeechResults = onSpeechResults;
-
-    return () => {
-      Voice.onSpeechResults = null;
-      Voice.destroy().catch((error) => {
-        console.error("Error destroying Voice module:", error);
-      });
-    };
-  }, [handleSearch]);
-
-  const startVoiceRecognition = async () => {
-    if (Platform.OS === "web") {
-      console.warn("Voice recognition is not supported on the web.");
-      return;
-    }
-
-    if (!isVoiceAvailable()) {
-      console.warn("Voice module is not available.");
-      return;
-    }
-
-    try {
-      await Voice.start("en-US"); // Or 'he-IL' for Hebrew, etc.
-    } catch (error) {
-      console.error("Voice start error:", error);
-    }
-  };
-
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View className="flex-1 bg-gray-100 p-4">
@@ -441,11 +398,6 @@ export default function SearchScreen() {
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch("")}>
                 <Ionicons name="close-circle" size={20} color="gray" className="mr-2" />
-              </TouchableOpacity>
-            )}
-            {Platform.OS !== "web" && (
-              <TouchableOpacity onPress={startVoiceRecognition}>
-                <Ionicons name="mic" size={20} color="gray" className="mr-2" />
               </TouchableOpacity>
             )}
             <TouchableOpacity
