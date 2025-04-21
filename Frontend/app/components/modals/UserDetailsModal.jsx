@@ -11,84 +11,39 @@ export default function UserDetailsModal({ user, visible, onClose }) {
   if (!visible || !user) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <BlurView intensity={80} tint="dark" style={{ flex: 1 }}>
-        <View className="flex-1 justify-center items-center p-4">
-          <View className="bg-white rounded-xl w-11/12 p-5">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-800">
-                {user.fullName}
-              </Text>
-              <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <View className="items-center mb-4">
-              <Image
-                source={{
-                  uri: `${apiUrl}/Images/${
-                    user.profileImage || "default_profile.png"
-                  }`,
-                }}
-                className="w-20 h-20 rounded-full"
-              />
-            </View>
-
-            <View className="space-y-3">
-              {user.email && (
-                <View className="flex-row">
-                  <Text className="text-gray-600 w-24">Email:</Text>
-                  <Text className="text-gray-800">{user.email}</Text>
+<Modal visible={visible} animationType="slide" transparent>
+        <BlurView
+          intensity={100}
+          tint="light"
+          style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }}
+        />
+        <View className="flex-1 justify-center items-center">
+          <View className="bg-white w-11/12 p-6 rounded-2xl shadow-lg">
+            {user && (
+              <>
+                <View className="flex-row items-center mb-4 space-x-4">
+                  <Image
+                    source={{ uri: `${apiUrl}/Images/${user.profileImage}`}}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <Text className="text-2xl font-bold text-gray-800">{user.fullName}</Text>
                 </View>
-              )}
-
-              {user.age && (
-                <View className="flex-row">
-                  <Text className="text-gray-600 w-24">Age:</Text>
-                  <Text className="text-gray-800">{user.age}</Text>
+                <View className="space-y-2">
+                  <Text className="text-gray-700"><Text className="font-semibold">Email:</Text> {user.email}</Text>
+                  <Text className="text-gray-700"><Text className="font-semibold">City:</Text> {user.cityName}</Text>
+                  <Text className="text-gray-700"><Text className="font-semibold">Bio:</Text> {user.bio}</Text>
+                  <Text className="text-gray-700"><Text className="font-semibold">Gender:</Text> {user.gender}</Text>
                 </View>
-              )}
-
-              {user.gender && (
-                <View className="flex-row">
-                  <Text className="text-gray-600 w-24">Gender:</Text>
-                  <Text className="text-gray-800">
-                    {user.gender === "M"
-                      ? "Male"
-                      : user.gender === "F"
-                      ? "Female"
-                      : user.gender}
-                  </Text>
-                </View>
-              )}
-
-              {user.cityName && (
-                <View className="flex-row">
-                  <Text className="text-gray-600 w-24">City:</Text>
-                  <Text className="text-gray-800">{user.cityName}</Text>
-                </View>
-              )}
-
-              {user.bio !== null && user.bio !== undefined && (
-                <View>
-                  <Text className="text-gray-600 mb-1">Bio:</Text>
-                  <Text className="text-gray-800">
-                    {user.bio.trim() === "" ? "N/A" : user.bio}
-                  </Text>
-                </View>
-              )}
-            </View>
-
+              </>
+            )}
             <TouchableOpacity
-              className="bg-gray-200 py-2 rounded-lg mt-4"
+              className="mt-6 bg-gray-100 py-2 px-6 rounded-full self-end shadow-sm"
               onPress={onClose}
             >
-              <Text className="text-center font-medium">Close</Text>
+              <Text className="text-gray-700 font-medium">Close</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </BlurView>
-    </Modal>
+      </Modal>
   );
 }

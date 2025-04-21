@@ -16,25 +16,8 @@ export default function MyGroupsScreen() {
   const [error, setError] = useState(null);
   const [citiesMap, setCitiesMap] = useState({});
 
-  // Static fallback for city names
-  const staticCityMap = {
-    1: "Tel Aviv",
-    2: "Haifa",
-    3: "Jerusalem",
-    4: "Beer Sheva",
-    5: "Eilat",
-    6: "Netanya",
-    7: "Herzliya",
-    // Add more as needed
-  };
-
   const getCityNameById = async (cityId) => {
     if (!cityId) return null;
-    
-    // First check static map
-    if (staticCityMap[cityId]) {
-      return staticCityMap[cityId];
-    }
 
     // Then check cache
     if (citiesMap[cityId]) {
@@ -94,12 +77,6 @@ export default function MyGroupsScreen() {
       const result = await response.json();
 
       if (Array.isArray(result)) {
-        // First set groups with temporary city names
-        setGroups(result.map(group => ({
-          ...group,
-          cityName: staticCityMap[group.cityId] || `Loading...`
-        })));
-
         // Then update with actual city names
         const updatedGroups = await Promise.all(
           result.map(async (group) => {

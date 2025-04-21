@@ -10,7 +10,7 @@
 //     gender: null,
 //     date: null,
 //   });
-//   const [filteredNames, setFilteredNames] = useState([]); // Store filtered names
+//   const [filteredNames, setFilteredNames] = useState([]);
 
 //   return (
 //     <FilterContext.Provider value={{ filters, setFilters, filteredNames, setFilteredNames }}>
@@ -21,7 +21,8 @@
 
 // export const useFilters = () => useContext(FilterContext);
 
-
+// // Add this default export if you actually want to use this file as a route
+// export default FilterProvider;
 
 import React, { createContext, useState, useContext } from "react";
 
@@ -34,11 +35,16 @@ export const FilterProvider = ({ children }) => {
     age: null,
     gender: null,
     date: null,
+    startDate: null,
+    endDate: null,
+    resetSearch: false,
   });
   const [filteredNames, setFilteredNames] = useState([]);
-
+  const clearSearch = () => {
+        // This will be set by SearchScreen
+      };
   return (
-    <FilterContext.Provider value={{ filters, setFilters, filteredNames, setFilteredNames }}>
+    <FilterContext.Provider value={{ filters, setFilters, filteredNames, setFilteredNames, clearSearch }}>
       {children}
     </FilterContext.Provider>
   );

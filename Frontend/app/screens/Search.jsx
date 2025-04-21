@@ -31,7 +31,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { type } = useLocalSearchParams();
-  const { filters } = useFilters();
+  const { filters, setFilters } = useFilters(); // Added setFilters to update the context
   const searchInputRef = useRef(null);
 
   const limit = 10;
@@ -96,12 +96,12 @@ export default function SearchScreen() {
       // Build the query string with mandatory parameters
       let query = `?type=${itemType}&page=${currentPage}&pageSize=${pageSize}`;
 
-      // Add search query if provided (now optional)
+      // Add search query if provided
       if (searchQuery && searchQuery.trim().length > 0) {
         query += `&name=${encodeURIComponent(searchQuery.trim())}`;
       }
 
-      // Add optional parameters only if they have real values (not null or undefined)
+      // Add optional parameters only if they have real values
       if (filters) {
         if (filters.sport != null) query += `&sportId=${filters.sport}`;
         if (filters.city != null) query += `&cityId=${filters.city}`;
@@ -118,19 +118,18 @@ export default function SearchScreen() {
         }
         
         if (filters.gender != null) query += `&gender=${filters.gender}`;
-        if (itemType === "event" && filters.startDate != null) {
-          // Format startDate as MM/DD/YYYY for the API
-          const formattedDate = new Date(filters.startDate).toLocaleDateString('en-US', {
-            month: 'numeric',
-            day: 'numeric',
-            year: 'numeric'
-          });
-          query += `&startDate=${encodeURIComponent(formattedDate)}`;
+        if (itemType === "event") {
+          if (filters.startDate != null) {
+            query += `&startDate=${encodeURIComponent(filters.startDate)}`;
+          }
+          if (filters.endDate != null) {
+            query += `&endDate=${encodeURIComponent(filters.endDate)}`;
+          }
         }
       }
 
       const endpoint = `${apiUrl}/api/Search${query}`;
-      console.log("Fetching from API:", endpoint);
+      // console.log("Fetching from API:", endpoint);
 
       const response = await fetch(endpoint, {
         headers: {
@@ -173,28 +172,51 @@ export default function SearchScreen() {
     }
   };
 
-  // Fetch data when filters change (e.g., after applying filters)
+  // Function to check if any filters are applied
+  const areFiltersApplied = () => {
+    const filterValues = { ...filters };
+    delete filterValues.resetSearch;
+    return Object.values(filterValues).some(value => value != null);
+  };
+
+  // Fetch data only when search or filters are applied
   useEffect(() => {
     const fetchOnFilterApply = async () => {
-      // Check if all filters are null
-      const allFiltersNull = Object.values(filters).every(value => value == null);
-
-      if (allFiltersNull && search.length < 2) {
-        // Clear results and hide main list if no filters and no valid search query
-        setFilteredItems([]);
-        setShowMainList(false);
-        setPage(1);
-        setHasMore(true);
-        setSuggestions([]);
+      // Handle reset
+      if (filters.resetSearch) {
+        // Avoid redundant state updates
+        if (filteredItems.length > 0 || suggestions.length > 0 || showMainList || page !== 1 || !hasMore || search !== "") {
+          setFilteredItems([]);
+          setShowMainList(false);
+          setPage(1);
+          setHasMore(true);
+          setSuggestions([]);
+          setSearch("");
+        }
+        // Reset the resetSearch flag to prevent loop
+        setFilters(prev => ({ ...prev, resetSearch: false }));
         return;
       }
 
+      // Do not fetch if no search query and no filters are applied
+      if (search.length < 2 && !areFiltersApplied()) {
+        if (filteredItems.length > 0 || suggestions.length > 0 || showMainList || page !== 1 || !hasMore) {
+          setFilteredItems([]);
+          setShowMainList(false);
+          setPage(1);
+          setHasMore(true);
+          setSuggestions([]);
+        }
+        return;
+      }
+
+      // Fetch only if there's a search query or filters are applied
       try {
         const itemType = type || "event";
         const results = await fetchItemsFromApi(itemType, search, 1, limit, filters);
         setFilteredItems(results.items);
         setShowMainList(true);
-        setPage(2); // Start at page 2 for the next fetch (infinite scroll)
+        setPage(2);
         setHasMore(results.hasMore);
       } catch (error) {
         console.error("Error fetching items on filter apply:", error);
@@ -202,40 +224,87 @@ export default function SearchScreen() {
     };
 
     fetchOnFilterApply();
-  }, [filters, type, search]);
+  }, [filters, type, search, setFilters]); // Added setFilters as a dependency
 
-  // Re-fetch data when the screen comes into focus
+  // Re-fetch data when the screen comes into focus, but only if necessary
   useFocusEffect(
     useCallback(() => {
+      // If there are already items and no reset, show the existing list
+      if (filteredItems.length > 0 && !filters.resetSearch) {
+        setShowMainList(true);
+        return;
+      }
+
       const fetchOnFocus = async () => {
-        if (search.length >= 2 || Object.values(filters).some(value => value != null)) {
-          try {
-            const itemType = type || "event";
-            const results = await fetchItemsFromApi(itemType, search, 1, limit, filters);
-            setFilteredItems(results.items);
-            setShowMainList(true);
-            setPage(2); // Start at page 2 for the next fetch (infinite scroll)
-            setHasMore(results.hasMore);
-          } catch (error) {
-            console.error("Error fetching items on screen focus:", error);
+        // Handle reset
+        if (filters.resetSearch) {
+          if (filteredItems.length > 0 || suggestions.length > 0 || showMainList || page !== 1 || !hasMore || search !== "") {
+            setFilteredItems([]);
+            setShowMainList(false);
+            setPage(1);
+            setHasMore(true);
+            setSuggestions([]);
+            setSearch("");
           }
+          // Reset the resetSearch flag to prevent loop
+          setFilters(prev => ({ ...prev, resetSearch: false }));
+          return;
+        }
+
+        // Do not fetch if no search query and no filters are applied
+        if (search.length < 2 && !areFiltersApplied()) {
+          if (filteredItems.length > 0 || suggestions.length > 0 || showMainList || page !== 1 || !hasMore) {
+            setFilteredItems([]);
+            setShowMainList(false);
+            setPage(1);
+            setHasMore(true);
+            setSuggestions([]);
+          }
+          return;
+        }
+
+        // Fetch only if there's a search query or filters are applied
+        try {
+          const itemType = type || "event";
+          const results = await fetchItemsFromApi(itemType, search, 1, limit, filters);
+          setFilteredItems(results.items);
+          setShowMainList(true);
+          setPage(2);
+          setHasMore(results.hasMore);
+        } catch (error) {
+          console.error("Error fetching items on screen focus:", error);
         }
       };
 
       fetchOnFocus();
-
-      // No cleanup needed since we want to re-fetch on every focus
-    }, [search, filters, type])
+    }, [search, filters, type, filteredItems, setFilters]) // Added setFilters as a dependency
   );
 
   // Debounced search handler
   const handleSearch = useCallback(async () => {
-    if (search.length < 2 && !Object.values(filters).some(value => value != null)) {
-      setSuggestions([]);
-      setShowMainList(false);
-      setFilteredItems([]);
-      setPage(1);
-      setHasMore(true);
+    // Handle reset
+    if (filters.resetSearch) {
+      if (suggestions.length > 0 || showMainList || filteredItems.length > 0 || page !== 1 || !hasMore) {
+        setSuggestions([]);
+        setShowMainList(false);
+        setFilteredItems([]);
+        setPage(1);
+        setHasMore(true);
+      }
+      // Reset the resetSearch flag to prevent loop
+      setFilters(prev => ({ ...prev, resetSearch: false }));
+      return;
+    }
+
+    // Do not fetch if search length is less than 2
+    if (search.length < 2) {
+      if (suggestions.length > 0 || showMainList || filteredItems.length > 0 || page !== 1 || !hasMore) {
+        setSuggestions([]);
+        setShowMainList(false);
+        setFilteredItems([]);
+        setPage(1);
+        setHasMore(true);
+      }
       return;
     }
 
@@ -245,12 +314,12 @@ export default function SearchScreen() {
       setSuggestions(results.items);
       setShowMainList(true);
       setFilteredItems(results.items);
-      setPage(2); // Start at page 2 for the next fetch (infinite scroll)
+      setPage(2);
       setHasMore(results.hasMore);
     } catch (error) {
       console.error("Error searching items:", error);
     }
-  }, [search, type, filters]);
+  }, [search, type, filters, setFilters]); // Added setFilters as a dependency
 
   // Load more items (infinite scroll)
   const loadItems = useCallback(async () => {
@@ -269,7 +338,7 @@ export default function SearchScreen() {
         return uniqueItems;
       });
 
-      setPage(page + 1); // Increment page for the next fetch
+      setPage(page + 1);
       setHasMore(response.hasMore);
     } catch (error) {
       console.error("Error fetching more items:", error);
@@ -293,11 +362,13 @@ export default function SearchScreen() {
         }, 300)
       );
     } else {
-      setSuggestions([]);
-      setShowMainList(false);
-      setFilteredItems([]);
-      setPage(1);
-      setHasMore(true);
+      if (suggestions.length > 0 || showMainList || filteredItems.length > 0 || page !== 1 || !hasMore) {
+        setSuggestions([]);
+        setShowMainList(false);
+        setFilteredItems([]);
+        setPage(1);
+        setHasMore(true);
+      }
     }
   };
 
@@ -306,9 +377,6 @@ export default function SearchScreen() {
       pathname: item.type === "event" ? "/screens/EventDetails" : "/screens/GroupDetails",
       params: item.type === "event" ? { eventId: item.id } : { groupId: item.id },
     });
-    setSuggestions([]);
-    setShowMainList(false);
-    setSearch("");
     Keyboard.dismiss();
   };
 
@@ -316,7 +384,6 @@ export default function SearchScreen() {
     if (navigation.canGoBack()) {
       router.back();
     } else {
-      // Fallback: Navigate to ExploreScreen if there's no previous screen in the stack
       router.replace('/tabs/explore');
     }
   };
@@ -412,7 +479,7 @@ export default function SearchScreen() {
               <Ionicons
                 name="options-outline"
                 size={24}
-                color={Object.keys(filters).some((key) => filters[key] != null) ? "#10B981" : "gray"}
+                color={Object.keys(filters).some((key) => filters[key] != null && key !== "resetSearch") ? "#10B981" : "gray"}
               />
             </TouchableOpacity>
           </View>
@@ -463,4 +530,3 @@ export default function SearchScreen() {
     </TouchableWithoutFeedback>
   );
 }
-

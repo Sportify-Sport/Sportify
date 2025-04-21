@@ -4,7 +4,7 @@ export default StyleSheet.create({
         padding: 20,
         paddingBottom: 40,
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'white',
     },
     imageContainer: {
         marginVertical: 20,
@@ -37,7 +37,7 @@ export default StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: '500',
-        color: '#555',
+        color: 'green',
         marginBottom: 5,
     },
     infoText: {
@@ -109,5 +109,23 @@ export default StyleSheet.create({
     suggestionText: {
         fontSize: 16,
         color: '#333',
-    },
+    }, 
+     imageWrapper: {
+        marginBottom: 10,
+        position: 'relative',      // make children positionable
+        alignSelf: 'center',   // or 'center', depending on your layout
+      },
+      profileImage: {
+        width: 130,                // or whatever size you need
+        height: 130,
+        borderRadius: 65,
+      },
+      editIconContainer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#2563EB', // Tailwind “blue‑600”
+        borderRadius: 12,           // half of width/height for circle
+        padding: 4,
+      },
 });

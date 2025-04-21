@@ -154,6 +154,7 @@ export default function GroupDetails() {
     if (!group) return;
     (async () => {
       const token = await AsyncStorage.getItem('token');
+      if(!token) return;
       try {
         const resp = await fetch(
           `${apiUrl}/api/GroupMembers/members/${group.groupId}?page=${membersPage}&pageSize=${PAGE_SIZE}`,
@@ -196,6 +197,7 @@ export default function GroupDetails() {
     if (!group) return;
     (async () => {
       const token = await AsyncStorage.getItem('token');
+      if(!token) return;
       try {
         const resp = await fetch(
           `${apiUrl}/api/Groups/${group.groupId}/upcoming-events?page=1&pageSize=10`,
@@ -647,7 +649,7 @@ export default function GroupDetails() {
               <>
                 <View className="flex-row items-center mb-4 space-x-4">
                   <Image
-                    source={{ uri: selectedUser.profileImage || 'https://via.placeholder.com/150' }}
+                    source={{ uri: `${apiUrl}/Images/${selectedUser.userImage}`}}
                     className="w-12 h-12 rounded-full"
                   />
                   <Text className="text-2xl font-bold text-gray-800">{selectedUser.fullName}</Text>
@@ -673,7 +675,7 @@ export default function GroupDetails() {
       {/* Guest Footer */}
       {!isLoggedIn && (
         <View className="bg-white p-4 border-t border-gray-200">
-          <TouchableOpacity className="bg-gray-200 py-3 rounded-full" onPress={() => router.push('/login')}>
+          <TouchableOpacity className="bg-gray-200 py-3 rounded-full" onPress={() => router.push('./Login')}>
             <Text className="text-gray-800 text-center font-bold">Log in to see more</Text>
           </TouchableOpacity>
         </View>

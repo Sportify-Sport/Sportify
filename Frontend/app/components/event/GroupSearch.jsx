@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, FlatList, ActivityIndic
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import getApiBaseUrl from '../../config/apiConfig';
+import useAlertNotification from '../../hooks/useAlertNotification';
 
 export default function GroupSearch({ event, token, sportsMap, onAddGroup }) {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function GroupSearch({ event, token, sportsMap, onAddGroup }) {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const abortControllerRef = useRef(null);
+  const { alert, showAlert, hideAlert } = useAlertNotification();
   
   useEffect(() => {
     // Clean up abort controller on unmount
@@ -96,18 +98,17 @@ export default function GroupSearch({ event, token, sportsMap, onAddGroup }) {
       });
       
       const result = await response.json();
-      
       if (result.success) {
         // Call the refresh function from parent to update the groups list
         onAddGroup();
         // Clear search results after adding
         setSearchText('');
         setResults([]);
+        showAlert(result.message || 'Successfully added the group', 'success');
       }
-      
       return result;
     } catch (error) {
-      console.error('Error adding group:', error);
+      showAlert(result.message || 'Failed to add group');
       return { success: false, message: 'Network error while adding group' };
     }
   };

@@ -78,7 +78,6 @@ export default function useEventRequests(eventId, token, isAdmin, citiesMap, set
         throw new Error(result.message || 'Failed to load user details');
       }
     } catch (error) {
-      console.error('Error fetching user details:', error);
       showAlert(error.message || 'Failed to load user details');
       return null;
     }
@@ -119,7 +118,6 @@ export default function useEventRequests(eventId, token, isAdmin, citiesMap, set
         throw new Error(result.message || `Failed to ${approve ? 'approve' : 'reject'} request`);
       }
     } catch (error) {
-      console.error('Error processing request:', error);
       showAlert(error.message || `Failed to ${approve ? 'approve' : 'reject'} request`);
     }
   }, [eventId, token, isAdmin, apiUrl, showAlert, onMemberAdded]);
