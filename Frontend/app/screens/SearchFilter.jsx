@@ -275,8 +275,8 @@ const SearchFilter = () => {
                   searchCities(text);
                 }}
                 onBlur={handleCityBlur}
-              />
-              {cityQuery && (
+              /> 
+                {Boolean(cityQuery) && (
                 <TouchableOpacity onPress={() => {
                   console.log("Clearing city input");
                   setCityQuery("");
