@@ -177,7 +177,7 @@ export default function GroupDetails() {
       if (!token) return;
       try {
         const r = await fetch(
-          `${apiUrl}/api/Groups/${group.groupId}/upcoming-events?page=1&pageSize=10`,
+          `${apiUrl}/api/Groups/${group.groupId}/upcoming-events?page=1&pageSize=3`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await r.json();
