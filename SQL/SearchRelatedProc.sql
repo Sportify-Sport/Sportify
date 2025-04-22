@@ -43,7 +43,7 @@ GO
 -- Create date: <7/4/2025>
 -- Description:	Used for searching event with infinity scroll
 -- =============================================
-CREATE PROCEDURE SP_SearchEvents
+Create PROCEDURE SP_SearchEvents
     @name NVARCHAR(100) = NULL,
     @sportId INT = NULL,
     @cityId INT = NULL,
@@ -51,7 +51,7 @@ CREATE PROCEDURE SP_SearchEvents
     @maxAge INT = NULL,
     @gender VARCHAR(10) = NULL,
     @startDate DATETIME = NULL,
-	@endDate DATETIME = NULL,
+    @endDate DATETIME = NULL,
     @page INT = 1,
     @pageSize INT = 10
 AS
@@ -76,11 +76,15 @@ BEGIN
         AND (@gender IS NULL OR e.Gender = @gender)
         AND (@minAge IS NULL OR e.MinAge >= @minAge)
         AND (@maxAge IS NULL OR e.MinAge <= @maxAge)
-        AND (@startDate IS NULL OR e.StartDatetime >= @startDate)
-        AND (@endDate IS NULL OR e.EndDatetime <= DATEADD(DAY, 1, @endDate))
+        AND (
+            (@startDate IS NULL AND @endDate IS NULL)
+            OR (@startDate IS NOT NULL AND @endDate IS NULL AND e.StartDatetime >= @startDate)
+            OR (@startDate IS NULL AND @endDate IS NOT NULL AND e.EndDatetime <= DATEADD(DAY, 1, @endDate))
+            OR (@startDate IS NOT NULL AND @endDate IS NOT NULL AND e.EndDatetime <= DATEADD(DAY, 1, @endDate) AND e.StartDatetime >= @startDate)
+        )
     ORDER BY 
-    CASE WHEN e.EndDatetime >= GETDATE() THEN 0 ELSE 1 END,
-    e.StartDatetime ASC
+        CASE WHEN e.EndDatetime >= GETDATE() THEN 0 ELSE 1 END,
+        e.StartDatetime ASC
     OFFSET @skip ROWS
     FETCH NEXT @pageSize + 1 ROWS ONLY;
 END
