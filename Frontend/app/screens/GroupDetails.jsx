@@ -4,6 +4,7 @@ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Modal, Tex
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
 import getApiBaseUrl from '../config/apiConfig';
+import { useRouter } from "expo-router";
 
 import Header from '../components/group/Header';
 import DetailsCard from '../components/group/DetailsCard';
@@ -20,6 +21,8 @@ const PAGE_SIZE = 3;
 
 export default function GroupDetails() {
   const { groupId } = useLocalSearchParams();
+
+  const router = useRouter();
 
   // State
   const [group, setGroup] = useState(null);
@@ -220,7 +223,7 @@ export default function GroupDetails() {
       Alert.alert('Error', 'Failed to cancel join request');
     }
   };
-  
+
   // 2. Toggle members list (show more / hide)
   const handleToggleMembers = () => {
     if (membersHasMore) {
@@ -261,10 +264,12 @@ export default function GroupDetails() {
                 { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
               );
               const json = await resp.json();
-              if (json.success) router.back();
-              else Alert.alert('Error', json.message || 'Failed to leave group.');
+              if (json.success) {
+                Alert.alert('Success', json.message || 'You left the group.');
+                router.replace('../(tabs)');
+              }
             } catch {
-              Alert.alert('Error', 'Failed to leave group.');
+              console.log('Error', 'Failed to leave group.');
             }
           },
         },

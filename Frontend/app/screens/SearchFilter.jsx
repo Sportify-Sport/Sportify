@@ -139,18 +139,30 @@ const SearchFilter = () => {
   };
 
   const handleStartDateChange = (event, selectedDate) => {
-    setShowStartDatePicker(Platform.OS === "ios");
+    setShowStartDatePicker(Platform.OS === 'ios');
     if (selectedDate) {
-      setStartDate(selectedDate);
+      if (!endDate || selectedDate <= endDate) {
+        // Valid start date
+        setStartDate(selectedDate);
+      } else {
+        // Invalid start date
+        Alert.alert('Invalid Start Date', 'Start date cannot be after end date.');
+      }
     } else {
       setStartDate(null);
     }
   };
 
   const handleEndDateChange = (event, selectedDate) => {
-    setShowEndDatePicker(Platform.OS === "ios");
+    setShowEndDatePicker(Platform.OS === 'ios');
     if (selectedDate) {
-      setEndDate(selectedDate);
+      if (selectedDate >= startDate) {
+        // Valid end date
+        setEndDate(selectedDate);
+      } else {
+        // Invalid end date
+        Alert.alert('Invalid End Date', 'End date cannot be before start date.');
+      }
     } else {
       setEndDate(null);
     }
@@ -195,12 +207,12 @@ const SearchFilter = () => {
   const isApplyDisabled = !sport && !city && !age && !gender && !startDate && !endDate;
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-white"
     >
-      <ScrollView 
-        className="flex-1 p-5" 
+      <ScrollView
+        className="flex-1 p-5"
         contentContainerStyle={{ paddingBottom: 30 }}
         keyboardShouldPersistTaps="handled"
       >
@@ -228,7 +240,7 @@ const SearchFilter = () => {
               </View>
               <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="absolute inset-0"
               onPress={() => setIsFocus({ ...isFocus, sport: !isFocus.sport })}
             />
@@ -275,8 +287,8 @@ const SearchFilter = () => {
                   searchCities(text);
                 }}
                 onBlur={handleCityBlur}
-              /> 
-                {Boolean(cityQuery) && (
+              />
+              {Boolean(cityQuery) && (
                 <TouchableOpacity onPress={() => {
                   console.log("Clearing city input");
                   setCityQuery("");
@@ -323,7 +335,7 @@ const SearchFilter = () => {
               </View>
               <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="absolute inset-0"
               onPress={() => setIsFocus({ ...isFocus, age: !isFocus.age })}
             />
@@ -366,7 +378,7 @@ const SearchFilter = () => {
               </View>
               <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="absolute inset-0"
               onPress={() => setIsFocus({ ...isFocus, gender: !isFocus.gender })}
             />
