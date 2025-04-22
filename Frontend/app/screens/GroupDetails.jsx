@@ -180,6 +180,7 @@ export default function GroupDetails() {
           `${apiUrl}/api/Groups/${group.groupId}/upcoming-events?page=1&pageSize=3`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        
         const json = await r.json();
         if (json.success) setEvents(json.data);
       } catch (e) {

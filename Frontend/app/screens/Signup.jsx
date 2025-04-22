@@ -173,7 +173,7 @@ const Signup = () => {
 
   // Search cities dynamically from the gov API
   const searchCities = async (query) => {
-    if (query.length < 3) {
+    if (query.length < 2) {
       setCitySuggestions([]);
       return;
     }
