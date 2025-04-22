@@ -1,26 +1,24 @@
+// screens/GroupDetails.js
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  Modal,
-  TextInput,
-  Alert,
-} from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import getApiBaseUrl from '../config/apiConfig';
-import { BlurView } from 'expo-blur';
+
+import Header from '../components/group/Header';
+import DetailsCard from '../components/group/DetailsCard';
+import TeamMembers from '../components/group/TeamMembers';
+import JoinRequestButton from '../components/group/JoinRequestButton';
+import JoinRequests from '../components/group/JoinRequests';
+import NotificationEditor from '../components/group/NotificationEditor';
+import LeaveGroupButton from '../components/group/LeaveGroupButton';
+import EditGroupModal from '../components/group/EditGroupModal';
+import UserDetailsModal from '../components/group/UserDetailsModal';
 
 const apiUrl = getApiBaseUrl();
 const PAGE_SIZE = 3;
 
 export default function GroupDetails() {
-  const router = useRouter();
   const { groupId } = useLocalSearchParams();
 
   // State
@@ -32,51 +30,48 @@ export default function GroupDetails() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
 
-  // Members pagination state
+  // Pagination
   const [members, setMembers] = useState([]);
   const [membersPage, setMembersPage] = useState(1);
   const [membersHasMore, setMembersHasMore] = useState(false);
   const [membersDisplayCount, setMembersDisplayCount] = useState(PAGE_SIZE);
 
-  // Requests pagination state
   const [requests, setRequests] = useState([]);
   const [requestsPage, setRequestsPage] = useState(1);
   const [requestsHasMore, setRequestsHasMore] = useState(false);
   const [requestsDisplayCount, setRequestsDisplayCount] = useState(PAGE_SIZE);
 
-  // Events
   const [events, setEvents] = useState([]);
 
-  // Other UI state
+  // UI state
   const [notificationMessage, setNotificationMessage] = useState('');
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Derived state for toggling
+  // Derived
   const isMembersExpanded = membersDisplayCount > PAGE_SIZE;
   const isRequestsExpanded = requestsDisplayCount > PAGE_SIZE;
 
-  // Load sports map
+  // Load sportsMap
   useEffect(() => {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem('sportsMap');
-        if (stored) setSportsMap(JSON.parse(stored));
-        else setSportsMap({ 1: 'Football', 2: 'Basketball', 3: 'Marathon' });
+        setSportsMap(stored ? JSON.parse(stored) : { 1: 'Football', 2: 'Basketball', 3: 'Marathon' });
       } catch {
         setSportsMap({ 1: 'Football', 2: 'Basketball', 3: 'Marathon' });
       }
     })();
   }, []);
 
-  // Check login & load current user
+  // Check login
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('token');
       const uid = await AsyncStorage.getItem('userId');
       setIsLoggedIn(!!token);
-      if (uid) setCurrentUserId(parseInt(uid, 10));
+      if (uid) setCurrentUserId(+uid);
     })();
   }, []);
 
@@ -90,7 +85,7 @@ export default function GroupDetails() {
       const json = await resp.json();
       if (json.success && json.result.records.length) {
         const name = json.result.records[0]['city_name_en'];
-        setCitiesMap((m) => ({ ...m, [cityId]: name }));
+        setCitiesMap(m => ({ ...m, [cityId]: name }));
         return name;
       }
     } catch (e) {
@@ -102,44 +97,23 @@ export default function GroupDetails() {
   // Fetch group details
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
-        setLoading(true);
         const token = await AsyncStorage.getItem('token');
-        const resp = await fetch(`${apiUrl}/api/Groups/${groupId}`, {
+        const r = await fetch(`${apiUrl}/api/Groups/${groupId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!resp.ok) throw new Error('Failed to fetch group details');
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message || 'Failed to load group data');
-        const d = result.data;
-        const cityName = await getCityNameById(d.cityId);
+        if (!r.ok) throw new Error('Failed to fetch group details');
+        const { success, data, message } = await r.json();
+        if (!success) throw new Error(message || 'Failed to load group data');
+        const cityName = await getCityNameById(data.cityId);
         setGroup({
-          groupId: d.groupId,
-          groupName: d.groupName,
-          description: d.description,
-          sportId: d.sportId,
-          groupImage: d.groupImage,
-          cityId: d.cityId,
+          ...data,
           cityName,
-          foundedAt: d.foundedAt,
-          maxMembers: d.maxMemNum,
-          totalMembers: d.totalMembers,
-          minAge: d.minAge,
-          gender: d.gender,
-          matches: d.matches,
-          wins: d.wins,
-          losses: d.loses,
-          isMember: d.isMember,
-          isAdmin: d.isAdmin,
-          hasPendingRequest: d.hasPendingRequest,
         });
-        // Reset pagination on group change
-        setMembers([]);
-        setMembersPage(1);
-        setMembersDisplayCount(PAGE_SIZE);
-        setRequests([]);
-        setRequestsPage(1);
-        setRequestsDisplayCount(PAGE_SIZE);
+        // reset pagination on new group
+        setMembers([]); setMembersPage(1); setMembersDisplayCount(PAGE_SIZE);
+        setRequests([]); setRequestsPage(1); setRequestsDisplayCount(PAGE_SIZE);
       } catch (e) {
         console.error(e);
         setError(e.message);
@@ -149,20 +123,20 @@ export default function GroupDetails() {
     })();
   }, [groupId]);
 
-  // Fetch members (paginated)
+  // Fetch members
   useEffect(() => {
     if (!group) return;
     (async () => {
       const token = await AsyncStorage.getItem('token');
-      if(!token) return;
+      if (!token) return;
       try {
-        const resp = await fetch(
+        const r = await fetch(
           `${apiUrl}/api/GroupMembers/members/${group.groupId}?page=${membersPage}&pageSize=${PAGE_SIZE}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const json = await resp.json();
+        const json = await r.json();
         if (json.success) {
-          setMembers((prev) => (membersPage === 1 ? json.data : [...prev, ...json.data]));
+          setMembers(p => membersPage === 1 ? json.data : [...p, ...json.data]);
           setMembersHasMore(json.pagination.hasMore);
         }
       } catch (e) {
@@ -171,19 +145,19 @@ export default function GroupDetails() {
     })();
   }, [group, membersPage]);
 
-  // Fetch join requests (paginated)
+  // Fetch requests
   useEffect(() => {
     if (!group?.isAdmin) return;
     (async () => {
       const token = await AsyncStorage.getItem('token');
       try {
-        const resp = await fetch(
+        const r = await fetch(
           `${apiUrl}/api/GroupMembers/${group.groupId}/join-requests/pending?page=${requestsPage}&pageSize=${PAGE_SIZE}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const json = await resp.json();
+        const json = await r.json();
         if (json.success) {
-          setRequests((prev) => (requestsPage === 1 ? json.data : [...prev, ...json.data]));
+          setRequests(p => requestsPage === 1 ? json.data : [...p, ...json.data]);
           setRequestsHasMore(json.pagination.hasMore);
         }
       } catch (e) {
@@ -197,13 +171,13 @@ export default function GroupDetails() {
     if (!group) return;
     (async () => {
       const token = await AsyncStorage.getItem('token');
-      if(!token) return;
+      if (!token) return;
       try {
-        const resp = await fetch(
+        const r = await fetch(
           `${apiUrl}/api/Groups/${group.groupId}/upcoming-events?page=1&pageSize=10`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const json = await resp.json();
+        const json = await r.json();
         if (json.success) setEvents(json.data);
       } catch (e) {
         console.error('Failed to load events', e);
@@ -211,7 +185,7 @@ export default function GroupDetails() {
     })();
   }, [group]);
 
-  // Handlers
+  // 1. Send join request
   const handleRequestToJoin = async () => {
     const token = await AsyncStorage.getItem('token');
     try {
@@ -221,37 +195,56 @@ export default function GroupDetails() {
       );
       const json = await resp.json();
       Alert.alert(json.success ? 'Success:' : 'Error:', json.message);
-      if (json.success) setGroup((g) => ({ ...g, hasPendingRequest: true }));
+      if (json.success) setGroup(g => ({ ...g, hasPendingRequest: true }));
     } catch {
       Alert.alert('Error', 'Failed to send join request');
     }
   };
-
+  // cancel join request
+  const handleCancelRequestToJoin = async () => {
+    const token = await AsyncStorage.getItem('token');
+    try {
+      const resp = await fetch(
+        `${apiUrl}/api/GroupMembers/${group.groupId}/cancel-request`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const json = await resp.json();
+      Alert.alert(json.success ? 'Success:' : 'Error:', json.message);
+      if (json.success) {
+        setGroup(g => ({ ...g, hasPendingRequest: false }));
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to cancel join request');
+    }
+  };
+  
+  // 2. Toggle members list (show more / hide)
   const handleToggleMembers = () => {
     if (membersHasMore) {
-      // load next page
       setMembersPage(p => p + 1);
       setMembersDisplayCount(c => c + PAGE_SIZE);
     } else if (isMembersExpanded) {
-      // hide: reset to first page
       setMembersPage(1);
       setMembersDisplayCount(PAGE_SIZE);
     }
   };
 
+  // 3. Toggle join‐requests list (show more / hide)
   const handleToggleRequests = () => {
     if (requestsHasMore) {
-      // load next page
       setRequestsPage(p => p + 1);
       setRequestsDisplayCount(c => c + PAGE_SIZE);
     } else if (isRequestsExpanded) {
-      // hide: reset to first page
       setRequestsPage(1);
       setRequestsDisplayCount(PAGE_SIZE);
     }
   };
 
-  const handleLeaveGroup = async (group) => {
+  // 4. Leave group (with confirmation)
+  const handleLeaveGroup = async () => {
     Alert.alert(
       'Leave Group',
       'Are you sure you want to leave this group?',
@@ -265,18 +258,12 @@ export default function GroupDetails() {
               const token = await AsyncStorage.getItem('token');
               const resp = await fetch(
                 `${apiUrl}/api/GroupMembers/${group.groupId}/leave`,
-                {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${token}` },
-                }
+                { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
               );
               const json = await resp.json();
-              if (json.success) {
-                router.back();
-              } else {
-                Alert.alert('Error', json.message || 'Failed to leave group.');
-              }
-            } catch (error) {
+              if (json.success) router.back();
+              else Alert.alert('Error', json.message || 'Failed to leave group.');
+            } catch {
               Alert.alert('Error', 'Failed to leave group.');
             }
           },
@@ -286,6 +273,7 @@ export default function GroupDetails() {
     );
   };
 
+  // 5. Remove a member (admin only)
   const handleRemoveMember = async (member) => {
     const token = await AsyncStorage.getItem('token');
     try {
@@ -294,13 +282,14 @@ export default function GroupDetails() {
         { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
       );
       const json = await resp.json();
-      if (json.success) setMembers((m) => m.filter((x) => x.userId !== member.userId));
+      if (json.success) setMembers(m => m.filter(x => x.userId !== member.userId));
       Alert.alert(json.success ? 'Removed' : 'Error', json.message);
     } catch {
       Alert.alert('Error', 'Failed to remove member');
     }
   };
 
+  // 6. Show member details in modal
   const handleShowMemberDetails = async (member) => {
     const token = await AsyncStorage.getItem('token');
     try {
@@ -313,12 +302,15 @@ export default function GroupDetails() {
         const cityName = await getCityNameById(json.data.cityId);
         setSelectedUser({ ...json.data, cityName });
         setUserModalVisible(true);
-      } else Alert.alert('Error', json.message);
+      } else {
+        Alert.alert('Error', json.message);
+      }
     } catch {
       Alert.alert('Error', 'Failed to load user details');
     }
   };
 
+  // 7. Show join‐request user details in modal
   const handleShowRequestUserDetails = async (req) => {
     const token = await AsyncStorage.getItem('token');
     try {
@@ -331,12 +323,15 @@ export default function GroupDetails() {
         const cityName = await getCityNameById(json.data.cityId);
         setSelectedUser({ ...json.data, cityName });
         setUserModalVisible(true);
-      } else Alert.alert('Error', json.message);
+      } else {
+        Alert.alert('Error', json.message);
+      }
     } catch {
       Alert.alert('Error', 'Failed to load user details');
     }
   };
 
+  // 8. Approve a join request
   const handleAcceptRequest = async (req) => {
     const token = await AsyncStorage.getItem('token');
     try {
@@ -345,13 +340,14 @@ export default function GroupDetails() {
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
       );
       const json = await resp.json();
-      if (json.success) setRequests((r) => r.filter((x) => x.requestId !== req.requestId));
+      if (json.success) setRequests(r => r.filter(x => x.requestId !== req.requestId));
       Alert.alert(json.success ? 'Accepted' : 'Error', json.message);
     } catch {
       Alert.alert('Error', 'Failed to accept request');
     }
   };
 
+  // 9. Reject a join request
   const handleRejectRequest = async (req) => {
     const token = await AsyncStorage.getItem('token');
     try {
@@ -360,13 +356,14 @@ export default function GroupDetails() {
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
       );
       const json = await resp.json();
-      if (json.success) setRequests((r) => r.filter((x) => x.requestId !== req.requestId));
+      if (json.success) setRequests(r => r.filter(x => x.requestId !== req.requestId));
       Alert.alert(json.success ? 'Rejected' : 'Error', json.message);
     } catch {
       Alert.alert('Error', 'Failed to reject request');
     }
   };
 
+  // 10. Send notification (placeholder)
   const handleSendNotification = () => {
     Alert.alert('Notification', 'Feature not implemented');
     setNotificationMessage('');
@@ -384,7 +381,6 @@ export default function GroupDetails() {
       </View>
     );
   }
-
   if (error) {
     return (
       <View className="flex-1 justify-center items-center p-4 bg-gray-50">
@@ -399,287 +395,81 @@ export default function GroupDetails() {
   return (
     <View className="flex-1 bg-gray-50">
       <ScrollView className="p-6">
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={28} color="#65DA84" />
-          </TouchableOpacity>
-          <Text className="text-3xl font-extrabold text-gray-900 flex-1 text-center">{group.groupName}</Text>
-          <View className="flex-row items-center space-x-3">
-            <Image source={{ uri: `${apiUrl}/Images/${group.groupImage}` }} style={{ width: 48, height: 48, borderRadius: 24 }} />
+        <Header
+          groupName={group.groupName}
+          groupImage={group.groupImage}
+        />
 
-          </View>
-        </View>
-        <View className="h-px bg-green-400 mb-4" />
+        <DetailsCard
+          group={group}
+          sportsMap={sportsMap}
+        />
 
-        {/* Details */}
-        <View className="bg-white p-4 rounded-xl shadow mb-4">
-          <Text className="text-lg font-semibold text-gray-800 mb-3">Details</Text>
-          <Text className="text-green-800 font-bold text-lg mb-4 leading-relaxed">{group.description}</Text>
-          <View className="space-y-3">
-            {[
-              ['Sport', sportsMap[group.sportId] || '—'],
-              ['City', group.cityName || '—'],
-              ['Members', `${group.totalMembers}/${group.maxMembers}`],
-              ['Min Age', group.minAge],
-              ['Gender', group.gender],
-              ['Matches', group.matches],
-              ['W / L', `${group.wins}/${group.losses}`],
-            ].map(([label, value]) => (
-              <View key={label} className="flex-row justify-between">
-                <Text className="text-gray-700 text-lg">{label}</Text>
-                <Text className="text-gray-900 font-medium text-lg">{value}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View className="h-px bg-green-400 mb-4" />
-
-        {/* Team Members */}
         {isLoggedIn && (
-          <View className="bg-white p-4 rounded-xl shadow mb-4">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">Team Members</Text>
-            {members.length === 0 ? (
-              <Text className="text-gray-600">There are no team members in this group.</Text>
-            ) : (
-              members.slice(0, membersDisplayCount).map((m) => (
-                <View key={m.userId} className="flex-row justify-between items-center py-3 border-b border-gray-200">
-                  <View className="flex-row items-center space-x-3">
-                    <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
-                      <Image
-                        source={{ uri: `${apiUrl}/Images/${m.groupMemberImage}` }}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    </View>
-                    <View>
-                      <Text className="text-gray-800 text-base font-medium">{m.groupMemberName}</Text>
-                      <Text className="text-gray-500 text-sm">Since {m.joinYear}</Text>
-                    </View>
-                  </View>
-                  {group.isAdmin && m.userId !== currentUserId && (
-                    <View className="flex-row space-x-3 items-center">
-                      <TouchableOpacity onPress={() => handleShowMemberDetails(m)}>
-                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
-                      </TouchableOpacity>
-                      {!m.isAdmin && (
-                        <TouchableOpacity onPress={() => handleRemoveMember(m)}>
-                          <Ionicons name="trash" size={20} color="#E53E3E" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  )}
-                </View>
-              ))
-            )}
-            {(membersDisplayCount > PAGE_SIZE || membersHasMore) && (
-              <TouchableOpacity onPress={handleToggleMembers} className="mt-2 py-2">
-                <Text className="text-blue-600 text-center">
-                  {membersHasMore ? 'Show More' : (isMembersExpanded ? 'Hide' : 'Show More')}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Upcoming Events */}
-            <View className="mt-4">
-              <Text className="text-lg font-semibold text-gray-800 mb-2">Upcoming Events</Text>
-              {events.length === 0 ? (
-                <Text className="text-gray-600">There are no upcoming events at the moment.</Text>
-              ) : (
-                events.map((ev) => (
-                  <View key={ev.eventId} className="flex-row justify-between py-2">
-                    <Text className="text-gray-700 text-lg">{ev.eventName}</Text>
-                    <Text className="text-gray-700 text-lg">{new Date(ev.startDatetime).toLocaleDateString('en-CA')}</Text>
-                  </View>
-                ))
-              )}
-            </View>
-          </View>
+          <TeamMembers
+            members={members}
+            displayCount={membersDisplayCount}
+            pageSize={PAGE_SIZE}
+            hasMore={membersHasMore}
+            onToggle={handleToggleMembers}
+            isAdmin={group.isAdmin}
+            currentUserId={currentUserId}
+            onShowDetails={handleShowMemberDetails}
+            onRemove={handleRemoveMember}
+            events={events}
+          />
         )}
 
-        <View className="h-px bg-green-400 mb-4" />
+        <JoinRequestButton
+          isLoggedIn={isLoggedIn}
+          isMember={group.isMember}
+          isAdmin={group.isAdmin}
+          hasPending={group.hasPendingRequest}
+          onRequest={handleRequestToJoin}
+          onCancel={handleCancelRequestToJoin}
+        />
 
-        {/* Join / Request Button */}
-        {isLoggedIn && !group.isMember && !group.isAdmin && (
-          group.hasPendingRequest ? (
-            <TouchableOpacity className="bg-gray-300 py-3 rounded-full mb-4" disabled>
-              <Text className="text-gray-600 text-center font-bold">Request Pending</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity className="bg-green-500 py-3 rounded-full mb-4" onPress={handleRequestToJoin}>
-              <Text className="text-white text-center font-bold">Request to Join</Text>
-            </TouchableOpacity>
-          )
-        )}
-
-        {/* Join Requests */}
         {isLoggedIn && group.isAdmin && (
-          <View className="bg-white p-4 rounded-xl shadow mb-4">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">Join Requests</Text>
-            {requests.length === 0 ? (
-              <Text className="text-gray-600">There are no pending join requests.</Text>
-            ) : (
-              requests.slice(0, requestsDisplayCount).map((r) => (
-                <View key={r.requestId} className="flex-row justify-between items-center py-2">
-                  <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
-                    <Image
-                      source={{ uri: `${apiUrl}/Images/${r.userPicture}` }}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  </View>
-                  <View className="flex-1 ml-3">
-                    <Text className="text-gray-700 text-lg">{r.fullName}</Text>
-                    <Text className="text-gray-500 text-sm">{new Date(r.requestDate).toLocaleDateString('en-CA')}</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => handleShowRequestUserDetails(r)}>
-                        <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
-                      </TouchableOpacity>
-                  <View className="flex-row space-x-3 ml-3">
-                    <TouchableOpacity onPress={() => handleAcceptRequest(r)}>
-                      <Ionicons name="checkmark-circle" size={24} color="#38A169" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleRejectRequest(r)}>
-                      <Ionicons name="close-circle" size={24} color="#E53E3E" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))
-            )}
-            {(requestsDisplayCount > PAGE_SIZE || requestsHasMore) && (
-              <TouchableOpacity onPress={handleToggleRequests} className="mt-2 py-2">
-                <Text className="text-blue-600 text-center">
-                  {requestsHasMore ? 'Show More' : (isRequestsExpanded ? 'Hide' : 'Show More')}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          <JoinRequests
+            requests={requests}
+            displayCount={requestsDisplayCount}
+            pageSize={PAGE_SIZE}
+            hasMore={requestsHasMore}
+            onToggle={handleToggleRequests}
+            onDetails={handleShowRequestUserDetails}
+            onAccept={handleAcceptRequest}
+            onReject={handleRejectRequest}
+          />
         )}
 
-        <View className="h-px bg-green-400 mb-4" />
-
-        {/* Notification & Edit */}
         {isLoggedIn && group.isAdmin && (
-          <View className="bg-white p-4 rounded-xl shadow mb-6">
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-3"
-              placeholder="Type notification message..."
-              value={notificationMessage}
-              onChangeText={setNotificationMessage}
-              multiline
-            />
-            <View className="flex-row space-x-3">
-              <TouchableOpacity
-                className={`flex-1 py-3 rounded-full ${notificationMessage.trim() ? 'bg-green-500' : 'bg-gray-300'}`}
-                onPress={handleSendNotification}
-                disabled={!notificationMessage.trim()}
-              >
-                <Text className="text-white text-center font-bold">Send Notification</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-1 py-3 rounded-full bg-blue-500" onPress={() => setEditModalVisible(true)}>
-                <Text className="text-white text-center font-bold">Edit Group</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <NotificationEditor
+            message={notificationMessage}
+            onChange={setNotificationMessage}
+            onSend={handleSendNotification}
+            onEdit={() => setEditModalVisible(true)}
+          />
         )}
 
-        {/* Leave Group */}
         {isLoggedIn && group.isMember && !group.isAdmin && (
-          <View className="items-center mb-8">
-            <TouchableOpacity className="bg-red-500 py-3 px-8 rounded-full shadow" onPress={handleLeaveGroup}>
-              <Text className="text-white text-center font-bold">Leave Group</Text>
-            </TouchableOpacity>
-          </View>
+          <LeaveGroupButton onLeave={() => handleLeaveGroup(group)} />
         )}
+
       </ScrollView>
 
-      {/* Edit Group Modal */}
-      <Modal visible={editModalVisible} animationType="slide" transparent>
-        <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
-          <View className="bg-white w-11/12 p-6 rounded-xl shadow-lg">
-            <Text className="text-xl font-bold mb-4 text-gray-800">Edit Group Details</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-3"
-              value={group.groupName}
-              onChangeText={(t) => setGroup((g) => ({ ...g, groupName: t }))}
-              placeholder="Group Name"
-            />
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-3"
-              value={group.description}
-              onChangeText={(t) => setGroup((g) => ({ ...g, description: t }))}
-              placeholder="Description"
-              multiline
-            />
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-3"
-              value={`${group.maxMembers}`}
-              onChangeText={(t) => setGroup((g) => ({ ...g, maxMembers: parseInt(t, 10) || 0 }))}
-              placeholder="Max Members"
-              keyboardType="numeric"
-            />
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-3"
-              value={`${group.minAge}`}
-              onChangeText={(t) => setGroup((g) => ({ ...g, minAge: parseInt(t, 10) || 0 }))}
-              placeholder="Min Age"
-              keyboardType="numeric"
-            />
-            <View className="flex-row justify-end space-x-3">
-              <TouchableOpacity className="bg-gray-200 py-2 px-4 rounded-full" onPress={() => setEditModalVisible(false)}>
-                <Text className="text-gray-800">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="bg-blue-500 py-2 px-4 rounded-full" onPress={handleSaveGroup}>
-                <Text className="text-white">Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <EditGroupModal
+        visible={editModalVisible}
+        group={group}
+        setGroup={setGroup}
+        onClose={() => setEditModalVisible(false)}
+        onSave={handleSaveGroup}
+      />
 
-      {/* User Details Modal */}
-      <Modal visible={userModalVisible} animationType="slide" transparent>
-        <BlurView
-          intensity={100}
-          tint="light"
-          style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }}
-        />
-        <View className="flex-1 justify-center items-center">
-          <View className="bg-white w-11/12 p-6 rounded-2xl shadow-lg">
-            {selectedUser && (
-              <>
-                <View className="flex-row items-center mb-4 space-x-4">
-                  <Image
-                    source={{ uri: `${apiUrl}/Images/${selectedUser.userImage}`}}
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <Text className="text-2xl font-bold text-gray-800">{selectedUser.fullName}</Text>
-                </View>
-                <View className="space-y-2">
-                  <Text className="text-gray-700"><Text className="font-semibold">Email:</Text> {selectedUser.email}</Text>
-                  <Text className="text-gray-700"><Text className="font-semibold">City:</Text> {selectedUser.cityName}</Text>
-                  <Text className="text-gray-700"><Text className="font-semibold">Bio:</Text> {selectedUser.bio}</Text>
-                  <Text className="text-gray-700"><Text className="font-semibold">Gender:</Text> {selectedUser.gender}</Text>
-                </View>
-              </>
-            )}
-            <TouchableOpacity
-              className="mt-6 bg-gray-100 py-2 px-6 rounded-full self-end shadow-sm"
-              onPress={() => setUserModalVisible(false)}
-            >
-              <Text className="text-gray-700 font-medium">Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Guest Footer */}
-      {!isLoggedIn && (
-        <View className="bg-white p-4 border-t border-gray-200">
-          <TouchableOpacity className="bg-gray-200 py-3 rounded-full" onPress={() => router.push('./Login')}>
-            <Text className="text-gray-800 text-center font-bold">Log in to see more</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <UserDetailsModal
+        visible={userModalVisible}
+        user={selectedUser}
+        onClose={() => setUserModalVisible(false)}
+      />
     </View>
   );
 }
