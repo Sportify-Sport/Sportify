@@ -250,3 +250,20 @@ BEGIN
     FETCH NEXT @pageSize ROWS ONLY;
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/5/2025>
+-- Description:	<This procedure returns the specified user details>
+-- =============================================
+CREATE PROCEDURE SP_GetUserById
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT UserId, FirstName, LastName, Email, IsGroupAdmin, IsCityOrganizer
+    FROM Users
+    WHERE UserId = @UserId
+END
+GO

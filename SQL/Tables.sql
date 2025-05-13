@@ -135,3 +135,14 @@ CREATE TABLE EventTeams (
     ScoreNum INT DEFAULT 0,
     PRIMARY KEY (EventId, GroupId)
 );
+
+CREATE TABLE RefreshTokens (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    Token VARCHAR(255) NOT NULL,
+    ExpiryDate DATETIME NOT NULL,
+    Created DATETIME NOT NULL DEFAULT GETDATE(),
+    Revoked DATETIME NULL,
+    ReplacedByToken VARCHAR(255) NULL,
+    ReasonRevoked NVARCHAR(100) NULL
+);

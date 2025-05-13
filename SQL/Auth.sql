@@ -117,3 +117,76 @@ BEGIN
     WHERE UserId = @UserId
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/5/2025>
+-- Description:	<This procedure saves a new refresh token>
+-- =============================================
+CREATE PROCEDURE SP_SaveRefreshToken
+    @UserId INT,
+    @Token VARCHAR(255),
+    @ExpiryDate DATETIME
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    INSERT INTO RefreshTokens (UserId, Token, ExpiryDate, Created)
+    VALUES (@UserId, @Token, @ExpiryDate, GETDATE());
+    
+    SELECT 
+        Id, UserId, Token, ExpiryDate, Created
+    FROM RefreshTokens 
+    WHERE Id = SCOPE_IDENTITY();
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/5/2025>
+-- Description:	<This procedure gets a refresh token and its details>
+-- =============================================
+CREATE PROCEDURE SP_GetRefreshToken
+    @Token VARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        Id, UserId, Token, ExpiryDate, Created, Revoked, ReplacedByToken, ReasonRevoked
+    FROM RefreshTokens 
+    WHERE Token = @Token;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/5/2025>
+-- Description:	<This procedure revokes a token>
+-- =============================================
+CREATE PROCEDURE SP_RevokeRefreshToken
+    @Token VARCHAR(255),
+    @Reason NVARCHAR(100),
+    @ReplacedByToken VARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @success BIT = 0;
+    
+    -- Check if token exists and is not already revoked
+    IF EXISTS (SELECT 1 FROM RefreshTokens WHERE Token = @Token AND Revoked IS NULL)
+    BEGIN
+        UPDATE RefreshTokens
+        SET 
+            Revoked = GETDATE(),
+            ReasonRevoked = @Reason,
+            ReplacedByToken = @ReplacedByToken
+        WHERE Token = @Token;
+        
+        SET @success = 1;
+    END
+    
+    SELECT @success AS Success;
+END
+GO

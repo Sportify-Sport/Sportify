@@ -7,6 +7,7 @@ using System.CodeDom.Compiler;
 using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -42,16 +43,13 @@ namespace Backend.Controllers
                     return BadRequest("Registration failed");
                 }
 
-                var token = GenerateJwtToken(user);
+                var accessToken = GenerateJwtToken(user);
+                var refreshToken = GenerateRefreshToken(user.UserId);
 
-                var response = new
+                var response = new AuthResponse
                 {
-                    token,
-                    //permissions = new
-                    //{
-                    //    adminForGroups = user.AdminForGroups,
-                    //    organizerForCities = user.OrganizerForCities
-                    //}
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken.Token
                 };
 
                 return Ok(response);
@@ -87,9 +85,7 @@ namespace Backend.Controllers
                 FavSportId = registerDto.FavSportId,
                 CityId = registerDto.CityId,
                 IsGroupAdmin = false,
-                IsCityOrganizer = false,
-                //AdminForGroups = new List<int>(),
-                //OrganizerForCities = new List<int>()
+                IsCityOrganizer = false
             };
         }
 
@@ -112,16 +108,13 @@ namespace Backend.Controllers
                     return Unauthorized("Invalid email or password");
                 }
 
-                string token = GenerateJwtToken(user);
+                string accessToken = GenerateJwtToken(user);
+                var refreshToken = GenerateRefreshToken(user.UserId);
 
-                var response = new
+                var response = new AuthResponse
                 {
-                    token,
-                    //permissions = new
-                    //{
-                    //    adminForGroups = user.AdminForGroups,
-                    //    organizerForCities = user.OrganizerForCities
-                    //}
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken.Token
                 };
 
                 return Ok(response);
@@ -131,6 +124,124 @@ namespace Backend.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+
+        [AllowAnonymous]
+        [HttpPost("refresh-token")]
+        public IActionResult RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return BadRequest("Refresh token is required");
+                }
+
+                var dbServices = new DBservices();
+                var refreshToken = dbServices.GetRefreshToken(request.RefreshToken);
+
+                if (refreshToken == null)
+                {
+                    return Unauthorized("Invalid refresh token");
+                }
+
+                if (!refreshToken.IsActive)
+                {
+                    return Unauthorized("Refresh token has been revoked or expired");
+                }
+
+                // Get user information
+                var user = GetUserById(refreshToken.UserId);
+                if (user == null)
+                {
+                    return Unauthorized("User not found");
+                }
+
+                // Generate new tokens
+                var newAccessToken = GenerateJwtToken(user);
+                var newRefreshToken = GenerateRefreshToken(user.UserId);
+
+                // Revoke old refresh token
+                dbServices.RevokeRefreshToken(refreshToken.Token, "Replaced by new token", newRefreshToken.Token);
+
+                var response = new AuthResponse
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken.Token
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPost("revoke-token")]
+        public IActionResult RevokeToken([FromHeader(Name = "X-Refresh-Token")] string token)
+        {
+            try
+            {
+                // Get user ID from token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized("Invalid token");
+                }
+
+                int userId = int.Parse(userIdClaim.Value);
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    return BadRequest("Refresh token is required");
+                }
+
+                // Keep those if we remove it from the parameters passed to the RevokeToken Function
+                //var token = Request.Cookies["refreshToken"] ?? Request.Headers["X-Refresh-Token"].FirstOrDefault();
+                //var token = Request.Headers["X-Refresh-Token"].FirstOrDefault();
+
+
+                // To use this we have to add ? after the string word in the parameters passed to the RevokeToken Function ([FromHeader(Name = "X-Refresh-Token")] string? headerToken)
+                // Allow header first, then fall back to cookie
+                //var token = headerToken ?? Request.Cookies["refreshToken"];
+                //if (string.IsNullOrEmpty(token))
+                //    return BadRequest("Token is required");
+                //if (string.IsNullOrEmpty(token))
+                //{
+                //    return BadRequest("Token is required");
+                //}
+
+                var dbServices = new DBservices();
+                var refreshToken = dbServices.GetRefreshToken(token);
+
+                if (refreshToken == null)
+                {
+                    return NotFound("Token not found");
+                }
+
+                if (refreshToken.UserId != userId)
+                {
+                    return StatusCode(403, new { success = false, message = "You are not authorized to revoke this token" });
+                }
+
+                var success = dbServices.RevokeRefreshToken(token, "Revoked by user");
+
+                if (!success)
+                {
+                    return NotFound("Token already revoked");
+                }
+
+                return Ok(new { message = "Token revoked" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
         private string GenerateJwtToken(User user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
@@ -155,7 +266,9 @@ namespace Backend.Controllers
             }
 
             var now = DateTime.UtcNow;
-            var expires = now.AddDays(1);
+            //var expires = now.AddDays(1);
+            //var expires = now.AddMinutes(30);
+            var expires = now.AddHours(1);
 
             var token = new JwtSecurityToken(_config["Jwt:Issuer"],
               _config["Jwt:Audience"],
@@ -166,13 +279,32 @@ namespace Backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        private RefreshToken GenerateRefreshToken(int userId)
+        {
+            // Generate a random token
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            string token = Convert.ToBase64String(randomBytes);
+
+            //var expiryDate = DateTime.UtcNow.AddDays(7);
+            var expiryDate = DateTime.UtcNow.AddMonths(1);
+
+            DBservices dbServices = new DBservices();
+            return dbServices.SaveRefreshToken(userId, token, expiryDate);
+        }
+
         private bool IsEmailRegistered(string email)
         {
             DBservices dBservices = new DBservices();
             return dBservices.IsEmailRegistered(email);
         }
 
-        
+        private User GetUserById(int userId)
+        {
+            DBservices dbServices = new DBservices();
+            return dbServices.GetUserById(userId);
+        }
 
     }
 }
