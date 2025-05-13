@@ -121,9 +121,12 @@ const Signup = () => {
 
       if (response.ok) {
         const data = await response.json();
-        const token = data.token;
+        const token = data.accessToken;
+        const refreshToken = data.refreshToken;
+
         try {
           await AsyncStorage.setItem('token', token);
+          await AsyncStorage.setItem('refreshToken', refreshToken);
           console.log('Token saved successfully');
         } catch (error) {
           console.error('Failed to save token:', error);
