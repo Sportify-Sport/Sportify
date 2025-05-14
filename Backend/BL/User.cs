@@ -18,6 +18,7 @@ namespace Backend.BL
         private string gender;
         private bool isGroupAdmin;
         private bool isCityOrganizer;
+        private bool isEventAdmin;
         private List<int> adminForGroups;
         private List<int> organizerForCities;
 
@@ -27,7 +28,7 @@ namespace Backend.BL
             AdminForGroups = new List<int>();
             OrganizerForCities = new List<int>();
         }
-        public User(int userId, string firstName, string lastName, DateTime birthDate, string email, string passwordHash, int favSportId, int cityId, string profileImage, string bio, string gender, bool isGroupAdmin, bool isCityOrganizer, List<int> adminForGroups, List<int> organizerForCities)
+        public User(int userId, string firstName, string lastName, DateTime birthDate, string email, string passwordHash, int favSportId, int cityId, string profileImage, string bio, string gender, bool isGroupAdmin, bool isCityOrganizer, bool isEventAdmin, List<int> adminForGroups, List<int> organizerForCities)
         {
             this.UserId = userId;
             this.FirstName = firstName;
@@ -42,6 +43,7 @@ namespace Backend.BL
             this.Gender = gender;
             this.IsGroupAdmin = isGroupAdmin;
             this.IsCityOrganizer = isCityOrganizer;
+            this.IsEventAdmin = isEventAdmin;
             this.AdminForGroups = adminForGroups ?? new List<int>();
             this.OrganizerForCities = organizerForCities ?? new List<int>();
         }
@@ -59,6 +61,7 @@ namespace Backend.BL
         public string Gender { get => gender; set => gender = value; }
         public bool IsGroupAdmin { get => isGroupAdmin; set => isGroupAdmin = value; }
         public bool IsCityOrganizer { get => isCityOrganizer; set => isCityOrganizer = value; }
+        public bool IsEventAdmin { get => isEventAdmin; set => isEventAdmin = value; }
         public List<int> AdminForGroups { get => adminForGroups; set => adminForGroups = value; }
         public List<int> OrganizerForCities { get => organizerForCities; set => organizerForCities = value; }
 

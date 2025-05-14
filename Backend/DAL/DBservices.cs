@@ -217,7 +217,8 @@ public class DBservices
                         LastName = dataReader["LastName"].ToString(),
                         Email = dataReader["Email"].ToString(),
                         IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
-                        IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"])
+                        IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
+                        IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"])
                     };
                 }
             }
@@ -3918,7 +3919,8 @@ public class DBservices
                     LastName = dataReader["LastName"].ToString(),
                     Email = dataReader["Email"].ToString(),
                     IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
-                    IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"])
+                    IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
+                    IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"])
                 };
             }
         }

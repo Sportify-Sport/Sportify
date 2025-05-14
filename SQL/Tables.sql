@@ -19,8 +19,8 @@ CREATE TABLE Users (
     Gender NVARCHAR(1) NOT NULL CHECK (Gender IN ('M', 'F')),
 	IsCityOrganizer BIT NOT NULL DEFAULT 0,
 	IsGroupAdmin BIT NOT NULL DEFAULT 0,
+	IsEventAdmin BIT NOT NULL DEFAULT 0
 );
-
 
 CREATE TABLE Groups (
     GroupId INT PRIMARY KEY IDENTITY(1,1),

@@ -85,7 +85,8 @@ namespace Backend.Controllers
                 FavSportId = registerDto.FavSportId,
                 CityId = registerDto.CityId,
                 IsGroupAdmin = false,
-                IsCityOrganizer = false
+                IsCityOrganizer = false,
+                IsEventAdmin = false,
             };
         }
 
@@ -263,6 +264,11 @@ namespace Backend.Controllers
             if (user.IsCityOrganizer)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "CityOrganizer"));
+            }
+
+            if (user.IsEventAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "EventAdmin"));
             }
 
             var now = DateTime.UtcNow;
