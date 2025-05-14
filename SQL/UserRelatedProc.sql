@@ -41,18 +41,19 @@ GO
 -- =============================================
 CREATE PROCEDURE SP_UpdateUserProfile
     @userId INT,
-    @birthDate DATE,
+	@firstName NVARCHAR(50),
+	@lastName NVARCHAR(50),
     @favSportId INT,
     @cityId INT,
     @bio NVARCHAR(500) = NULL,
-    @gender NVARCHAR(1),
     @profileImage NVARCHAR(255) = NULL
 AS
 BEGIN
     SET NOCOUNT OFF;
     
     UPDATE Users
-    SET BirthDate = @birthDate, FavSportId = @favSportId, CityId = @cityId, Bio = @bio, Gender = @gender,
+    SET FirstName = @firstName, LastName = @lastName, 
+		FavSportId = @favSportId, CityId = @cityId, Bio = @bio,
         -- Only update ProfileImage if value is provided
         ProfileImage = CASE WHEN @profileImage IS NOT NULL THEN @profileImage ELSE ProfileImage END
     WHERE UserId = @userId;
@@ -68,21 +69,21 @@ GO
 -- =============================================
 CREATE PROCEDURE SP_UpdateUserDetails
     @userId INT,
-    @birthDate DATE,
+	@firstName NVARCHAR(50),
+	@lastName NVARCHAR(50),
     @favSportId INT,
     @cityId INT,
-    @bio NVARCHAR(500) = '',
-    @gender NVARCHAR(1)
+    @bio NVARCHAR(500) = ''
 AS
 BEGIN
     SET NOCOUNT OFF; -- We want the count of affected rows
     
     UPDATE Users
-    SET BirthDate = @birthDate, 
-        FavSportId = @favSportId, 
+    SET FirstName = @firstName,
+		LastName = @lastName,
+		FavSportId = @favSportId, 
         CityId = @cityId, 
-        Bio = @bio, 
-        Gender = @gender
+        Bio = @bio
     WHERE UserId = @userId;
 END
 GO

@@ -662,11 +662,11 @@ public class DBservices
     //    cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
     //    cmd.Parameters.AddWithValue("@userId", userId);
-    //    cmd.Parameters.AddWithValue("@birthDate", model.BirthDate);
+    //    cmd.Parameters.AddWithValue("@firstName", model.FirstName);
+    //    cmd.Parameters.AddWithValue("@lastName", model.LastName);
     //    cmd.Parameters.AddWithValue("@favSportId", model.FavSportId);
     //    cmd.Parameters.AddWithValue("@cityId", model.CityId);
     //    cmd.Parameters.AddWithValue("@bio", string.IsNullOrEmpty(model.Bio) ? (object)DBNull.Value : model.Bio);
-    //    cmd.Parameters.AddWithValue("@gender", model.Gender);
 
     //    // Only update image if a new one was provided
     //    if (!string.IsNullOrEmpty(imageFileName))
@@ -724,23 +724,13 @@ public class DBservices
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
         cmd.Parameters.AddWithValue("@userId", userId);
-        cmd.Parameters.AddWithValue("@birthDate", model.BirthDate);
+        cmd.Parameters.AddWithValue("@firstName", model.FirstName);
+        cmd.Parameters.AddWithValue("@lastName", model.LastName);
         cmd.Parameters.AddWithValue("@favSportId", model.FavSportId);
         cmd.Parameters.AddWithValue("@cityId", model.CityId);
         cmd.Parameters.AddWithValue("@bio", string.IsNullOrEmpty(model.Bio) ? (object)DBNull.Value : model.Bio);
-        cmd.Parameters.AddWithValue("@gender", model.Gender);
-
         return cmd;
     }
-
-
-
-
-
-
-
-
-
 
     //---------------------------------------------------------------------------------
     // This method updates only the user profile image
