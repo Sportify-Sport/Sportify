@@ -11,7 +11,7 @@ namespace Backend.Controllers
     [ApiController]
     public class EventParticipantsController : ControllerBase
     {
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpGet("{eventId}/players")]
         public IActionResult GetEventPlayers(int eventId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
@@ -168,7 +168,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpPost("{eventId}/remove-player/{playerUserId}")]
         public IActionResult RemovePlayerFromEvent(int eventId, int playerUserId)
         {
@@ -198,7 +198,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpPost("events/{eventId}/process-request/{requestUserId}/{approve}")]
         public IActionResult AdminProcessJoinRequest(int eventId, int requestUserId, bool approve)
         {
@@ -234,7 +234,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpGet("events/{eventId}/pending-requests")]
         public IActionResult GetEventPendingJoinRequests(int eventId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
@@ -277,7 +277,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpGet("events/{eventId}/pending-request-user/{userId}")]
         public IActionResult GetEventPendingRequestUserDetails(int eventId, int userId)
         {
@@ -314,7 +314,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpGet("events/{eventId}/player/{userId}")]
         public IActionResult GetEventPlayerDetails(int eventId, int userId)
         {

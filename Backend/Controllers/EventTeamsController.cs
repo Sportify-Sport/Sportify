@@ -113,7 +113,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpDelete("team-events/{eventId}/groups/{groupId}")]
         public IActionResult RemoveGroupFromEvent(int eventId, int groupId)
         {
@@ -141,7 +141,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "CityOrganizer")]
+        [Authorize(Roles = "EventAdmin")]
         [HttpPost("team-events/{eventId}/groups/{groupId}")]
         public IActionResult AddGroupToEvent(int eventId, int groupId)
         {
