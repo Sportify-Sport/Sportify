@@ -54,7 +54,8 @@ export default function RootLayout() {
             />
           </Stack> 
           */}
-          <StatusBar style="light" />
+          {/* <StatusBar barStyle="light-content" backgroundColor="black" /> */}
+          <StatusBar barStyle="dark-content" backgroundColor="white" />
           <Stack screenOptions={{ headerShown: false }} />
         </SafeAreaView>
       </FilterProvider>
