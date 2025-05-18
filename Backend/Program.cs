@@ -58,7 +58,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ),
             ClockSkew = TimeSpan.Zero
         };
-    });
+    })
+    .AddJwtBearer("AdminScheme", options =>
+     {
+         options.TokenValidationParameters = new TokenValidationParameters
+         {
+             ValidateIssuer = true,
+             ValidateAudience = true,
+             ValidateLifetime = true,
+             ValidateIssuerSigningKey = true,
+             ValidIssuer = builder.Configuration["Jwt:AdminIssuer"],
+             ValidAudience = builder.Configuration["Jwt:AdminAudience"],
+             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:AdminKey"])),
+             ClockSkew = TimeSpan.Zero
+         };
+     });
 
 var app = builder.Build();
 

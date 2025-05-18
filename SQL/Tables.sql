@@ -146,3 +146,16 @@ CREATE TABLE RefreshTokens (
     ReplacedByToken VARCHAR(255) NULL,
     ReasonRevoked NVARCHAR(100) NULL
 );
+
+CREATE TABLE AdminRefreshTokens (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    Token VARCHAR(255) NOT NULL,
+    ExpiryDate DATETIME NOT NULL,
+    Created DATETIME NOT NULL DEFAULT GETDATE(),
+    Revoked DATETIME NULL,
+    ReplacedByToken VARCHAR(255) NULL,
+    ReasonRevoked NVARCHAR(100) NULL,
+    UseCount INT NOT NULL DEFAULT 0,
+    IpAddress NVARCHAR(50)
+);

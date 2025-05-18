@@ -3944,4 +3944,322 @@ public class DBservices
         return cmd;
     }
 
+    //---------------------------------------------------------------------------------
+    // This method is used to save admin refresh tokens
+    //---------------------------------------------------------------------------------
+    public RefreshToken SaveAdminRefreshToken(int userId, string token, DateTime expiryDate, string ipAddress, int useCount = 0)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureSaveAdminRefreshToken("SP_SaveAdminRefreshToken", con, userId, token, expiryDate, ipAddress, useCount);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                var refreshToken = new RefreshToken
+                {
+                    Id = Convert.ToInt32(dataReader["Id"]),
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    Token = dataReader["Token"].ToString(),
+                    ExpiryDate = Convert.ToDateTime(dataReader["ExpiryDate"]),
+                    Created = Convert.ToDateTime(dataReader["Created"]),
+                    UseCount = Convert.ToInt32(dataReader["UseCount"]),
+                    IpAddress = dataReader["IpAddress"].ToString()
+                };
+
+                return refreshToken;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for saving admin refresh tokens
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSaveAdminRefreshToken(string spName, SqlConnection con, int userId, string token, DateTime expiryDate, string ipAddress, int useCount = 0)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Token", token);
+        cmd.Parameters.AddWithValue("@ExpiryDate", expiryDate);
+        cmd.Parameters.AddWithValue("@IpAddress", ipAddress);
+        cmd.Parameters.AddWithValue("@UseCount", useCount);
+
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get the saved admin refresh token for the specified CityOrganizer (The details)
+    //---------------------------------------------------------------------------------
+    public RefreshToken GetAdminRefreshToken(string token)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetAdminRefreshToken("SP_GetAdminRefreshToken", con, token);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                var refreshToken = new RefreshToken
+                {
+                    Id = Convert.ToInt32(dataReader["Id"]),
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    Token = dataReader["Token"].ToString(),
+                    ExpiryDate = Convert.ToDateTime(dataReader["ExpiryDate"]),
+                    Created = Convert.ToDateTime(dataReader["Created"]),
+                    Revoked = dataReader["Revoked"] != DBNull.Value ? Convert.ToDateTime(dataReader["Revoked"]) : (DateTime?)null,
+                    ReplacedByToken = dataReader["ReplacedByToken"] != DBNull.Value ? dataReader["ReplacedByToken"].ToString() : null,
+                    ReasonRevoked = dataReader["ReasonRevoked"] != DBNull.Value ? dataReader["ReasonRevoked"].ToString() : null,
+                    UseCount = Convert.ToInt32(dataReader["UseCount"]),
+                    IpAddress = dataReader["IpAddress"].ToString()
+                };
+
+                return refreshToken;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting the saved admin refresh token for the specified CityOrganizer (The details)
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetAdminRefreshToken(string spName, SqlConnection con, string token)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@Token", token);
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method is used to Increment the refresh token count for the admin refresh tokens
+    //---------------------------------------------------------------------------------
+    public bool IncrementRefreshTokenUseCount(int tokenId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = "SP_IncrementAdminRefreshTokenUseCount";
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@TokenId", tokenId);
+
+        SqlParameter successParam = new SqlParameter("@Success", SqlDbType.Bit);
+        successParam.Direction = ParameterDirection.Output;
+        cmd.Parameters.Add(successParam);
+
+        try
+        {
+            cmd.ExecuteNonQuery();
+            bool success = Convert.ToBoolean(cmd.Parameters["@Success"].Value);
+            return success;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to revoke admin refresh token
+    //---------------------------------------------------------------------------------
+    public bool RevokeAdminRefreshToken(string token, string reason, string replacedByToken = null)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureRevokeAdminRefreshToken("SP_RevokeAdminRefreshToken", con, token, reason, replacedByToken);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["Success"]);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for revoking admin refresh token
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRevokeAdminRefreshToken(string spName, SqlConnection con, string token, string reason, string replacedByToken)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@Token", token);
+        cmd.Parameters.AddWithValue("@Reason", reason);
+
+        if (replacedByToken != null)
+            cmd.Parameters.AddWithValue("@ReplacedByToken", replacedByToken);
+        else
+            cmd.Parameters.AddWithValue("@ReplacedByToken", DBNull.Value);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to revoke all admin refresh tokens for the specified user
+    //---------------------------------------------------------------------------------
+    public int RevokeAllUserAdminRefreshTokens(int userId, string reason)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = "SP_RevokeAllUserAdminRefreshTokens";
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Reason", reason);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["AffectedTokens"]);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
 }

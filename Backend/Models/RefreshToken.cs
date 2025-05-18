@@ -10,7 +10,12 @@
         public DateTime? Revoked { get; set; }
         public string ReplacedByToken { get; set; }
         public string ReasonRevoked { get; set; }
+        public int UseCount { get; set; } // For admin tokens
+        public string IpAddress { get; set; } // For admin tokens
+
+        // Computed properties
         public bool IsExpired => DateTime.UtcNow >= ExpiryDate;
         public bool IsActive => Revoked == null && !IsExpired;
+        public bool HasReachedUseLimit => UseCount >= 3; // For admin tokens
     }
 }
