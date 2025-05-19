@@ -4,11 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import getApiBaseUrl from '../config/apiConfig';
+import getCityNameById from '../services/locationService';
 import { AUTH_ROUTES } from '../constants/authConstants';
 import '../styles/auth.css';
 
 const CitySelectionPage = () => {
   const [cities, setCities] = useState([]);
+  const [citiesWithNames, setCitiesWithNames] = useState([]);
+  const [citiesMap, setCitiesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { currentUser, selectCity, logout } = useAuth();
@@ -21,7 +24,7 @@ const CitySelectionPage = () => {
       
       try {
         const token = localStorage.getItem('adminAccessToken');
-        const response = await fetch(`${getApiBaseUrl()}/api/AdminAuth/admin/managed-cities`, {
+        const response = await fetch(`${getApiBaseUrl()}/api/AdminCity/managed-cities`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -36,13 +39,45 @@ const CitySelectionPage = () => {
       } catch (err) {
         console.error("Error fetching cities:", err);
         setError("Failed to load managed cities. Please try again.");
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchManagedCities();
   }, [currentUser]);
+
+  // Fetch city names for each city ID
+  useEffect(() => {
+    const fetchCityNames = async () => {
+      if (!cities.length) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const citiesWithNamesArray = await Promise.all(
+          cities.map(async (city) => {
+            const cityName = await getCityNameById(city.cityId, citiesMap, setCitiesMap);
+            return { ...city, cityName };
+          })
+        );
+        
+        setCitiesWithNames(citiesWithNamesArray);
+      } catch (err) {
+        console.error("Error fetching city names:", err);
+        // Fall back to showing city IDs if names can't be fetched
+        setCitiesWithNames(cities.map(city => ({
+          ...city,
+          cityName: `City #${city.cityId}`
+        })));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (cities.length) {
+      fetchCityNames();
+    }
+  }, [cities]);
 
   const handleCitySelect = (city) => {
     selectCity(city);
@@ -70,7 +105,7 @@ const CitySelectionPage = () => {
         
         {error && <div className="error-message">{error}</div>}
         
-        {cities.length === 0 && !error ? (
+        {citiesWithNames.length === 0 && !error ? (
           <div className="no-cities-message">
             <p>You don't have any cities assigned to manage.</p>
             <button className="auth-button" onClick={logout}>Log Out</button>
@@ -78,7 +113,7 @@ const CitySelectionPage = () => {
         ) : (
           <>
             <div className="cities-grid">
-              {cities.map(city => (
+              {citiesWithNames.map(city => (
                 <div 
                   key={city.cityId} 
                   className="city-card"

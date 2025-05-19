@@ -4259,4 +4259,187 @@ public class DBservices
             }
         }
     }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get cities that a user is an organizer for
+    //---------------------------------------------------------------------------------
+    public List<CityOrganizer> GetManagedCities(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        List<CityOrganizer> cities = new List<CityOrganizer>();
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetManagedCities("SP_GetUserManagedCities", con, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                cities.Add(new CityOrganizer
+                {
+                    CityId = Convert.ToInt32(dataReader["CityId"])
+                });
+            }
+
+            return cities;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting managed cities
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetManagedCities(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to check if a user is an organizer for a specific city
+    //---------------------------------------------------------------------------------
+    public bool IsUserCityOrganizer(int userId, int cityId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool isOrganizer = false;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureIsUserCityOrganizer("SP_IsUserCityOrganizer", con, userId, cityId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                isOrganizer = Convert.ToBoolean(dataReader["IsOrganizer"]);
+            }
+
+            return isOrganizer;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking if user is city organizer
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIsUserCityOrganizer(string spName, SqlConnection con, int userId, int cityId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get dashboard statistics for a city
+    //---------------------------------------------------------------------------------
+    public DashboardStats GetCityDashboardStats(int cityId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        DashboardStats stats = new DashboardStats();
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetCityDashboardStats("SP_GetCityDashboardStats", con, cityId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                stats.EventsCount = Convert.ToInt32(dataReader["EventsCount"]);
+                stats.ActiveEventsCount = Convert.ToInt32(dataReader["ActiveEventsCount"]);
+                stats.GroupsCount = Convert.ToInt32(dataReader["GroupsCount"]);
+                stats.TotalParticipants = Convert.ToInt32(dataReader["TotalParticipants"]);
+                stats.TotalGroupMembers = Convert.ToInt32(dataReader["TotalGroupMembers"]);
+            }
+
+            return stats;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting city dashboard stats
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetCityDashboardStats(string spName, SqlConnection con, int cityId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        return cmd;
+    }
+
 }
