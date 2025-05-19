@@ -1,0 +1,64 @@
+/* src/styles/dashboard.css */
+.dashboard-container {
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--text);
+}
+
+.dashboard-header {
+  background-color: var(--surface);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.dashboard-title h1 {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-title h2 {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: normal;
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.change-city-btn {
+  background-color: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  background-color: transparent;
+  border: 1px solid var(--error);
+  color: var(--error);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.dashboard-content {
+  padding: 2rem;
+}

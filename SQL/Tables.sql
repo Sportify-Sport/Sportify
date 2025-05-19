@@ -156,6 +156,5 @@ CREATE TABLE AdminRefreshTokens (
     Revoked DATETIME NULL,
     ReplacedByToken VARCHAR(255) NULL,
     ReasonRevoked NVARCHAR(100) NULL,
-    UseCount INT NOT NULL DEFAULT 0,
-    IpAddress NVARCHAR(50)
+    UseCount INT NOT NULL DEFAULT 0
 );

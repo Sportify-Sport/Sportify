@@ -49,12 +49,9 @@ namespace Backend.Controllers
 
                 }
 
-                // Get client IP address
-                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
                 // Admin-specific JWT with shorter lifetime (15 minutes)
                 string accessToken = GenerateAdminJwtToken(user);
-                var refreshToken = GenerateAdminRefreshToken(user.UserId, ipAddress);
+                var refreshToken = GenerateAdminRefreshToken(user.UserId);
 
                 var response = new AuthResponse
                 {
@@ -81,9 +78,6 @@ namespace Backend.Controllers
                     return BadRequest("Refresh token is required");
                 }
 
-                // Get client IP
-                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
                 var dbServices = new DBservices();
                 var refreshToken = dbServices.GetAdminRefreshToken(request.RefreshToken);
 
@@ -104,14 +98,6 @@ namespace Backend.Controllers
                     return Unauthorized("Maximum refresh limit reached. Please login again.");
                 }
 
-                // Verify IP address for security
-                if (refreshToken.IpAddress != ipAddress)
-                {
-                    // Security breach detected - revoke all tokens for this user
-                    dbServices.RevokeAllUserAdminRefreshTokens(refreshToken.UserId, "IP address mismatch");
-                    return Unauthorized("Security validation failed");
-                }
-
                 // Get user information
                 var user = dbServices.GetUserById(refreshToken.UserId);
                 if (user == null)
@@ -124,7 +110,7 @@ namespace Backend.Controllers
 
                 // Generate new tokens
                 var newAccessToken = GenerateAdminJwtToken(user);
-                var newRefreshToken = GenerateAdminRefreshToken(user.UserId, ipAddress, refreshToken.ExpiryDate, refreshToken.UseCount + 1);
+                var newRefreshToken = GenerateAdminRefreshToken(user.UserId, refreshToken.ExpiryDate, refreshToken.UseCount + 1);
 
                 // Revoke old refresh token
                 dbServices.RevokeAdminRefreshToken(refreshToken.Token, "Replaced by new token", newRefreshToken.Token);
@@ -222,7 +208,7 @@ namespace Backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private RefreshToken GenerateAdminRefreshToken(int userId, string ipAddress, DateTime? inheritExpiryDate = null, int useCount = 0)
+        private RefreshToken GenerateAdminRefreshToken(int userId, DateTime? inheritExpiryDate = null, int useCount = 0)
         {
             // Generate random token
             var randomBytes = new byte[64];
@@ -234,7 +220,7 @@ namespace Backend.Controllers
             var expiryDate = inheritExpiryDate ?? DateTime.UtcNow.AddHours(1);
 
             DBservices dbServices = new DBservices();
-            return dbServices.SaveAdminRefreshToken(userId, token, expiryDate, ipAddress, useCount);
+            return dbServices.SaveAdminRefreshToken(userId, token, expiryDate, useCount);
         }
     }
 }

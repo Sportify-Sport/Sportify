@@ -1,0 +1,54 @@
+/* src/styles/notFound.css */
+.not-found-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--background);
+}
+
+.not-found-content {
+  text-align: center;
+  padding: 2rem;
+  max-width: 500px;
+}
+
+.not-found-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.not-found-content h1 {
+  font-size: 6rem;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.not-found-content h2 {
+  font-size: 2rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.not-found-content p {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.back-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.back-link:hover {
+  background-color: var(--primary-dark);
+}

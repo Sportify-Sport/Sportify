@@ -3947,7 +3947,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // This method is used to save admin refresh tokens
     //---------------------------------------------------------------------------------
-    public RefreshToken SaveAdminRefreshToken(int userId, string token, DateTime expiryDate, string ipAddress, int useCount = 0)
+    public RefreshToken SaveAdminRefreshToken(int userId, string token, DateTime expiryDate, int useCount = 0)
     {
         SqlConnection con;
         SqlCommand cmd;
@@ -3961,7 +3961,7 @@ public class DBservices
             throw (ex);
         }
 
-        cmd = CreateCommandWithStoredProcedureSaveAdminRefreshToken("SP_SaveAdminRefreshToken", con, userId, token, expiryDate, ipAddress, useCount);
+        cmd = CreateCommandWithStoredProcedureSaveAdminRefreshToken("SP_SaveAdminRefreshToken", con, userId, token, expiryDate, useCount);
 
         try
         {
@@ -3976,8 +3976,7 @@ public class DBservices
                     Token = dataReader["Token"].ToString(),
                     ExpiryDate = Convert.ToDateTime(dataReader["ExpiryDate"]),
                     Created = Convert.ToDateTime(dataReader["Created"]),
-                    UseCount = Convert.ToInt32(dataReader["UseCount"]),
-                    IpAddress = dataReader["IpAddress"].ToString()
+                    UseCount = Convert.ToInt32(dataReader["UseCount"])
                 };
 
                 return refreshToken;
@@ -4004,7 +4003,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // Create the SqlCommand for saving admin refresh tokens
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureSaveAdminRefreshToken(string spName, SqlConnection con, int userId, string token, DateTime expiryDate, string ipAddress, int useCount = 0)
+    private SqlCommand CreateCommandWithStoredProcedureSaveAdminRefreshToken(string spName, SqlConnection con, int userId, string token, DateTime expiryDate, int useCount = 0)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -4015,7 +4014,6 @@ public class DBservices
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@Token", token);
         cmd.Parameters.AddWithValue("@ExpiryDate", expiryDate);
-        cmd.Parameters.AddWithValue("@IpAddress", ipAddress);
         cmd.Parameters.AddWithValue("@UseCount", useCount);
 
         return cmd;
@@ -4057,8 +4055,7 @@ public class DBservices
                     Revoked = dataReader["Revoked"] != DBNull.Value ? Convert.ToDateTime(dataReader["Revoked"]) : (DateTime?)null,
                     ReplacedByToken = dataReader["ReplacedByToken"] != DBNull.Value ? dataReader["ReplacedByToken"].ToString() : null,
                     ReasonRevoked = dataReader["ReasonRevoked"] != DBNull.Value ? dataReader["ReasonRevoked"].ToString() : null,
-                    UseCount = Convert.ToInt32(dataReader["UseCount"]),
-                    IpAddress = dataReader["IpAddress"].ToString()
+                    UseCount = Convert.ToInt32(dataReader["UseCount"])
                 };
 
                 return refreshToken;

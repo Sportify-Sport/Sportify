@@ -7,17 +7,16 @@ CREATE PROCEDURE SP_SaveAdminRefreshToken
     @UserId INT,
     @Token VARCHAR(255),
     @ExpiryDate DATETIME,
-    @IpAddress NVARCHAR(50),
     @UseCount INT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    INSERT INTO AdminRefreshTokens (UserId, Token, ExpiryDate, Created, UseCount, IpAddress)
-    VALUES (@UserId, @Token, @ExpiryDate, GETDATE(), @UseCount, @IpAddress);
+    INSERT INTO AdminRefreshTokens (UserId, Token, ExpiryDate, Created, UseCount)
+    VALUES (@UserId, @Token, @ExpiryDate, GETDATE(), @UseCount);
     
     SELECT 
-        Id, UserId, Token, ExpiryDate, Created, UseCount, IpAddress
+        Id, UserId, Token, ExpiryDate, Created, UseCount
     FROM AdminRefreshTokens 
     WHERE Id = SCOPE_IDENTITY();
 END
@@ -36,7 +35,7 @@ BEGIN
     
     SELECT 
         Id, UserId, Token, ExpiryDate, Created, Revoked, ReplacedByToken, 
-        ReasonRevoked, UseCount, IpAddress
+        ReasonRevoked, UseCount
     FROM AdminRefreshTokens 
     WHERE Token = @Token;
 END
