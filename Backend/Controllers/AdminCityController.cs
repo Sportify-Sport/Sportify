@@ -73,7 +73,7 @@ namespace Backend.Controllers
                 {
                     _logger.LogWarning("Unauthorized access attempt: Admin {AdminName} (ID: {AdminId}) tried to access stats for city {CityId}",
                         userName, userId, cityId);
-                    return Forbid("You do not have access to this city");
+                    return StatusCode(403, new { success = false, message = "You do not have access to this city" });
                 }
 
                 // Log dashboard access (audit log)

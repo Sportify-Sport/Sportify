@@ -4442,4 +4442,604 @@ public class DBservices
         return cmd;
     }
 
+    //---------------------------------------------------------------------------------
+    // This method is used to get groups by city for admin with search, sorting and pagination
+    //---------------------------------------------------------------------------------
+    public List<GroupListItem> GetGroupsByCityForAdmin(int cityId, string name, int sortBy, int page, int pageSize)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        List<GroupListItem> groups = new List<GroupListItem>();
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetGroupsByCityForAdmin(
+            "SP_GetGroupsByCityForAdmin", con, cityId, name, sortBy, page, pageSize);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                groups.Add(new GroupListItem
+                {
+                    GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                    GroupName = dataReader["GroupName"].ToString(),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    GroupImage = dataReader["GroupImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    FoundedAt = Convert.ToDateTime(dataReader["FoundedAt"]),
+                    Gender = dataReader["Gender"].ToString(),
+                    TotalMembers = Convert.ToInt32(dataReader["TotalMembers"])
+                });
+            }
+
+            return groups;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting groups by city for admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupsByCityForAdmin(
+        string spName, SqlConnection con, int cityId, string name, int sortBy, int page, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        cmd.Parameters.AddWithValue("@Name", name ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@SortBy", sortBy);
+        cmd.Parameters.AddWithValue("@Page", page);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
+        return cmd;
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get group details for admin
+    //---------------------------------------------------------------------------------
+    public GroupDetailsAdmin GetGroupDetailsForAdmin(int cityId, int groupId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        GroupDetailsAdmin groupDetails = null;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetGroupDetailsForAdmin("SP_GetGroupDetailsForAdmin", con, cityId, groupId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                groupDetails = new GroupDetailsAdmin
+                {
+                    GroupId = Convert.ToInt32(dataReader["GroupId"]),
+                    GroupName = dataReader["GroupName"].ToString(),
+                    Description = dataReader["Description"].ToString(),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    GroupImage = dataReader["GroupImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    FoundedAt = Convert.ToDateTime(dataReader["FoundedAt"]),
+                    MaxMemNum = Convert.ToInt32(dataReader["MaxMemNum"]),
+                    TotalMembers = Convert.ToInt32(dataReader["TotalMembers"]),
+                    MinAge = Convert.ToInt32(dataReader["MinAge"]),
+                    Gender = dataReader["Gender"].ToString(),
+                };
+            }
+
+            return groupDetails;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting group details for admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupDetailsForAdmin(string spName, SqlConnection con, int cityId, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get the group admin
+    //---------------------------------------------------------------------------------
+    public GroupAdmin GetGroupAdmin(int groupId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        GroupAdmin admin = null;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetGroupAdmin("SP_GetGroupAdmin", con, groupId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                admin = new GroupAdmin
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString()
+                };
+            }
+
+            return admin;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting the group admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupAdmin(string spName, SqlConnection con, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to search users by email or ID
+    //---------------------------------------------------------------------------------
+    public List<UserSearchResult> SearchUsersForAdmin(string emailOrId, int maxResults)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        List<UserSearchResult> users = new List<UserSearchResult>();
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureSearchUsersForAdmin("SP_SearchUsersForAdmin", con, emailOrId, maxResults);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                users.Add(new UserSearchResult
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FullName = $"{dataReader["FirstName"]} {dataReader["LastName"]}",
+                    Email = dataReader["Email"].ToString(),
+                    Gender = dataReader["Gender"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"])
+                });
+            }
+
+            return users;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for searching users
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSearchUsersForAdmin(string spName, SqlConnection con, string emailOrId, int maxResults)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EmailOrId", emailOrId);
+        cmd.Parameters.AddWithValue("@MaxResults", maxResults);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create new group and assign admin
+    //---------------------------------------------------------------------------------
+    public int CreateGroup(GroupInfo group, int adminUserId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureCreateGroup("SP_CreateGroup", con, group, adminUserId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["GroupId"]);
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for creating a group
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCreateGroup(string spName, SqlConnection con, GroupInfo group, int adminUserId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupName", group.GroupName);
+        cmd.Parameters.AddWithValue("@Description", group.Description);
+        cmd.Parameters.AddWithValue("@SportId", group.SportId);
+        cmd.Parameters.AddWithValue("@GroupImage", group.GroupImage);
+        cmd.Parameters.AddWithValue("@CityId", group.CityId);
+        cmd.Parameters.AddWithValue("@MaxMemNum", group.MaxMemNum);
+        cmd.Parameters.AddWithValue("@TotalMembers", group.TotalMembers);
+        cmd.Parameters.AddWithValue("@MinAge", group.MinAge);
+        cmd.Parameters.AddWithValue("@Gender", group.Gender);
+        cmd.Parameters.AddWithValue("@AdminUserId", adminUserId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Change group admin
+    //---------------------------------------------------------------------------------
+    public bool ChangeGroupAdmin(int groupId, int newAdminUserId, int currentAdminId, int cityId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureChangeGroupAdmin("SP_ChangeGroupAdmin", con, groupId, newAdminUserId, currentAdminId, cityId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["Success"]);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for changing group admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureChangeGroupAdmin(string spName, SqlConnection con, int groupId, int newAdminUserId, int currentAdminId, int cityId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+        cmd.Parameters.AddWithValue("@NewAdminUserId", newAdminUserId);
+        cmd.Parameters.AddWithValue("@CurrentAdminId", currentAdminId);
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Delete group
+    //---------------------------------------------------------------------------------
+    public bool DeleteGroup(int groupId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureDeleteGroup("SP_DeleteGroup", con, groupId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["Success"]);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for deleting a group
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureDeleteGroup(string spName, SqlConnection con, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Get user gender for validation using stored procedure
+    //---------------------------------------------------------------------------------
+    public string GetUserGender(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        string gender = null;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetUserGender("SP_GetUserGender", con, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                gender = dataReader["Gender"].ToString();
+            }
+
+            return gender;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user gender
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUserGender(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Check if user exists using stored procedure
+    //---------------------------------------------------------------------------------
+    public bool UserExists(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        bool exists = false;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureUserExists("SP_UserExists", con, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                exists = Convert.ToBoolean(dataReader["UserExists"]);
+            }
+
+            return exists;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking if user exists
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUserExists(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+
+        return cmd;
+    }
+
 }
