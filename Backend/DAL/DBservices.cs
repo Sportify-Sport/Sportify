@@ -4623,7 +4623,8 @@ public class DBservices
                 {
                     UserId = Convert.ToInt32(dataReader["UserId"]),
                     FirstName = dataReader["FirstName"].ToString(),
-                    LastName = dataReader["LastName"].ToString()
+                    LastName = dataReader["LastName"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString()
                 };
             }
 
@@ -5038,6 +5039,445 @@ public class DBservices
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
         cmd.Parameters.AddWithValue("@UserId", userId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get events by city for admin with search, sorting and pagination
+    //---------------------------------------------------------------------------------
+    public List<EventListItem> GetEventsByCityForAdmin(int cityId, string name, int sortBy, int page, int pageSize)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        List<EventListItem> events = new List<EventListItem>();
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetEventsByCityForAdmin("SP_GetEventsByCityForAdmin", con, cityId, name, sortBy, page, pageSize);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            while (dataReader.Read())
+            {
+                events.Add(new EventListItem
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    RequiresTeams = Convert.ToBoolean(dataReader["RequiresTeams"]),
+                    StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                    EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    EventImage = dataReader["ProfileImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    Gender = dataReader["Gender"].ToString(),
+                    IsPublic = Convert.ToBoolean(dataReader["IsPublic"]),
+                    LocationName = dataReader["LocationName"]?.ToString() ?? "No Location"
+                });
+            }
+
+            return events;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting events by city for admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventsByCityForAdmin(string spName, SqlConnection con, int cityId, string name, int sortBy, int page, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        cmd.Parameters.AddWithValue("@Name", name ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@SortBy", sortBy);
+        cmd.Parameters.AddWithValue("@Page", page);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get event details for admin
+    //---------------------------------------------------------------------------------
+    public EventDetailsAdmin GetEventDetailsForAdmin(int cityId, int eventId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        EventDetailsAdmin eventDetails = null;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetEventDetailsForAdmin("SP_GetEventDetailsForAdmin", con, cityId, eventId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                eventDetails = new EventDetailsAdmin
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    RequiresTeams = Convert.ToBoolean(dataReader["RequiresTeams"]),
+                    Description = dataReader["Description"].ToString(),
+                    StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                    EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    LocationName = dataReader["LocationName"]?.ToString() ?? "No Location",
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]),
+                    MinAge = Convert.ToInt32(dataReader["MinAge"]),
+                    Gender = dataReader["Gender"].ToString(),
+                    EventImage = dataReader["ProfileImage"].ToString()
+                };
+
+                // Set either team-related or participant-related properties based on RequiresTeams
+                if (eventDetails.RequiresTeams)
+                {
+                    if (dataReader["MaxTeams"] != DBNull.Value)
+                        eventDetails.MaxTeams = Convert.ToInt32(dataReader["MaxTeams"]);
+
+                    if (dataReader["TeamsNum"] != DBNull.Value)
+                        eventDetails.TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]);
+                }
+                else
+                {
+                    if (dataReader["MaxParticipants"] != DBNull.Value)
+                        eventDetails.MaxParticipants = Convert.ToInt32(dataReader["MaxParticipants"]);
+
+                    if (dataReader["ParticipantsNum"] != DBNull.Value)
+                        eventDetails.ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]);
+                }
+            }
+
+            return eventDetails;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting event details for admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventDetailsForAdmin(string spName, SqlConnection con, int cityId, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get the event admin
+    //---------------------------------------------------------------------------------
+    public EventAdmin GetEventAdmin(int eventId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        EventAdmin admin = null;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetEventAdmin("SP_GetEventAdmin", con, eventId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                admin = new EventAdmin
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString()
+                };
+            }
+
+            return admin;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting the event admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventAdmin(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create new event and assign admin
+    //---------------------------------------------------------------------------------
+    public int CreateEvent(Backend.Models.EventInfo eventInfo, int adminUserId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureCreateEvent("SP_CreateEvent", con, eventInfo, adminUserId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["EventId"]);
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for creating an event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCreateEvent(string spName, SqlConnection con, Backend.Models.EventInfo eventInfo, int adminUserId) 
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventName", eventInfo.EventName);
+        cmd.Parameters.AddWithValue("@RequiresTeams", eventInfo.RequiresTeams);
+        cmd.Parameters.AddWithValue("@Description", eventInfo.Description);
+        cmd.Parameters.AddWithValue("@StartDatetime", eventInfo.StartDatetime);
+        cmd.Parameters.AddWithValue("@EndDatetime", eventInfo.EndDatetime);
+        cmd.Parameters.AddWithValue("@CityId", eventInfo.CityId);
+        cmd.Parameters.AddWithValue("@LocationName", eventInfo.LocationName);
+        cmd.Parameters.AddWithValue("@SportId", eventInfo.SportId);
+        cmd.Parameters.AddWithValue("@IsPublic", eventInfo.IsPublic);
+        cmd.Parameters.AddWithValue("@Gender", eventInfo.Gender);
+        cmd.Parameters.AddWithValue("@MinAge", eventInfo.MinAge);
+        cmd.Parameters.AddWithValue("@ProfileImage", eventInfo.ProfileImage);
+
+        // Handle nullable parameters
+        cmd.Parameters.AddWithValue("@MaxTeams", eventInfo.MaxTeams.HasValue ? (object)eventInfo.MaxTeams.Value : DBNull.Value);
+        cmd.Parameters.AddWithValue("@MaxParticipants", eventInfo.MaxParticipants.HasValue ? (object)eventInfo.MaxParticipants.Value : DBNull.Value);
+
+        cmd.Parameters.AddWithValue("@AdminUserId", adminUserId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Change event admin
+    //---------------------------------------------------------------------------------
+    public bool ChangeEventAdmin(int eventId, int newAdminUserId, int currentAdminId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureChangeEventAdmin("SP_ChangeEventAdmin", con, eventId, newAdminUserId, currentAdminId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["Success"]);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for changing event admin
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureChangeEventAdmin(string spName, SqlConnection con, int eventId, int newAdminUserId, int currentAdminId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+        cmd.Parameters.AddWithValue("@NewAdminUserId", newAdminUserId);
+        cmd.Parameters.AddWithValue("@CurrentAdminId", currentAdminId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Delete event
+    //---------------------------------------------------------------------------------
+    public bool DeleteEvent(int eventId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureDeleteEvent("SP_DeleteEvent", con, eventId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["Success"]);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for deleting an event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureDeleteEvent(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventId", eventId);
 
         return cmd;
     }

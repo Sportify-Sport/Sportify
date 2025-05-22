@@ -15,5 +15,6 @@
         public string Gender { get; set; }
         public int? GroupAdminId { get; set; }
         public string GroupAdminName { get; set; }
+        public string GroupAdminImage { get; set; }
     }
 }

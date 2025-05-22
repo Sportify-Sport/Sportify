@@ -1,6 +1,6 @@
 ﻿namespace Backend.Models
 {
-    public class GroupAdmin
+    public class EventAdmin
     {
         public int UserId { get; set; }
         public string FirstName { get; set; }

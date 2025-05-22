@@ -153,6 +153,7 @@ namespace Backend.Controllers
                 {
                     groupDetails.GroupAdminId = groupAdmin.UserId;
                     groupDetails.GroupAdminName = $"{groupAdmin.FirstName} {groupAdmin.LastName}";
+                    groupDetails.GroupAdminImage = groupAdmin.ProfileImage;
                 }
 
                 return Ok(groupDetails);

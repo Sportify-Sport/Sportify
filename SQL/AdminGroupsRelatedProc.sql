@@ -79,7 +79,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT TOP 1 u.UserId, u.FirstName, u.LastName
+    SELECT TOP 1 u.UserId, u.FirstName, u.LastName, u.ProfileImage
     FROM Users u
     INNER JOIN GroupAdmins ga ON u.UserId = ga.UserId
     WHERE ga.GroupId = @GroupId
