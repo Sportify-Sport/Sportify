@@ -11,13 +11,23 @@ namespace Backend.Controllers
     [ApiController]
     public class EventParticipantsController : ControllerBase
     {
+        private readonly ILogger<EventParticipantsController> _logger;
+
+        public EventParticipantsController(ILogger<EventParticipantsController> logger)
+        {
+            _logger = logger;
+        }
+
+
         [Authorize(Roles = "EventAdmin")]
         [HttpGet("{eventId}/players")]
         public IActionResult GetEventPlayers(int eventId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
+            int currentUserId = 0;
             try
             {
-                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 if (page < 1 || pageSize < 1 || pageSize > 50)
                 {
@@ -30,6 +40,8 @@ namespace Backend.Controllers
 
                 if (!Event.IsUserEventAdmin(eventId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to view players for event {EventId} without being an event admin",
+                        adminName, currentUserId, eventId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this event" });
                 }
 
@@ -49,6 +61,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving players for event {EventId} by admin {AdminId}", eventId, currentUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -172,6 +185,7 @@ namespace Backend.Controllers
         [HttpPost("{eventId}/remove-player/{playerUserId}")]
         public IActionResult RemovePlayerFromEvent(int eventId, int playerUserId)
         {
+            int adminUserId = 0;
             try
             {
                 if (eventId <= 0 || playerUserId <= 0)
@@ -179,21 +193,28 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid event ID or player ID" });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 var result = EventParticipant.RemovePlayerFromEvent(eventId, playerUserId, adminUserId);
 
                 if (result.Success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully removed player {PlayerUserId} from event {EventId}",
+                        adminName, adminUserId, playerUserId, eventId);
                     return Ok(new { success = true, message = "Player has been removed from the event" });
                 }
                 else
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to remove player {PlayerUserId} from event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, playerUserId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error removing player {PlayerUserId} from event {EventId} by admin {AdminId}",
+                    playerUserId, eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -202,6 +223,7 @@ namespace Backend.Controllers
         [HttpPost("events/{eventId}/process-request/{requestUserId}/{approve}")]
         public IActionResult AdminProcessJoinRequest(int eventId, int requestUserId, bool approve)
         {
+            int adminUserId = 0;
             try
             {
                 if (eventId <= 0 || requestUserId <= 0)
@@ -209,12 +231,16 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid event ID or user ID" });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 var result = EventParticipant.AdminProcessJoinRequest(eventId, requestUserId, adminUserId, approve);
 
                 if (result.Success)
                 {
+                    string action = approve ? "approved" : "rejected";
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) {Action} join request from user {RequestUserId} for event {EventId}",
+                        adminName, adminUserId, action, requestUserId, eventId);
                     return Ok(new
                     {
                         success = true,
@@ -225,11 +251,15 @@ namespace Backend.Controllers
                 }
                 else
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to process join request for user {RequestUserId} for event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, requestUserId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error processing join request for user {RequestUserId} for event {EventId} by admin {AdminId}",
+                    requestUserId, eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -238,6 +268,7 @@ namespace Backend.Controllers
         [HttpGet("events/{eventId}/pending-requests")]
         public IActionResult GetEventPendingJoinRequests(int eventId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
+            int adminUserId = 0;
             try
             {
                 if (eventId <= 0)
@@ -254,12 +285,15 @@ namespace Backend.Controllers
                     });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 var result = EventParticipant.GetPendingJoinRequests(eventId, adminUserId, page, pageSize);
 
                 if (!result.Success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to get pending join requests for event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
@@ -273,6 +307,8 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving pending join requests for event {EventId} by admin {AdminId}",
+                    eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -281,6 +317,7 @@ namespace Backend.Controllers
         [HttpGet("events/{eventId}/pending-request-user/{userId}")]
         public IActionResult GetEventPendingRequestUserDetails(int eventId, int userId)
         {
+            int adminUserId = 0;
             try
             {
                 if (eventId <= 0 || userId <= 0)
@@ -288,17 +325,22 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid event ID or user ID" });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 var result = EventParticipant.GetPendingRequestUserDetails(eventId, userId, adminUserId);
 
                 if (!result.Success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to get pending request user details for user {UserId} in event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, userId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
                 if (result.UserDetails == null)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent pending request for user {UserId} in event {EventId}",
+                        adminName, adminUserId, userId, eventId);
                     return NotFound(new { success = false, message = "User details not found" });
                 }
 
@@ -310,6 +352,8 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving pending request details for user {UserId} in event {EventId} by admin {AdminId}",
+                    userId, eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -318,6 +362,7 @@ namespace Backend.Controllers
         [HttpGet("events/{eventId}/player/{userId}")]
         public IActionResult GetEventPlayerDetails(int eventId, int userId)
         {
+            int adminUserId = 0;
             try
             {
                 if (eventId <= 0 || userId <= 0)
@@ -325,17 +370,22 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid event ID or user ID" });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 var result = EventParticipant.GetPlayerDetails(eventId, userId, adminUserId);
 
                 if (!result.Success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to get player details for user {UserId} in event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, userId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
                 if (result.UserDetails == null)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent player {UserId} in event {EventId}",
+                        adminName, adminUserId, userId, eventId);
                     return NotFound(new { success = false, message = "User details not found" });
                 }
 
@@ -347,6 +397,8 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving player details for user {UserId} in event {EventId} by admin {AdminId}",
+                    userId, eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }

@@ -11,6 +11,13 @@ namespace Backend.Controllers
     [ApiController]
     public class EventTeamsController : ControllerBase
     {
+        private readonly ILogger<EventTeamsController> _logger;
+
+        public EventTeamsController(ILogger<EventTeamsController> logger)
+        {
+            _logger = logger;
+        }
+
         [Authorize(Roles = "User")]
         [HttpPost("team-events/{eventId}/join-as-spectator")]
         public IActionResult JoinTeamEventAsSpectator(int eventId)
@@ -117,26 +124,34 @@ namespace Backend.Controllers
         [HttpDelete("team-events/{eventId}/groups/{groupId}")]
         public IActionResult RemoveGroupFromEvent(int eventId, int groupId)
         {
+            int adminUserId = 0;
             try
             {
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
+
                 if (eventId <= 0 || groupId <= 0)
                 {
                     return BadRequest(new { success = false, message = "Invalid event ID or group ID" });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-
                 var result = EventTeam.RemoveGroupFromEvent(eventId, groupId, adminUserId);
 
                 if (!result.Success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to remove group {GroupId} from event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, groupId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
+                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully removed group {GroupId} from event {EventId}",
+                    adminName, adminUserId, groupId, eventId);
                 return Ok(new { success = true, message = "Group successfully removed from event" });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error removing group {GroupId} from event {EventId} by admin {AdminId}",
+                    groupId, eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -145,6 +160,7 @@ namespace Backend.Controllers
         [HttpPost("team-events/{eventId}/groups/{groupId}")]
         public IActionResult AddGroupToEvent(int eventId, int groupId)
         {
+            int adminUserId = 0;
             try
             {
                 if (eventId <= 0 || groupId <= 0)
@@ -152,19 +168,26 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid event ID or group ID" });
                 }
 
-                int adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                adminUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 var result = EventTeam.AddGroupToEvent(eventId, groupId, adminUserId);
 
                 if (!result.Success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to add group {GroupId} to event {EventId}: {ErrorMessage}",
+                        adminName, adminUserId, groupId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
+                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully added group {GroupId} to event {EventId}",
+                    adminName, adminUserId, groupId, eventId);
                 return Ok(new { success = true, message = "Group successfully added to event" });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error adding group {GroupId} to event {EventId} by admin {AdminId}",
+                    groupId, eventId, adminUserId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }

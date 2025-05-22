@@ -11,6 +11,14 @@ namespace Backend.Controllers
     [ApiController]
     public class GroupMembersController : ControllerBase
     {
+        private readonly ILogger<GroupMembersController> _logger;
+
+        public GroupMembersController(ILogger<GroupMembersController> logger)
+        {
+            _logger = logger;
+        }
+
+
         [Authorize(Roles = "User")]
         [HttpGet("members/{groupId}")]
         public IActionResult GetGroupMembers(int groupId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -53,14 +61,20 @@ namespace Backend.Controllers
             try
             {
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
+
 
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to view user details for user {UserId} in group {GroupId} without being a group admin",
+                        adminName, currentUserId, userId, groupId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
 
                 if (!GroupMember.IsUserGroupMember(groupId, userId))
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) attempted to view details for non-member user {UserId} in group {GroupId}",
+                        adminName, currentUserId, userId, groupId);
                     return BadRequest(new { success = false, message = "User is not a member of this group" });
                 }
 
@@ -68,6 +82,8 @@ namespace Backend.Controllers
 
                 if (userDetails == null)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent user {UserId} in group {GroupId}",
+                        adminName, currentUserId, userId, groupId);
                     return NotFound(new { success = false, message = "User not found" });
                 }
 
@@ -75,6 +91,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving group user details for user {UserId} in group {GroupId}", userId, groupId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -86,9 +103,12 @@ namespace Backend.Controllers
             try
             {
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to view pending join requests for group {GroupId} without being a group admin",
+                        adminName, currentUserId, groupId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
 
@@ -117,6 +137,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving pending join requests for group {GroupId}", groupId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -158,9 +179,12 @@ namespace Backend.Controllers
             try
             {
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to approve join request {RequestId} for group {GroupId} without being a group admin",
+                        adminName, currentUserId, requestId, groupId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
 
@@ -168,15 +192,20 @@ namespace Backend.Controllers
 
                 if (success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) approved join request {RequestId} for group {GroupId}",
+                        adminName, currentUserId, requestId, groupId);
                     return Ok(new { success = true, message = message });
                 }
                 else
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to approve join request {RequestId} for group {GroupId}: {Message}",
+                        adminName, currentUserId, requestId, groupId, message);
                     return BadRequest(new { success = false, message = message });
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error approving join request {RequestId} for group {GroupId}", requestId, groupId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -188,9 +217,12 @@ namespace Backend.Controllers
             try
             {
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to reject join request {RequestId} for group {GroupId} without being a group admin",
+                        adminName, currentUserId, requestId, groupId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
 
@@ -198,15 +230,20 @@ namespace Backend.Controllers
 
                 if (rejected)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) rejected join request {RequestId} for group {GroupId}",
+                       adminName, currentUserId, requestId, groupId);
                     return Ok(new { success = true, message = "Join request rejected successfully" });
                 }
                 else
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to reject join request {RequestId} for group {GroupId}",
+                        adminName, currentUserId, requestId, groupId);
                     return BadRequest(new { success = false, message = "Failed to reject the request or request doesn't exist" });
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error rejecting join request {RequestId} for group {GroupId}", requestId, groupId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -219,14 +256,19 @@ namespace Backend.Controllers
             try
             {
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to remove member {UserId} from group {GroupId} without being a group admin",
+                        adminName, currentUserId, userId, groupId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
 
                 if (userId == currentUserId)
                 {
+                    _logger.LogWarning("Admin {AdminName} (ID: {AdminId}) attempted to remove himself from group {GroupId}",
+                        adminName, currentUserId, groupId);
                     return BadRequest(new { success = false, message = "Group admins cannot remove themselves from the group" });
                 }
 
@@ -234,15 +276,20 @@ namespace Backend.Controllers
 
                 if (success)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) removed member {UserId} from group {GroupId}",
+                        adminName, currentUserId, userId, groupId);
                     return Ok(new { success = true, message = message });
                 }
                 else
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) failed to remove member {UserId} from group {GroupId}: {Message}",
+                        adminName, currentUserId, userId, groupId, message);
                     return BadRequest(new { success = false, message = message });
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error removing member {UserId} from group {GroupId}", userId, groupId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -278,15 +325,18 @@ namespace Backend.Controllers
         {
             try
             {
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
+
                 if (groupId <= 0 || userId <= 0)
                 {
                     return BadRequest(new { success = false, message = "Invalid group Id or user Id" });
                 }
 
-                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-
                 if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
                 {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to view pending request for user {UserId} in group {GroupId} without being a group admin",
+                        adminName, currentUserId, userId, groupId);
                     return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
                 }
 
@@ -294,6 +344,8 @@ namespace Backend.Controllers
 
                 if (userDetails == null)
                 {
+                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) checked for pending request for user {UserId} in group {GroupId} but none found",
+                        adminName, currentUserId, userId, groupId);
                     return NotFound(new { success = false, message = "No pending request found for this user in this group" });
                 }
 
@@ -301,6 +353,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving pending request details for user {UserId} in group {GroupId}", userId, groupId);
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
