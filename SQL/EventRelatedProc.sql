@@ -235,3 +235,20 @@ BEGIN
     -- This will be interpreted as null in C#
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <22/5/2025>
+-- Description:	<Get the CityId for a specific event>
+-- =============================================
+CREATE PROCEDURE SP_GetEventCityId
+    @EventId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT CityId 
+    FROM Events 
+    WHERE EventId = @EventId;
+END
+GO

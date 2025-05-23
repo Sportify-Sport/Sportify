@@ -140,3 +140,19 @@ BEGIN
 END
 GO
 
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <22/5/2025>
+-- Description:	<Get the CityId for a specific group>
+-- =============================================
+CREATE PROCEDURE SP_GetGroupCityId
+    @GroupId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT CityId 
+    FROM Groups 
+    WHERE GroupId = @GroupId;
+END
+GO
