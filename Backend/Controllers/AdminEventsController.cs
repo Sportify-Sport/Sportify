@@ -56,8 +56,8 @@ namespace Backend.Controllers
                 int sortOption = ConvertSortByToNumeric(sortBy);
 
                 // Log the request
-                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested events for city {CityId} with sort: {SortBy}, search: {SearchName}",
-                    userName, userId, cityId, sortBy, name ?? "none");
+                //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested events for city {CityId} with sort: {SortBy}, search: {SearchName}",
+                //    userName, userId, cityId, sortBy, name ?? "none");
 
                 // Get events with pagination (fetch one extra item to determine if there are more)
                 var events = dbServices.GetEventsByCityForAdmin(cityId, name, sortOption, page, pageSize);
@@ -112,8 +112,8 @@ namespace Backend.Controllers
                 }
 
                 // Log the request
-                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for event {EventId} in city {CityId}",
-                    userName, userId, eventId, cityId);
+                //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for event {EventId} in city {CityId}",
+                //    userName, userId, eventId, cityId);
 
                 // Get event details
                 var eventDetails = dbServices.GetEventDetailsForAdmin(cityId, eventId);

@@ -82,8 +82,8 @@ namespace Backend.Controllers
 
                 if (userDetails == null)
                 {
-                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent user {UserId} in group {GroupId}",
-                        adminName, currentUserId, userId, groupId);
+                    //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent user {UserId} in group {GroupId}",
+                    //    adminName, currentUserId, userId, groupId);
                     return NotFound(new { success = false, message = "User not found" });
                 }
 
@@ -344,8 +344,8 @@ namespace Backend.Controllers
 
                 if (userDetails == null)
                 {
-                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) checked for pending request for user {UserId} in group {GroupId} but none found",
-                        adminName, currentUserId, userId, groupId);
+                    //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) checked for pending request for user {UserId} in group {GroupId} but none found",
+                    //    adminName, currentUserId, userId, groupId);
                     return NotFound(new { success = false, message = "No pending request found for this user in this group" });
                 }
 

@@ -34,8 +34,8 @@ namespace Backend.Controllers
                 string userName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 // Log the action
-                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested managed cities list at {Timestamp}",
-                    userName, userId, DateTime.UtcNow);
+                //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested managed cities list at {Timestamp}",
+                //    userName, userId, DateTime.UtcNow);
 
                 // Get the cities from the database
                 DBservices dbServices = new DBservices();

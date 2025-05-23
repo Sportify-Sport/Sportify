@@ -34,8 +34,8 @@ namespace Backend.Controllers
                 string adminUserName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 // Log the search request
-                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) searched for users with query: {Query}",
-                    adminUserName, adminUserId, emailOrId ?? "empty");
+                //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) searched for users with query: {Query}",
+                //    adminUserName, adminUserId, emailOrId ?? "empty");
 
                 if (string.IsNullOrWhiteSpace(emailOrId))
                 {

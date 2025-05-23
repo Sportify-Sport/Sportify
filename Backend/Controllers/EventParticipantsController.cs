@@ -339,8 +339,8 @@ namespace Backend.Controllers
 
                 if (result.UserDetails == null)
                 {
-                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent pending request for user {UserId} in event {EventId}",
-                        adminName, adminUserId, userId, eventId);
+                    //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent pending request for user {UserId} in event {EventId}",
+                    //    adminName, adminUserId, userId, eventId);
                     return NotFound(new { success = false, message = "User details not found" });
                 }
 
@@ -384,8 +384,8 @@ namespace Backend.Controllers
 
                 if (result.UserDetails == null)
                 {
-                    _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent player {UserId} in event {EventId}",
-                        adminName, adminUserId, userId, eventId);
+                    //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for non-existent player {UserId} in event {EventId}",
+                    //    adminName, adminUserId, userId, eventId);
                     return NotFound(new { success = false, message = "User details not found" });
                 }
 

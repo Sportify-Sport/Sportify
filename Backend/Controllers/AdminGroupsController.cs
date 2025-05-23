@@ -63,8 +63,8 @@ namespace Backend.Controllers
                 int sortOption = ConvertSortByToNumeric(sortBy);
 
                 // Log the request
-                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested groups for city {CityId} with sort: {SortBy}, search: {SearchName}",
-                    userName, userId, cityId, sortBy, name ?? "none");
+                //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested groups for city {CityId} with sort: {SortBy}, search: {SearchName}",
+                //    userName, userId, cityId, sortBy, name ?? "none");
 
                 // Get groups with pagination (fetch one extra item to determine if there are more)
                 var groups = dbServices.GetGroupsByCityForAdmin(cityId, name, sortOption, page, pageSize);
@@ -136,8 +136,8 @@ namespace Backend.Controllers
                 }
 
                 // Log the request
-                _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for group {GroupId} in city {CityId}",
-                    userName, userId, groupId, cityId);
+                //_logger.LogInformation("Admin {AdminName} (ID: {AdminId}) requested details for group {GroupId} in city {CityId}",
+                //    userName, userId, groupId, cityId);
 
                 // Get group details
                 var groupDetails = dbServices.GetGroupDetailsForAdmin(cityId, groupId);
