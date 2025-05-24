@@ -160,7 +160,7 @@ namespace Backend.Controllers
 
                 // Generate new tokens
                 var newAccessToken = GenerateJwtToken(user);
-                var newRefreshToken = GenerateRefreshToken(user.UserId);
+                var newRefreshToken = GenerateRefreshToken(user.UserId, refreshToken.ExpiryDate);
 
                 // Revoke old refresh token
                 dbServices.RevokeRefreshToken(refreshToken.Token, "Replaced by new token", newRefreshToken.Token);
@@ -285,7 +285,7 @@ namespace Backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private RefreshToken GenerateRefreshToken(int userId)
+        private RefreshToken GenerateRefreshToken(int userId, DateTime? inheritExpiryDate = null)
         {
             // Generate a random token
             var randomBytes = new byte[64];
@@ -294,8 +294,10 @@ namespace Backend.Controllers
             string token = Convert.ToBase64String(randomBytes);
 
             //var expiryDate = DateTime.UtcNow.AddDays(7);
-            var expiryDate = DateTime.UtcNow.AddMonths(1);
+            //var expiryDate = DateTime.UtcNow.AddMonths(1);
 
+            // Use inherited expiry date or create a new one
+            var expiryDate = inheritExpiryDate ?? DateTime.UtcNow.AddMonths(1);
             DBservices dbServices = new DBservices();
             return dbServices.SaveRefreshToken(userId, token, expiryDate);
         }
