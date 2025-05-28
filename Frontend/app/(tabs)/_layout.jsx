@@ -5,10 +5,13 @@ import { COLORS } from "@/constants/theme";
 export default function TabLayout() {
   return (
     <Tabs
-    screenOptions={{
-      tabBarShowLabel: false,
-      headerShown: false
-    }}
+      screenOptions={{
+        tabBarShowLabel: false,
+        headerShown: false,
+        tabBarStyle: {
+          height: 0, 
+        },
+      }}
     >
       <Tabs.Screen name="index"
         options={{
