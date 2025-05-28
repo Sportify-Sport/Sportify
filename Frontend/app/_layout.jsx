@@ -8,7 +8,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <FilterProvider>
-        <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "white" }} edges={['top']}>
           {/* 
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
