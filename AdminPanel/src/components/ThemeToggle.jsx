@@ -1,4 +1,3 @@
-// src/components/ThemeToggle.jsx
 import React from 'react';
 import { useTheme } from '../hooks/useTheme';
 import '../styles/theme.css';
@@ -16,9 +15,8 @@ const ThemeToggle = () => {
           aria-label="Toggle dark mode"
         />
         <span className="toggle-slider">
-          <span className="toggle-icon">
-            {darkMode ? '🌙' : '☀️'}
-          </span>
+          <span className={`toggle-icon sun ${darkMode ? 'hidden' : ''}`}>🌙</span>
+          <span className={`toggle-icon moon ${!darkMode ? 'hidden' : ''}`}>☀️</span>
         </span>
       </label>
     </div>
