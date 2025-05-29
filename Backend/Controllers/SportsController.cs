@@ -13,7 +13,6 @@ namespace Backend.Controllers
     {
         private readonly IMemoryCache _memoryCache;
         private readonly ILogger<SportsController> _logger;
-        private const string SPORTS_CACHE_KEY = "ALL_SPORTS";
 
         // Inject the IMemoryCache service
         public SportsController(IMemoryCache memoryCache, ILogger<SportsController> logger)
@@ -28,29 +27,8 @@ namespace Backend.Controllers
         {
             try
             {
-                // Try to get sports from cache first
-                if (_memoryCache.TryGetValue(SPORTS_CACHE_KEY, out var sports))
-                {
-                    //_logger.LogInformation("Cache HIT for sports data"); // For debuging
-                    //Response.Headers.Add("X-Cache", "HIT"); // For debuging
-                    return Ok(sports);
-                }
-
-                //_logger.LogInformation("Cache MISS for sports data - fetching from database"); // For debuging
-
-                // Cache miss - get from database
-                //Response.Headers.Add("X-Cache", "MISS");// For debuging
-                var sportsFromDb = Sport.GetAllSports();
-
-                // Cache the result with a long expiration since sports rarely change
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    //.SetAbsoluteExpiration(TimeSpan.FromMinutes(1))  // Cache for 1 minute (testing)
-                    .SetAbsoluteExpiration(TimeSpan.FromDays(30))  // Cache for 30 days
-                    .SetPriority(CacheItemPriority.High);          // High priority to avoid removal
-
-                _memoryCache.Set(SPORTS_CACHE_KEY, sportsFromDb, cacheOptions);
-
-                return Ok(sportsFromDb);
+                var sports = Sport.GetAllSports(_memoryCache);
+                return Ok(sports);
             }
             catch (Exception ex)
             {
@@ -58,6 +36,40 @@ namespace Backend.Controllers
                 return StatusCode(500, "An error occurred while retrieving sports");
             }
         }
+
+        [AllowAnonymous]
+        [HttpGet("{id}")]
+        public IActionResult GetSportById(int id)
+        {
+            try
+            {
+                var sport = Sport.GetSportById(id, _memoryCache);
+                if (sport == null)
+                {
+                    return NotFound(new { success = false, message = "Sport not found" });
+                }
+
+                return Ok(sport);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving sport {SportId}", id);
+                return StatusCode(500, "An error occurred while retrieving the sport");
+            }
+        }
+
+        //[AllowAnonymous]
+        //[HttpGet("debug-cache")]
+        //public IActionResult CheckCache()
+        //{
+        //    bool isCached = _memoryCache.TryGetValue("ALL_SPORTS", out List<Sport> sports);
+
+        //    return Ok(new
+        //    {
+        //        Cached = isCached,
+        //        Count = sports?.Count ?? 0
+        //    });
+        //}
 
         //[Authorize(Roles = "Admin")]  // Restrict to admins
         //[HttpPost]
