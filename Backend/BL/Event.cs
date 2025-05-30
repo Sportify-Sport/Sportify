@@ -159,5 +159,22 @@
             DBservices db = new DBservices();
             return db.EventRequiresTeams(eventId);
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Used to update event details
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string Message) UpdateEvent(int eventId, string eventName, string description, string locationName)
+        {
+            try
+            {
+                DBservices dbServices = new DBservices();
+                return dbServices.UpdateEvent(eventId, eventName, description, locationName);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"An error occurred: {ex.Message}");
+            }
+        }
+
     }
 }

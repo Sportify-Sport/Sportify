@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Backend.Models;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -11,6 +12,13 @@ namespace Backend.Controllers
     [ApiController]
     public class EventsController : ControllerBase
     {
+        private readonly ILogger<EventsController> _logger;
+
+        public EventsController(ILogger<EventsController> logger)
+        {
+            _logger = logger;
+        }
+
         [AllowAnonymous]
         [HttpGet("eventDetialsWithoutStatus/{eventId}")]
         public IActionResult GetEventDetailsWithoutStatus(int eventId)
@@ -108,6 +116,86 @@ namespace Backend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        [HttpPut("{eventId}")]
+        [Authorize(AuthenticationSchemes = "Bearer,AdminScheme", Roles = "EventAdmin,CityOrganizer")]
+        public IActionResult UpdateEvent(int eventId, [FromBody] UpdateEventDto updateDto)
+        {
+            try
+            {
+                // Get user ID from claims
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string userName = User.FindFirst("name")?.Value ?? "Unknown";
+
+                // Input validation
+                if (string.IsNullOrWhiteSpace(updateDto.EventName))
+                {
+                    return BadRequest(new { success = false, message = "Event name is required" });
+                }
+
+                if (updateDto.EventName.Length > 100)
+                {
+                    return BadRequest(new { success = false, message = "Event name cannot exceed 100 characters" });
+                }
+
+                if (updateDto.Description?.Length > 500)
+                {
+                    return BadRequest(new { success = false, message = "Description cannot exceed 500 characters" });
+                }
+
+                if (string.IsNullOrWhiteSpace(updateDto.LocationName))
+                {
+                    return BadRequest(new { success = false, message = "Location name is required" });
+                }
+
+                if (updateDto.LocationName.Length > 100)
+                {
+                    return BadRequest(new { success = false, message = "Location name cannot exceed 100 characters" });
+                }
+
+                // Check authorization - first get the event's city id
+                DBservices dbServices = new DBservices();
+                var eventCityId = dbServices.GetEventCityId(eventId);
+                if (!eventCityId.HasValue)
+                {
+                    return NotFound(new { success = false, message = "Event not found" });
+                }
+
+                // Check if user is event admin or city organizer
+                bool isEventAdmin = Event.IsUserEventAdmin(eventId, currentUserId);
+                bool isCityOrganizer = dbServices.IsUserCityOrganizer(currentUserId, eventCityId.Value);
+
+                if (!isEventAdmin && !isCityOrganizer)
+                {
+                    _logger.LogWarning("Unauthorized event update attempt: User {UserName} (ID: {UserId}) tried to update event {EventId}",
+                        userName, currentUserId, eventId);
+                    return StatusCode(403, new { success = false, message = "You do not have permission to edit this event" });
+                }
+
+                // Update event
+                string editorRole = isEventAdmin ? "EventAdmin" : "CityOrganizer";
+                var (success, message) = Event.UpdateEvent(eventId, updateDto.EventName.Trim(),
+                    updateDto.Description?.Trim(), updateDto.LocationName.Trim());
+
+                if (success)
+                {
+                    _logger.LogInformation("{EditorRole} {UserName} (ID: {UserId}) updated event {EventId}",
+                        editorRole, userName, currentUserId, eventId);
+                    return Ok(new { success = true, message = message });
+                }
+                else
+                {
+                    _logger.LogWarning("{EditorRole} {UserName} (ID: {UserId}) failed to update event {EventId}: {Message}",
+                        editorRole, userName, currentUserId, eventId, message);
+                    return BadRequest(new { success = false, message = message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating event {EventId}", eventId);
+                return StatusCode(500, new { success = false, message = "An error occurred while updating the event" });
             }
         }
     }

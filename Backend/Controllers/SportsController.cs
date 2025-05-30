@@ -58,6 +58,15 @@ namespace Backend.Controllers
             }
         }
 
+        // To Validate Sports (To use in other controllers)
+        // Validate SportId using cached sports
+        //bool isValidSport = Sport.ValidateSportId(groupDto.SportId, _memoryCache);
+        //    if (!isValidSport)
+        //    {
+        //        return BadRequest(new { success = false, message = "Invalid sport ID" });
+        //    }
+
+
         //[AllowAnonymous]
         //[HttpGet("debug-cache")]
         //public IActionResult CheckCache()

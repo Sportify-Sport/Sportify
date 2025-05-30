@@ -156,3 +156,46 @@ BEGIN
     WHERE GroupId = @GroupId;
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <29/5/2025>
+-- Description:	<Is used to update group details>
+-- =============================================
+CREATE PROCEDURE SP_UpdateGroup
+    @GroupId INT,
+    @GroupName NVARCHAR(100),
+    @Description NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    BEGIN TRY
+        -- Check if group exists
+        IF NOT EXISTS (SELECT 1 FROM Groups WHERE GroupId = @GroupId)
+        BEGIN
+            SELECT 0 AS Success, 'Group not found' AS Message;
+            RETURN;
+        END
+        
+        -- Check if group name already exists (excluding current group)
+        --IF EXISTS (SELECT 1 FROM Groups WHERE GroupName = @GroupName AND GroupId != @GroupId)
+        --BEGIN
+            --SELECT 0 AS Success, 'A group with this name already exists' AS Message;
+            --RETURN;
+        --END
+        
+        -- Update the group
+        UPDATE Groups 
+        SET 
+            GroupName = @GroupName,
+            Description = @Description
+        WHERE GroupId = @GroupId;
+        
+        SELECT 1 AS Success, 'Group updated successfully' AS Message;
+    END TRY
+    BEGIN CATCH
+        SELECT 0 AS Success, ERROR_MESSAGE() AS Message;
+    END CATCH
+END
+GO

@@ -114,5 +114,22 @@
                 throw ex;
             }
         }
+
+        //--------------------------------------------------------------------------------------------------
+        // Updates group details
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string Message) UpdateGroup(int groupId, string groupName, string description)
+        {
+            try
+            {
+                DBservices dbServices = new DBservices();
+                return dbServices.UpdateGroup(groupId, groupName, description);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"An error occurred: {ex.Message}");
+            }
+        }
+
     }
 }

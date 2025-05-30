@@ -252,3 +252,100 @@ BEGIN
     WHERE EventId = @EventId;
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <29/5/2025>
+-- Description:	<Is used to update event details>
+-- =============================================
+CREATE PROCEDURE SP_UpdateEvent
+    @EventId INT,
+    @EventName NVARCHAR(100),
+    @Description NVARCHAR(500),
+    @LocationName NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    BEGIN TRY
+        DECLARE @CurrentLocationId INT;
+        DECLARE @NewLocationId INT;
+        DECLARE @EventStarted BIT = 0;
+        DECLARE @CurrentLocationName NVARCHAR(100);
+        
+        -- Check if event exists and if it has already started
+        SELECT 
+            @CurrentLocationId = e.LocationId,
+            @EventStarted = CASE WHEN e.StartDatetime <= GETDATE() THEN 1 ELSE 0 END,
+            @CurrentLocationName = el.LocationName
+        FROM Events e
+        LEFT JOIN EventLocations el ON e.LocationId = el.LocationId
+        WHERE e.EventId = @EventId;
+        
+        IF @@ROWCOUNT = 0
+        BEGIN
+            SELECT 0 AS Success, 'Event not found' AS Message;
+            RETURN;
+        END
+        
+        -- Check if event has started
+        IF @EventStarted = 1
+        BEGIN
+            SELECT 0 AS Success, 'Cannot edit event that has already started' AS Message;
+            RETURN;
+        END
+        
+        -- Check if event name already exists (excluding current event)
+        --IF EXISTS (SELECT 1 FROM Events WHERE EventName = @EventName AND EventId != @EventId)
+        --BEGIN
+            --SELECT 0 AS Success, 'An event with this name already exists' AS Message;
+            --RETURN;
+        --END
+        
+        -- Handle location logic
+        IF @CurrentLocationName IS NULL OR @CurrentLocationName <> @LocationName
+        BEGIN
+            -- Check if the location already exists
+            SELECT @NewLocationId = LocationId 
+            FROM EventLocations 
+            WHERE LocationName = @LocationName;
+            
+            -- If location doesn't exist, create a new one
+            IF @NewLocationId IS NULL
+            BEGIN
+                INSERT INTO EventLocations (LocationName, Latitude, Longitude)
+                VALUES (@LocationName, NULL, NULL);
+                
+                SET @NewLocationId = SCOPE_IDENTITY();
+            END
+        END
+        ELSE
+        BEGIN
+            -- Same location name, keep current LocationId
+            SET @NewLocationId = @CurrentLocationId;
+        END
+        
+        -- Update the event
+        UPDATE Events 
+        SET 
+            EventName = @EventName,
+            Description = @Description,
+            LocationId = @NewLocationId
+        WHERE EventId = @EventId;
+        
+        -- Check if old location is now unused and delete if so
+        IF @CurrentLocationId IS NOT NULL AND @CurrentLocationId <> @NewLocationId
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM Events WHERE LocationId = @CurrentLocationId)
+            BEGIN
+                DELETE FROM EventLocations WHERE LocationId = @CurrentLocationId;
+            END
+        END
+        
+        SELECT 1 AS Success, 'Event updated successfully' AS Message;
+    END TRY
+    BEGIN CATCH
+        SELECT 0 AS Success, ERROR_MESSAGE() AS Message;
+    END CATCH
+END
+GO

@@ -2,6 +2,7 @@
 using Backend.BL;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Backend.Models;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -11,6 +12,13 @@ namespace Backend.Controllers
     [ApiController]
     public class GroupsController : ControllerBase
     {
+        private readonly ILogger<GroupsController> _logger;
+
+        public GroupsController(ILogger<GroupsController> logger)
+        {
+            _logger = logger;
+        }
+
         //[AllowAnonymous]
         //[HttpGet("group/{groupId}")]
         //public IActionResult GetGroupDetails(int groupId)
@@ -123,6 +131,73 @@ namespace Backend.Controllers
             }
         }
 
-        
+        [HttpPut("{groupId}")]
+        [Authorize(AuthenticationSchemes = "Bearer,AdminScheme", Roles = "GroupAdmin,CityOrganizer")]
+        public IActionResult UpdateGroup(int groupId, [FromBody] UpdateGroupDto updateDto)
+        {
+            try
+            {
+                // Get user ID from claims
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string userName = User.FindFirst("name")?.Value ?? "Unknown";
+
+                // Input validation
+                if (string.IsNullOrWhiteSpace(updateDto.GroupName))
+                {
+                    return BadRequest(new { success = false, message = "Group name is required" });
+                }
+
+                if (updateDto.GroupName.Length > 100)
+                {
+                    return BadRequest(new { success = false, message = "Group name cannot exceed 100 characters" });
+                }
+
+                if (updateDto.Description?.Length > 500)
+                {
+                    return BadRequest(new { success = false, message = "Description cannot exceed 500 characters" });
+                }
+
+                // Check authorization - first get the group's city id
+                DBservices dbServices = new DBservices();
+                var groupCityId = dbServices.GetGroupCityId(groupId);
+                if (!groupCityId.HasValue)
+                {
+                    return NotFound(new { success = false, message = "Group not found" });
+                }
+
+                // Check if user is group admin or city organizer
+                bool isGroupAdmin = GroupMember.IsUserGroupAdmin(groupId, currentUserId);
+                bool isCityOrganizer = dbServices.IsUserCityOrganizer(currentUserId, groupCityId.Value);
+
+                if (!isGroupAdmin && !isCityOrganizer)
+                {
+                    _logger.LogWarning("Unauthorized group update attempt: User {UserName} (ID: {UserId}) tried to update group {GroupId}",
+                        userName, currentUserId, groupId);
+                    return StatusCode(403, new { success = false, message = "You do not have permission to edit this group" });
+                }
+
+                // Update group
+                string editorRole = isGroupAdmin ? "GroupAdmin" : "CityOrganizer";
+                var (success, message) = Group.UpdateGroup(groupId, updateDto.GroupName.Trim(), updateDto.Description?.Trim());
+
+                if (success)
+                {
+                    _logger.LogInformation("{EditorRole} {UserName} (ID: {UserId}) updated group {GroupId}",
+                        editorRole, userName, currentUserId, groupId);
+                    return Ok(new { success = true, message = message });
+                }
+                else
+                {
+                    _logger.LogWarning("{EditorRole} {UserName} (ID: {UserId}) failed to update group {GroupId}: {Message}",
+                        editorRole, userName, currentUserId, groupId, message);
+                    return BadRequest(new { success = false, message = message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating group {GroupId}", groupId);
+                return StatusCode(500, new { success = false, message = "An error occurred while updating the group" });
+            }
+        }
     }
 }

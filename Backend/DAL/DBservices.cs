@@ -781,19 +781,11 @@ public class DBservices
         }
         else
         {
-            cmd.Parameters.AddWithValue("@profileImage", DBNull.Value);
+            cmd.Parameters.AddWithValue("@profileImage", "default_profile.png");
         }
 
         return cmd;
     }
-
-
-
-
-
-
-
-
 
     ////--------------------------------------------------------------------------------------------------
     //// This method retrieves complete information for a specific group
@@ -5596,6 +5588,134 @@ public class DBservices
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
         cmd.Parameters.AddWithValue("@EventId", eventId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get the city id for the specified event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string Message) UpdateGroup(int groupId, string groupName, string description)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+
+        cmd = CreateCommandWithStoredProcedureUpdateGroup("SP_UpdateGroup", con, groupId, groupName, description);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Unexpected error occurred");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting the city id for the specified event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateGroup(string spName, SqlConnection con, int groupId, string groupName, string description)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+        cmd.Parameters.AddWithValue("@GroupName", groupName);
+        cmd.Parameters.AddWithValue("@Description", description ?? "");
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get the city id for the specified event
+    //---------------------------------------------------------------------------------
+    public (bool Success, string Message) UpdateEvent(int eventId, string eventName, string description, string locationName)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+
+        cmd = CreateCommandWithStoredProcedureUpdateEvent("SP_UpdateEvent", con, eventId, eventName, description, locationName);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Unexpected error occurred");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting the city id for the specified event
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateEvent(string spName, SqlConnection con, int eventId, string eventName, string description, string locationName)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+        cmd.Parameters.AddWithValue("@EventName", eventName);
+        cmd.Parameters.AddWithValue("@Description", description ?? "");
+        cmd.Parameters.AddWithValue("@LocationName", locationName);
 
         return cmd;
     }
