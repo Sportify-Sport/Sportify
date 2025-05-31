@@ -1,11 +1,18 @@
-/* src/styles/auth.css */
+body, html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .auth-container, .city-selection-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   padding: 1rem;
-  background-color: var(--background);
+  /* background-color: var(--background); */
 }
 
 .auth-card, .city-selection-card {
