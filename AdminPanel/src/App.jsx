@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import CitySelectionPage from './pages/CitySelectionPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
+import GroupSelectionPage from './pages/GroupSelectionPage';
 import './styles/global.css';
 //import './styles/App.css'
 
@@ -32,6 +33,12 @@ function App() {
           <Route path="/dashboard" element={
             <PrivateRoute>
               <DashboardPage />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/group" element={
+            <PrivateRoute>
+              <GroupSelectionPage />
             </PrivateRoute>
           } />
           
