@@ -1,6 +1,6 @@
 import React from 'react';
-import getApiBaseUrl from '../config/apiConfig';
-import { SPORT_TYPES } from '../constants/sportTypes';
+import getApiBaseUrl from '../../config/apiConfig';
+import { SPORT_TYPES } from '../../constants/sportTypes';
 
 const GroupCard = ({ group }) => {
   return (

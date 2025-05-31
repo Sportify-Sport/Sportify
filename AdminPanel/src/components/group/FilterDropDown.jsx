@@ -1,5 +1,5 @@
 import React from 'react';
-import { FILTER_OPTIONS } from '../constants/filterOptions';
+import { FILTER_OPTIONS } from '../../constants/filterOptions';
 
 const FilterDropdown = ({ filterBy, handleFilterChange, disabled }) => {
   return (

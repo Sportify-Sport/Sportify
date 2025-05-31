@@ -20,13 +20,13 @@ export const fetchCityIdByName = async (cityName) => {
   throw new Error('No city data available');
 };
 
-export const searchGroups = async (cityId, searchQuery, abortSignal) => {
+export const searchGroups = async (cityId, searchQuery, page, pageSize, abortSignal) => {
   if (!cityId) throw new Error('City ID is required');
-  if (!searchQuery) return [];
+  if (!searchQuery) return { groups: [], hasMore: false, currentPage: page };
 
   const token = localStorage.getItem('adminAccessToken');
   const normalizedQuery = searchQuery.toLowerCase();
-  const url = `${getApiBaseUrl()}/api/AdminGroups/${cityId}?name=${encodeURIComponent(normalizedQuery)}&sortBy=name&page=1&pageSize=10`;
+  const url = `${getApiBaseUrl()}/api/AdminGroups/${cityId}?name=${encodeURIComponent(normalizedQuery)}&sortBy=name&page=${page}&pageSize=${pageSize}`;
 
   const response = await fetch(url, {
     headers: {
@@ -39,14 +39,18 @@ export const searchGroups = async (cityId, searchQuery, abortSignal) => {
   if (!response.ok) throw new Error(`Search failed: ${response.status} ${response.statusText}`);
   
   const data = await response.json();
-  return data.groups || [];
+ return {
+    groups: data.groups || [],
+    hasMore: data.hasMore || false,
+    currentPage: data.currentPage || page
+  };
 };
 
-export const fetchGroupsByCity = async (cityId, sortBy, abortSignal) => {
+export const fetchGroupsByCity = async (cityId, sortBy, page, pageSize, abortSignal) => {
   if (!cityId) throw new Error('City ID is required');
 
   const token = localStorage.getItem('adminAccessToken');
-  const url = `${getApiBaseUrl()}/api/AdminGroups/${cityId}?sortBy=${sortBy}&page=1&pageSize=10`;
+  const url = `${getApiBaseUrl()}/api/AdminGroups/${cityId}?sortBy=${sortBy}&page=${page}&pageSize=${pageSize}`;
 
   const response = await fetch(url, {
     headers: {
@@ -58,5 +62,9 @@ export const fetchGroupsByCity = async (cityId, sortBy, abortSignal) => {
   if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
   
   const data = await response.json();
-  return data.groups || [];
+   return {
+    groups: data.groups || [],
+    hasMore: data.hasMore || false,
+    currentPage: data.currentPage || page
+  };
 };
