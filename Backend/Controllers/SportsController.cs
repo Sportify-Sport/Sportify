@@ -2,6 +2,7 @@
 using Backend.BL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
+using Backend.Helpers;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -11,13 +12,12 @@ namespace Backend.Controllers
     [ApiController]
     public class SportsController : ControllerBase
     {
-        private readonly IMemoryCache _memoryCache;
+        private readonly SportsHelper _sportsHelper;
         private readonly ILogger<SportsController> _logger;
 
-        // Inject the IMemoryCache service
-        public SportsController(IMemoryCache memoryCache, ILogger<SportsController> logger)
+        public SportsController(SportsHelper sportsHelper, ILogger<SportsController> logger)
         {
-            _memoryCache = memoryCache;
+            _sportsHelper = sportsHelper;
             _logger = logger;
         }
 
@@ -27,7 +27,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var sports = Sport.GetAllSports(_memoryCache);
+                var sports = _sportsHelper.GetAllSports();
                 return Ok(sports);
             }
             catch (Exception ex)
@@ -37,35 +37,26 @@ namespace Backend.Controllers
             }
         }
 
-        [AllowAnonymous]
-        [HttpGet("{id}")]
-        public IActionResult GetSportById(int id)
-        {
-            try
-            {
-                var sport = Sport.GetSportById(id, _memoryCache);
-                if (sport == null)
-                {
-                    return NotFound(new { success = false, message = "Sport not found" });
-                }
-
-                return Ok(sport);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving sport {SportId}", id);
-                return StatusCode(500, "An error occurred while retrieving the sport");
-            }
-        }
-
-        // To Validate Sports (To use in other controllers)
-        // Validate SportId using cached sports
-        //bool isValidSport = Sport.ValidateSportId(groupDto.SportId, _memoryCache);
-        //    if (!isValidSport)
+        //[AllowAnonymous]
+        //[HttpGet("{id}")]
+        //public IActionResult GetSportById(int id)
+        //{
+        //    try
         //    {
-        //        return BadRequest(new { success = false, message = "Invalid sport ID" });
-        //    }
+        //        var sport = _sportsHelper.GetSportById(id);
+        //        if (sport == null)
+        //        {
+        //            return NotFound(new { success = false, message = "Sport not found" });
+        //        }
 
+        //        return Ok(sport);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error retrieving sport {SportId}", id);
+        //        return StatusCode(500, "An error occurred while retrieving the sport");
+        //    }
+        //}
 
         //[AllowAnonymous]
         //[HttpGet("debug-cache")]
@@ -78,30 +69,6 @@ namespace Backend.Controllers
         //        Cached = isCached,
         //        Count = sports?.Count ?? 0
         //    });
-        //}
-
-        //[Authorize(Roles = "Admin")]  // Restrict to admins
-        //[HttpPost]
-        //public IActionResult AddSport([FromBody] Sport newSport)
-        //{
-        //    try
-        //    {
-        //        // Add to database
-        //        bool success = Sport.AddSport(newSport);
-
-        //        if (success)
-        //        {
-        //            // Remove cached sports to force a refresh on next request
-        //            _memoryCache.Remove(SPORTS_CACHE_KEY);
-        //            return Ok(new { success = true });
-        //        }
-
-        //        return BadRequest(new { success = false });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, "An error occurred");
-        //    }
         //}
 
     }
