@@ -202,7 +202,7 @@ namespace Backend.Controllers
 
         [HttpPut("{eventId}/image")]
         [Authorize(AuthenticationSchemes = "Bearer,AdminScheme", Roles = "EventAdmin,CityOrganizer")]
-        public async Task<IActionResult> UpdateEventImage(int eventId, IFormFile eventImage)
+        public async Task<IActionResult> UpdateEventImage(int eventId, IFormFile? eventImage)
         {
             try
             {

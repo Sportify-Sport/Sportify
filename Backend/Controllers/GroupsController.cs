@@ -203,7 +203,7 @@ namespace Backend.Controllers
 
         [HttpPut("{groupId}/image")]
         [Authorize(AuthenticationSchemes = "Bearer,AdminScheme", Roles = "GroupAdmin,CityOrganizer")]
-        public async Task<IActionResult> UpdateGroupImage(int groupId, IFormFile groupImage)
+        public async Task<IActionResult> UpdateGroupImage(int groupId, IFormFile? groupImage)
         {
             try
             {
