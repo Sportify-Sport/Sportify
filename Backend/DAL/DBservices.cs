@@ -5720,4 +5720,213 @@ public class DBservices
         return cmd;
     }
 
+    //---------------------------------------------------------------------------------
+    // This method is used to update group image
+    //---------------------------------------------------------------------------------
+    public (bool Success, string Message) UpdateGroupImage(int groupId, string imageFileName)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUpdateGroupImage("SP_UpdateGroupImage", con, groupId, imageFileName);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Unexpected error occurred");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for updating group image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateGroupImage(string spName, SqlConnection con, int groupId, string imageFileName)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+        cmd.Parameters.AddWithValue("@GroupImage", imageFileName ?? "default_group.png");
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get group image
+    //---------------------------------------------------------------------------------
+    public string GetGroupImage(int groupId)
+    {
+        SqlConnection con = null;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+            cmd = CreateCommandWithStoredProcedureGetGroupImage("SP_GetGroupImage", con, groupId);
+
+            SqlDataReader reader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (reader.Read())
+            {
+                return reader["GroupImage"].ToString();
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting group image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupImage(string spName, SqlConnection con, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to update event image
+    //---------------------------------------------------------------------------------
+    public (bool Success, string Message) UpdateEventImage(int eventId, string imageFileName)
+    {
+        SqlConnection con = null;
+
+        try
+        {
+            con = connect("myProjDB");
+            SqlCommand cmd = CreateCommandWithStoredProcedureUpdateEventImage("SP_UpdateEventImage", con, eventId, imageFileName);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Unexpected error occurred");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for updating event image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateEventImage(string spName, SqlConnection con, int eventId, string imageFileName)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+        cmd.Parameters.AddWithValue("@ProfileImage", imageFileName ?? "default_event.png");
+
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // This method is used to get event image
+    //---------------------------------------------------------------------------------
+    public string GetEventImage(int eventId)
+    {
+        SqlConnection con = null;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+            cmd = CreateCommandWithStoredProcedureGetEventImage("SP_GetEventImage", con, eventId);
+
+            SqlDataReader reader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (reader.Read())
+            {
+                return reader["ProfileImage"].ToString();
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting event image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventImage(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+
+        return cmd;
+    }
+
+
 }

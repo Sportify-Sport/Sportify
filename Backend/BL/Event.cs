@@ -176,5 +176,37 @@
             }
         }
 
+        //--------------------------------------------------------------------------------------------------
+        // Used to update event image
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string Message) UpdateEventImage(int eventId, string imageFileName)
+        {
+            try
+            {
+                DBservices dbServices = new DBservices();
+                return dbServices.UpdateEventImage(eventId, imageFileName);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Used to get event image
+        //--------------------------------------------------------------------------------------------------
+        public static string GetCurrentEventImage(int eventId)
+        {
+            try
+            {
+                DBservices dbServices = new DBservices();
+                return dbServices.GetEventImage(eventId);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Backend.BL;
+using Backend.Helpers;
 using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -112,21 +113,114 @@ namespace Backend.Controllers
             }
         }
 
+        //[HttpPut("profile/image")]
+        //[Authorize(Roles = "User")]
+        //public async Task<IActionResult> UpdateProfileImage(IFormFile profileImage)
+        //{
+        //    try
+        //    {
+        //        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+        //        if (profileImage == null || profileImage.Length == 0)
+        //        {
+        //            return BadRequest(new { success = false, message = "No image file provided" });
+        //        }
+
+        //        // Process the image
+        //        string imageFileName = await ProcessProfileImage(userId, profileImage);
+
+        //        // Update the profile image in the database
+        //        bool success = BL.User.UpdateProfileImage(userId, imageFileName);
+
+        //        if (success)
+        //        {
+        //            return Ok(new { success = true, message = "Profile image updated successfully" });
+        //        }
+        //        else
+        //        {
+        //            return NotFound(new { success = false, message = $"User with ID {userId} not found" });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, $"An error occurred while updating profile image: {ex.Message}");
+        //    }
+        //}
+
+        //// Helper method to process profile image
+        //private async Task<string> ProcessProfileImage(int userId, IFormFile image)
+        //{
+        //    // Ensure profile images directory exists
+        //    string profileImagesPath = Path.Combine(Directory.GetCurrentDirectory(), "uploadedImages");
+        //    if (!Directory.Exists(profileImagesPath))
+        //    {
+        //        Directory.CreateDirectory(profileImagesPath);
+        //    }
+
+        //    if (image.Length > 5242880) // 5MB
+        //    {
+        //        throw new Exception("File size exceeds the limit (5MB)");
+        //    }
+
+        //    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        //    var permittedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+
+        //    var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+        //    var mimeType = image.ContentType;
+
+        //    if (string.IsNullOrEmpty(extension) ||
+        //        !allowedExtensions.Contains(extension) ||
+        //        !permittedMimeTypes.Contains(mimeType))
+        //    {
+        //        throw new Exception("Invalid file type. Only .jpg, .jpeg, .png and .webp files are allowed");
+        //    }
+
+        //    // Get current profile image to handle deletion
+        //    string currentImagePath = BL.User.GetCurrentProfileImage(userId);
+
+        //    // Generate unique filename
+        //    string fileName = $"user_{userId}_{DateTime.Now.Ticks}{extension}";
+        //    string filePath = Path.Combine(profileImagesPath, fileName);
+
+        //    // Delete old image if it exists and is not the default
+        //    if (!string.IsNullOrEmpty(currentImagePath) && !currentImagePath.Contains("default_profile.png"))
+        //    {
+        //        string oldFileName = Path.GetFileName(currentImagePath.Replace("/Images/", ""));
+        //        string oldFilePath = Path.Combine(profileImagesPath, currentImagePath);
+        //        if (System.IO.File.Exists(oldFilePath))
+        //        {
+        //            System.IO.File.Delete(oldFilePath);
+        //        }
+        //    }
+
+        //    // Save new image
+        //    using (var fileStream = new FileStream(filePath, FileMode.Create))
+        //    {
+        //        await image.CopyToAsync(fileStream);
+        //    }
+
+        //    return fileName;
+        //}
+
         [HttpPut("profile/image")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> UpdateProfileImage(IFormFile profileImage)
+        public async Task<IActionResult> UpdateProfileImage(IFormFile? profileImage)
         {
             try
             {
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                string userName = User.FindFirst("name")?.Value ?? "Unknown";
 
                 if (profileImage == null || profileImage.Length == 0)
                 {
                     return BadRequest(new { success = false, message = "No image file provided" });
                 }
 
-                // Process the image
-                string imageFileName = await ProcessProfileImage(userId, profileImage);
+                // Get current profile image
+                string currentImage = BL.User.GetCurrentProfileImage(userId);
+
+                // Process the image using ImageHelper
+                string imageFileName = await ImageHelper.ProcessImage(profileImage, "user", userId, currentImage);
 
                 // Update the profile image in the database
                 bool success = BL.User.UpdateProfileImage(userId, imageFileName);
@@ -137,69 +231,17 @@ namespace Backend.Controllers
                 }
                 else
                 {
+                    // Delete the newly uploaded image if database update failed
+                    ImageHelper.DeleteImage(imageFileName);
                     return NotFound(new { success = false, message = $"User with ID {userId} not found" });
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"An error occurred while updating profile image: {ex.Message}");
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
 
-        // Helper method to process profile image
-        private async Task<string> ProcessProfileImage(int userId, IFormFile image)
-        {
-            // Ensure profile images directory exists
-            string profileImagesPath = Path.Combine(Directory.GetCurrentDirectory(), "uploadedImages");
-            if (!Directory.Exists(profileImagesPath))
-            {
-                Directory.CreateDirectory(profileImagesPath);
-            }
-
-            if (image.Length > 5242880) // 5MB
-            {
-                throw new Exception("File size exceeds the limit (5MB)");
-            }
-
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-            var permittedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp" };
-
-            var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-            var mimeType = image.ContentType;
-
-            if (string.IsNullOrEmpty(extension) ||
-                !allowedExtensions.Contains(extension) ||
-                !permittedMimeTypes.Contains(mimeType))
-            {
-                throw new Exception("Invalid file type. Only .jpg, .jpeg, .png and .webp files are allowed");
-            }
-
-            // Get current profile image to handle deletion
-            string currentImagePath = BL.User.GetCurrentProfileImage(userId);
-
-            // Generate unique filename
-            string fileName = $"user_{userId}_{DateTime.Now.Ticks}{extension}";
-            string filePath = Path.Combine(profileImagesPath, fileName);
-
-            // Delete old image if it exists and is not the default
-            if (!string.IsNullOrEmpty(currentImagePath) && !currentImagePath.Contains("default_profile.png"))
-            {
-                string oldFileName = Path.GetFileName(currentImagePath.Replace("/Images/", ""));
-                string oldFilePath = Path.Combine(profileImagesPath, currentImagePath);
-                if (System.IO.File.Exists(oldFilePath))
-                {
-                    System.IO.File.Delete(oldFilePath);
-                }
-            }
-
-            // Save new image
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await image.CopyToAsync(fileStream);
-            }
-
-            return fileName;
-        }
 
         [HttpGet("groups/all")]
         [Authorize(Roles = "User")]

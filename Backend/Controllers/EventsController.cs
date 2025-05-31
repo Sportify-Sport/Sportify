@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Backend.Models;
+using Backend.Helpers;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -198,6 +199,74 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while updating the event" });
             }
         }
+
+        [HttpPut("{eventId}/image")]
+        [Authorize(AuthenticationSchemes = "Bearer,AdminScheme", Roles = "EventAdmin,CityOrganizer")]
+        public async Task<IActionResult> UpdateEventImage(int eventId, IFormFile eventImage)
+        {
+            try
+            {
+                // Get user ID from claims
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string userName = User.FindFirst("name")?.Value ?? "Unknown";
+
+                if (eventImage == null || eventImage.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "No image file provided" });
+                }
+
+                // Check authorization
+                DBservices dbServices = new DBservices();
+                var eventCityId = dbServices.GetEventCityId(eventId);
+                if (!eventCityId.HasValue)
+                {
+                    _logger.LogWarning("Event image update failed: User {UserName} (ID: {UserId}) - Event {EventId} not found",
+                        userName, currentUserId, eventId);
+                    return NotFound(new { success = false, message = "Event not found" });
+                }
+
+                // Check if user is event admin or city organizer
+                bool isEventAdmin = Event.IsUserEventAdmin(eventId, currentUserId);
+                bool isCityOrganizer = dbServices.IsUserCityOrganizer(currentUserId, eventCityId.Value);
+
+                if (!isEventAdmin && !isCityOrganizer)
+                {
+                    _logger.LogWarning("Unauthorized event image update: User {UserName} (ID: {UserId}) tried to update event {EventId}",
+                        userName, currentUserId, eventId);
+                    return StatusCode(403, new { success = false, message = "You do not have permission to edit this event" });
+                }
+
+                // Get current event image
+                string currentImage = Event.GetCurrentEventImage(eventId);
+
+                // Process the image
+                string imageFileName = await ImageHelper.ProcessImage(eventImage, "event", eventId, currentImage);
+
+                // Update the event image in the database
+                var (success, message) = Event.UpdateEventImage(eventId, imageFileName);
+
+                if (success)
+                {
+                    string editorRole = isEventAdmin ? "EventAdmin" : "CityOrganizer";
+                    _logger.LogInformation("{EditorRole} {UserName} (ID: {UserId}) updated image for event {EventId}",
+                        editorRole, userName, currentUserId, eventId);
+
+                    return Ok(new { success = true, message = message });
+                }
+                else
+                {
+                    // Delete the newly uploaded image if database update failed
+                    ImageHelper.DeleteImage(imageFileName);
+                    return BadRequest(new { success = false, message = message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating image for event {EventId}", eventId);
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
     }
 }
 

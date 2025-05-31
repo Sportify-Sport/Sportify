@@ -131,5 +131,37 @@
             }
         }
 
+        //--------------------------------------------------------------------------------------------------
+        // Updates group image
+        //--------------------------------------------------------------------------------------------------
+        public static (bool Success, string Message) UpdateGroupImage(int groupId, string imageFileName)
+        {
+            try
+            {
+                DBservices dbServices = new DBservices();
+                return dbServices.UpdateGroupImage(groupId, imageFileName);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        //--------------------------------------------------------------------------------------------------
+        // Gets group current image
+        //--------------------------------------------------------------------------------------------------
+        public static string GetCurrentGroupImage(int groupId)
+        {
+            try
+            {
+                DBservices dbServices = new DBservices();
+                return dbServices.GetGroupImage(groupId);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
     }
 }

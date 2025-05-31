@@ -3,6 +3,7 @@ using Backend.BL;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Backend.Models;
+using Backend.Helpers;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -199,5 +200,73 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while updating the group" });
             }
         }
+
+        [HttpPut("{groupId}/image")]
+        [Authorize(AuthenticationSchemes = "Bearer,AdminScheme", Roles = "GroupAdmin,CityOrganizer")]
+        public async Task<IActionResult> UpdateGroupImage(int groupId, IFormFile groupImage)
+        {
+            try
+            {
+                // Get user ID from claims
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string userName = User.FindFirst("name")?.Value ?? "Unknown";
+
+                if (groupImage == null || groupImage.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "No image file provided" });
+                }
+
+                // Check authorization
+                DBservices dbServices = new DBservices();
+                var groupCityId = dbServices.GetGroupCityId(groupId);
+                if (!groupCityId.HasValue)
+                {
+                    _logger.LogWarning("Group image update failed: User {UserName} (ID: {UserId}) - Group {GroupId} not found",
+                        userName, currentUserId, groupId);
+                    return NotFound(new { success = false, message = "Group not found" });
+                }
+
+                // Check if user is group admin or city organizer
+                bool isGroupAdmin = GroupMember.IsUserGroupAdmin(groupId, currentUserId);
+                bool isCityOrganizer = dbServices.IsUserCityOrganizer(currentUserId, groupCityId.Value);
+
+                if (!isGroupAdmin && !isCityOrganizer)
+                {
+                    _logger.LogWarning("Unauthorized group image update: User {UserName} (ID: {UserId}) tried to update group {GroupId}",
+                        userName, currentUserId, groupId);
+                    return StatusCode(403, new { success = false, message = "You do not have permission to edit this group" });
+                }
+
+                // Get current group image
+                string currentImage = Group.GetCurrentGroupImage(groupId);
+
+                // Process the image
+                string imageFileName = await ImageHelper.ProcessImage(groupImage, "group", groupId, currentImage);
+
+                // Update the group image in the database
+                var (success, message) = Group.UpdateGroupImage(groupId, imageFileName);
+
+                if (success)
+                {
+                    string editorRole = isGroupAdmin ? "GroupAdmin" : "CityOrganizer";
+                    _logger.LogInformation("{EditorRole} {UserName} (ID: {UserId}) updated image for group {GroupId}",
+                        editorRole, userName, currentUserId, groupId);
+
+                    return Ok(new { success = true, message = message });
+                }
+                else
+                {
+                    // Delete the newly uploaded image if database update failed
+                    ImageHelper.DeleteImage(imageFileName);
+                    return BadRequest(new { success = false, message = message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating image for group {GroupId}", groupId);
+                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
     }
 }
