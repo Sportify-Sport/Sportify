@@ -1,4 +1,103 @@
-/* Add to src/styles/dashboard.css */
+/* .stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--shadow);
+  text-align: center;
+}
+
+.stat-card h3 {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.main-navigation {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.nav-card {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px var(--shadow);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px var(--shadow);
+}
+
+.nav-card h3 {
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+}
+
+.nav-card p {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.card-footer span {
+  color: var(--text-secondary);
+}
+
+.card-footer button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+} */
+
+
+
+
+
+
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
 .stats-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -83,4 +182,44 @@
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+}
+.dashboard-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 2rem;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.dashboard-content {
+  width: 100%;
+}
+
+.dashboard-header {
+  width: 100%;
+  margin-bottom: 2rem;
+  padding-top: 1rem;
+}
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.dashboard-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.dashboard-title {
+  font-size: 2rem;
+  margin: 0;
+  color: var(--text);
+}
+.city-name {
+  text-align: left;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
 }

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import getApiBaseUrl from '../config/apiConfig';
+import { AUTH_ROUTES } from '../constants/authConstants';
 import '../styles/dashboard.css';
 
 const DashboardPage = () => {
@@ -52,7 +53,11 @@ const DashboardPage = () => {
   };
 
   const navigateToGroups = () => {
-    navigate('/groups');
+       navigate('/group', { 
+    state: { 
+      cityName: selectedCity.cityName 
+    } 
+  });
   };
   
   if (!selectedCity) {
@@ -66,14 +71,10 @@ const DashboardPage = () => {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>Admin Dashboard</h1>
-          <h2>{selectedCity.cityName || `City #${selectedCity.cityId}`}</h2>
-        </div>
-        
-        <div className="dashboard-actions">
-          <div className="user-info">
-            <span>Welcome, {currentUser?.name}</span>
+        <div className="header-row">
+          <h1 className="dashboard-title">Admin Dashboard</h1>
+          <div className="dashboard-actions">
+            <ThemeToggle />
             <button onClick={handleChangeCity} className="change-city-btn">
               Change City
             </button>
@@ -81,10 +82,10 @@ const DashboardPage = () => {
               Log Out
             </button>
           </div>
-          <ThemeToggle />
         </div>
+        <h2 className="city-name">{selectedCity.cityName || `City #${selectedCity.cityId}`}</h2>
       </header>
-      
+
       <div className="dashboard-content">
         {loading ? (
           <div className="loading-spinner">Loading dashboard data...</div>
