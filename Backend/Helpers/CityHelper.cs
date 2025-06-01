@@ -1,5 +1,7 @@
 ﻿using Backend.Models;
 using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.Collections.Concurrent;
 using System.Runtime;
 using System.Text.Json;
 using System.Web;
@@ -15,6 +17,8 @@ namespace Backend.Helpers
         private const string API_URL = "https://data.gov.il/api/3/action/datastore_search";
         private const string RESOURCE_ID = "8f714b6f-c35c-4b40-a0e7-547b675eee0e";
 
+        // Dictionary to manage locks per city ID
+        private static readonly ConcurrentDictionary<int, SemaphoreSlim> _semaphores = new();
         public CityHelper(IMemoryCache cache, IHttpClientFactory httpClientFactory, ILogger<CityHelper> logger)
         {
             _cache = cache;
@@ -67,8 +71,21 @@ namespace Backend.Helpers
                 return cachedCity;
             }
 
+            // Get or create semaphore for this city ID
+            var semaphore = _semaphores.GetOrAdd(cityId, _ => new SemaphoreSlim(1, 1));
+
             try
             {
+                // Wait for exclusive access
+                await semaphore.WaitAsync();
+
+                // Double-check cache after acquiring lock (someone else might have loaded it)
+                if (_cache.TryGetValue(cacheKey, out cachedCity))
+                {
+                    return cachedCity;
+                }
+
+                // Only one thread will reach here per city ID
                 // Call external API
                 var cityFromApi = await FetchCityFromApiAsync(cityId);
 
@@ -85,6 +102,10 @@ namespace Backend.Helpers
             {
                 _logger.LogError(ex, "Error fetching city {CityId}", cityId);
                 return null;
+            }
+            finally
+            {
+                semaphore.Release();
             }
         }
 
