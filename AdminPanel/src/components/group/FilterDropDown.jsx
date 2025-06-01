@@ -1,7 +1,11 @@
 import React from 'react';
-import { FILTER_OPTIONS } from '../../constants/filterOptions';
-
 const FilterDropdown = ({ filterBy, handleFilterChange, disabled }) => {
+  const FILTER_OPTIONS = [
+  { value: 'name', label: 'Name' },
+  { value: 'sport', label: 'Sport' },
+  { value: 'foundedAt', label: 'Founded Date' },
+  { value: 'members', label: 'Members' }
+];
   return (
     <div className="filter-dropdown">
       <label htmlFor="filter-select">Filter By:</label>

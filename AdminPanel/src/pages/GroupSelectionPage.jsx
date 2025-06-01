@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AUTH_ROUTES } from '../constants/authConstants';
 import useCityId from '../hooks/useCityId';
+import { useAuth } from '../hooks/useAuth';
 import useGroupSearch from '../hooks/useGroupSearch'
 import useGroupsByCity from '../hooks/useGroupsByCity';
 import GroupCard from '../components/group/GroupCard';
@@ -13,6 +14,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import '../styles/group.css';
 
 const GroupSelectionPage = () => {
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const cityName = location.state?.cityName;
@@ -50,7 +52,9 @@ const GroupSelectionPage = () => {
   const handleBackToDashboard = () => {
     navigate(AUTH_ROUTES.DASHBOARD);
   };
-
+  const handleChangeCity = () => {
+    navigate('/select-city');
+  };
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -79,7 +83,15 @@ const GroupSelectionPage = () => {
           ← Back to Dashboard
         </button>
         <h2>Groups in {cityName}</h2>
+        <div  className="dashboard-actions">
         <ThemeToggle />
+         <button onClick={handleChangeCity} className="change-city-btn">
+          Change City
+        </button>
+        <button onClick={logout} className="logout-btn">
+          Log Out
+        </button>
+        </div>
       </header>
 
       <div className="search-filter-container">
@@ -101,12 +113,11 @@ const GroupSelectionPage = () => {
         ))}
         {loading && <LoadingSpinner />}
       </div>
-
-      {groups.length > 0 && (
+      {hasMore && (
         <div className="show-more-container">
           <ShowMoreButton
             onClick={handleShowMore}
-            disabled={!hasMore || loading}
+            hasMore={hasMore}
           />
         </div>
       )}

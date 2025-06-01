@@ -16,7 +16,8 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Routes>
+      <div className="app-container">
+          <Routes>
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           
@@ -45,6 +46,7 @@ function App() {
           {/* 404 route */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+      </div>
       </AuthProvider>
     </ThemeProvider>
   );

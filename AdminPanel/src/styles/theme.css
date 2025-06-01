@@ -62,3 +62,22 @@ input:checked + .toggle-slider:before {
   font-size: 14px;
   transition: opacity 0.3s;
 }
+:root {
+  --background: #ffffff;
+  --surface: #f5f5f5;
+  --text: #000000;
+  --text-secondary: #666666;
+  --primary-color: #007bff;
+  --on-primary: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --background: #1a1a1a;
+  --surface: #2d2d2d;
+  --text: #ffffff;
+  --text-secondary: #cccccc;
+  --primary-color: #4dabf7;
+  --on-primary: #1a1a1a;
+  --shadow: rgba(0, 0, 0, 0.3);
+}

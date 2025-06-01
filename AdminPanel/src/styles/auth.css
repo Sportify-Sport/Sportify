@@ -12,7 +12,6 @@ body, html {
   align-items: center;
   min-height: 100vh;
   padding: 1rem;
-  /* background-color: var(--background); */
 }
 
 .auth-card, .city-selection-card {
@@ -150,4 +149,60 @@ body, html {
   text-align: center;
   margin: 2rem 0;
   color: var(--text-secondary);
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .auth-card, .city-selection-card {
+    max-width: 600px;
+  }
+  
+  .cities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+.form-group input:focus {
+  background-color: var(--background);
+  outline: none;
+}
+
+input:-webkit-autofill {
+  background-color: var(--background) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+
+/* Transparent centered spinner with overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.3); /* Semi-transparent overlay */
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid transparent; /* Transparent circle */
+  border-top-color: var(--primary-color); /* Colored spinner part */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Reduced motion alternative */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: spin 2s linear infinite;
+  }
 }

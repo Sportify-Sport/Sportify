@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchCityIdByName } from '../services/apiService';
+import { fetchCityIdByName } from '../services/idOfCity';
 
 const useCityId = (cityName) => {
   const [cityId, setCityId] = useState(null);

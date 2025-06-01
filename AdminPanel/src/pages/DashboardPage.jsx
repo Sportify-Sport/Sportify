@@ -69,6 +69,7 @@ const DashboardPage = () => {
   }
   
   return (
+    <div className="page-wrapper">
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="header-row">
@@ -143,6 +144,7 @@ const DashboardPage = () => {
           </>
         )}
       </div>
+    </div>
     </div>
   );
 };

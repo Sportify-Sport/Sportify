@@ -1,11 +1,11 @@
 import React from 'react';
 
-const ShowMoreButton = ({ onClick, disabled }) => {
+const ShowMoreButton = ({ onClick, hasMore  }) => {
+   if (!hasMore) return null; 
   return (
     <button
       className="show-more-button"
       onClick={onClick}
-      disabled={disabled}
     >
       Show More
     </button>

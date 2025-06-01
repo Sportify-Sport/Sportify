@@ -1,133 +1,254 @@
-html, body {
-  margin: 0;
-  padding: 0;
+/* src/styles/dashboard.css */
+:root {
+  --error-color: #f90000;
+  --error-light: #ffebeb;
+  --error-dark: #f90000;
+  --on-error: #ffffff;
+}
+.dashboard-container {
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
   box-sizing: border-box;
 }
 
+.dashboard-header {
+  margin-bottom: 2.5rem;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.city-name {
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+  font-weight: 500;
+}
 
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
 }
 
 .stat-card {
   background-color: var(--surface);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px var(--shadow);
+  box-shadow: 0 2px 12px var(--shadow);
   text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
 }
 
 .stat-card h3 {
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 1rem;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .stat-value {
-  font-size: 2.5rem;
-  font-weight: 600;
+  font-size: 2.25rem;
+  font-weight: 700;
   color: var(--primary-color);
-  margin-bottom: 0.5rem;
+  margin: 0.5rem 0;
+  line-height: 1;
 }
 
 .stat-label {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
 }
 
 .main-navigation {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 2rem;
-  margin-top: 2rem;
 }
 
 .nav-card {
   background-color: var(--surface);
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px var(--shadow);
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 12px var(--shadow);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
 }
 
 .nav-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px var(--shadow);
+  box-shadow: 0 8px 20px var(--shadow-hover);
+  border-color: var(--primary-light);
 }
 
 .nav-card h3 {
   color: var(--primary-color);
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .nav-card p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
+  line-height: 1.5;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .card-footer span {
   color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .card-footer button {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--on-primary);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
   cursor: pointer;
-}
-.dashboard-container {
-  width: 100%;
-  max-width: 100%;
-  padding: 2rem;
-  margin: 0;
-  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
-.dashboard-content {
-  width: 100%;
+.card-footer button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
 }
 
-.dashboard-header {
-  width: 100%;
-  margin-bottom: 2rem;
-  padding-top: 1rem;
+/* Buttons in header */
+.change-city-btn,
+.logout-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface);
 }
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  flex-wrap: wrap;
-}
-.dashboard-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-.dashboard-title {
-  font-size: 2rem;
-  margin: 0;
+
+.change-city-btn {
   color: var(--text);
 }
-.city-name {
-  text-align: left;
-  font-size: 1.5rem;
-  color: var(--text-secondary);
-  margin-top: 0.5rem;
+
+.change-city-btn:hover {
+  background-color: var(--background-hover);
+  border-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.logout-btn {
+  color: var(--error-color);
+  border-color : var(--error-color);
+}
+
+.logout-btn:hover {
+  background-color: var(--error-color);
+  color: var(--on-error) !important;
+  border-color: var(--error-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1.5rem 1rem;
+  }
+  
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .main-navigation {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 1.25rem;
+  }
+  
+  .nav-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .dashboard-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.loading-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 4px solid var(--spinner-track, rgba(0, 0, 0, 0.1));
+  border-radius: 50%;
+  border-top-color: var(--spinner-active, #10B981);
+  animation: spin 1s ease-in-out infinite;
+  will-change: transform;
+  z-index: 1000;
 }

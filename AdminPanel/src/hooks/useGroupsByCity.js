@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchGroupsByCity } from '../services/apiService';
+import { fetchGroupsByCity } from '../services/idOfCity';
 import { SPORT_TYPES } from '../constants/sportTypes';
 
-const useGroupsByCity = (cityId, filterBy, page, pageSize = 10) => {
+const useGroupsByCity = (cityId, filterBy, page, pageSize = 4) => {
   const [groups, setGroups] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);

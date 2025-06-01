@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { searchGroups } from '../services/apiService';
+import { searchGroups } from '../services/idOfCity';
 import { SPORT_TYPES } from '../constants/sportTypes';
 
 const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
