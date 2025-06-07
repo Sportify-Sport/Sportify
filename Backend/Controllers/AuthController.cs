@@ -338,6 +338,100 @@ namespace Backend.Controllers
             }
         }
 
+        [Authorize] // User must be logged in, but doesn't need email verification
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+        {
+            try
+            {
+                // Get user ID from JWT token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized("Invalid token");
+                }
+
+                int userId = int.Parse(userIdClaim.Value);
+
+                // Input validation
+                if (string.IsNullOrWhiteSpace(changePasswordDto.CurrentPassword))
+                {
+                    return BadRequest("Current password is required");
+                }
+
+                if (string.IsNullOrWhiteSpace(changePasswordDto.NewPassword))
+                {
+                    return BadRequest("New password is required");
+                }
+
+                if (changePasswordDto.NewPassword.Length < 8)
+                {
+                    return BadRequest("New password must be at least 8 characters long");
+                }
+
+                if (changePasswordDto.CurrentPassword == changePasswordDto.NewPassword)
+                {
+                    return BadRequest("New password must be different from current password");
+                }
+
+                // Get user from database to verify current password
+                DBservices dbServices = new DBservices();
+                var user = dbServices.GetUserById(userId);
+
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                // Verify current password
+                if (!BCrypt.Net.BCrypt.Verify(changePasswordDto.CurrentPassword, user.PasswordHash))
+                {
+                    return BadRequest("Current password is incorrect");
+                }
+
+                // Hash the new password
+                string newHashedPassword = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);
+
+                // Update password in database
+                bool passwordUpdated = dbServices.UpdateUserPassword(userId, newHashedPassword);
+                if (!passwordUpdated)
+                {
+                    return StatusCode(500, "Failed to update password");
+                }
+
+                // Revoke all existing refresh tokens for this user
+                int revokedCount = dbServices.RevokeAllUserRefreshTokens(userId, "Password changed by user");
+                _logger.LogInformation("User {UserId} changed password, revoked {RevokedCount} refresh tokens", userId, revokedCount);
+
+                // Generate new tokens for current session
+                string newAccessToken = GenerateJwtToken(user);
+                var newRefreshToken = GenerateRefreshToken(user.UserId);
+
+                // Send password changed notification email
+                await _emailService.SendPasswordChangedNotificationAsync(user.Email, user.FirstName);
+
+                var response = new AuthResponse
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken.Token,
+                    IsEmailVerified = user.IsEmailVerified
+                };
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Password changed successfully. All other sessions have been logged out.",
+                    tokens = response
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing password for user");
+                return StatusCode(500, "An error occurred while changing password");
+            }
+        }
+
+
         [AllowAnonymous]
         [HttpPost("refresh-token")]
         public IActionResult RefreshToken([FromBody] RefreshTokenRequest request)

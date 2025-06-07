@@ -297,7 +297,7 @@ BEGIN
     INNER JOIN Users u ON prc.UserId = u.UserId
     WHERE prc.Code = @Code 
         AND prc.IsUsed = 0 
-        AND prc.ExpiresAt > GETDATE();
+        AND prc.ExpiresAt > GETUTCDATE();
 END
 GO
 
