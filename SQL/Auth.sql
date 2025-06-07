@@ -9,7 +9,13 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	IF EXISTS (SELECT 1 FROM Users WHERE Email = @email)
+	-- Check if email exists AND is verified
+    -- Allow re-registration if account exists but is unverified for more than 24 hours
+    IF EXISTS (
+        SELECT 1 FROM Users 
+        WHERE Email = @email 
+        AND (IsEmailVerified = 1 OR DATEDIFF(HOUR, CreatedAt, GETUTCDATE()) < 24)
+    )
         SELECT 1 AS IsRegistered
     ELSE
         SELECT 0 AS IsRegistered
@@ -359,5 +365,60 @@ BEGIN
         AND Revoked IS NULL;
     
     SELECT @@ROWCOUNT AS RevokedCount;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Handles unverified account Reregistration>
+-- =============================================
+CREATE PROCEDURE SP_HandleUnverifiedAccountReregistration
+    @Email NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @ExistingUserId INT;
+    
+    -- Check if unverified account exists that's older than 24 hours
+    SELECT @ExistingUserId = UserId
+    FROM Users
+    WHERE Email = @Email 
+        AND IsEmailVerified = 0 
+        AND DATEDIFF(HOUR, CreatedAt, GETUTCDATE()) >= 24;
+    
+    IF @ExistingUserId IS NOT NULL
+    BEGIN
+        -- Delete old unverified account and related data
+        DELETE FROM Users WHERE UserId = @ExistingUserId;
+        
+        SELECT 1 AS Success, 'Old unverified account removed' AS Message;
+    END
+    ELSE
+    BEGIN
+        SELECT 0 AS Success, 'No action needed' AS Message;
+    END
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Handles unverified accounts by removing them from the database>
+-- =============================================
+CREATE PROCEDURE SP_CleanupUnverifiedAccounts
+    @DaysOld INT = 30
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @CutoffDate DATETIME = DATEADD(DAY, -@DaysOld, GETUTCDATE());
+    
+    -- Delete unverified users
+    DELETE FROM Users
+    WHERE IsEmailVerified = 0 AND CreatedAt < @CutoffDate;
+    
+    SELECT @@ROWCOUNT AS DeletedUsers;
 END
 GO

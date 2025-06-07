@@ -56,6 +56,8 @@ namespace Backend.Services
                 message.Body = new TextPart(TextFormat.Html) { Text = htmlBody };
 
                 using var client = new SmtpClient();
+                // This is for testing purposes only
+                // client.ServerCertificateValidationCallback = (s, c, h, e) => true; 
                 await client.ConnectAsync(_configuration["Email:SmtpHost"], int.Parse(_configuration["Email:SmtpPort"]), SecureSocketOptions.StartTls);
                 await client.AuthenticateAsync(_configuration["Email:SmtpUser"], _configuration["Email:SmtpPassword"]);
                 await client.SendAsync(message);

@@ -36,6 +36,16 @@ namespace Backend.Controllers
         {
             try
             {
+                DBservices dbServices = new DBservices();
+
+                // First, check if there's an old unverified account
+                var (success, message) = dbServices.HandleUnverifiedAccountReregistration(registerDto.Email.ToLower());
+                if (success)
+                {
+                    _logger.LogInformation("Removed old unverified account for email: {Email}", registerDto.Email);
+                }
+
+                // Check if email is registered
                 if (IsEmailRegistered(registerDto.Email.ToLower()))
                 {
                     return BadRequest("Email already registered");
@@ -52,7 +62,6 @@ namespace Backend.Controllers
                 string verificationCode = GenerateVerificationCode();
                 DateTime expiresAt = DateTime.UtcNow.AddMinutes(15);
                 
-                DBservices dbServices = new DBservices();
                 dbServices.SaveEmailVerificationCode(user.UserId, verificationCode, expiresAt);
 
                 // Send welcome email with verification code
@@ -65,7 +74,7 @@ namespace Backend.Controllers
                 {
                     AccessToken = accessToken,
                     RefreshToken = refreshToken.Token,
-                    IsEmailVerified = false
+                    // IsEmailVerified = false
                 };
 
                 return Ok(response);
@@ -134,7 +143,7 @@ namespace Backend.Controllers
                 {
                     AccessToken = accessToken,
                     RefreshToken = refreshToken.Token,
-                    IsEmailVerified = user.IsEmailVerified
+                    // IsEmailVerified = user.IsEmailVerified
                 };
 
                 return Ok(response);
@@ -174,12 +183,20 @@ namespace Backend.Controllers
                 string accessToken = GenerateJwtToken(user);
                 var refreshToken = GenerateRefreshToken(user.UserId);
 
+                var response = new AuthResponse
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken.Token,
+                    // IsEmailVerified = user.IsEmailVerified
+                };
+
                 return Ok(new
                 {
                     success = true,
                     message = "Email verified successfully",
-                    accessToken = accessToken,
-                    refreshToken = refreshToken.Token
+                    tokens = response
+                    //accessToken = accessToken,
+                    //refreshToken = refreshToken.Token
                 });
             }
             catch (Exception ex)
@@ -323,12 +340,20 @@ namespace Backend.Controllers
                 // Send notification email
                 await _emailService.SendPasswordChangedNotificationAsync(user.Email, user.FirstName);
 
+                var response = new AuthResponse
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken.Token,
+                    // IsEmailVerified = user.IsEmailVerified
+                };
+
                 return Ok(new
                 {
                     success = true,
                     message = "Password reset successfully",
-                    accessToken = newAccessToken,
-                    refreshToken = newRefreshToken.Token
+                    tokens = response
+                    //accessToken = newAccessToken,
+                    //refreshToken = newRefreshToken.Token
                 });
             }
             catch (Exception ex)
@@ -401,7 +426,7 @@ namespace Backend.Controllers
 
                 // Revoke all existing refresh tokens for this user
                 int revokedCount = dbServices.RevokeAllUserRefreshTokens(userId, "Password changed by user");
-                _logger.LogInformation("User {UserId} changed password, revoked {RevokedCount} refresh tokens", userId, revokedCount);
+                // _logger.LogInformation("User {UserId} changed password, revoked {RevokedCount} refresh tokens", userId, revokedCount);
 
                 // Generate new tokens for current session
                 string newAccessToken = GenerateJwtToken(user);
@@ -414,7 +439,7 @@ namespace Backend.Controllers
                 {
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken.Token,
-                    IsEmailVerified = user.IsEmailVerified
+                    // IsEmailVerified = user.IsEmailVerified
                 };
 
                 return Ok(new
@@ -474,7 +499,7 @@ namespace Backend.Controllers
                 {
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken.Token,
-                    IsEmailVerified = user.IsEmailVerified
+                    // IsEmailVerified = user.IsEmailVerified
                 };
 
                 return Ok(response);
