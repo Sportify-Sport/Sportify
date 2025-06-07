@@ -1,18 +1,18 @@
 ﻿using Backend.BL;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Backend.Helpers
+namespace Backend.Services
 {
-    public class SportsHelper
+    public class SportService
     {
         private readonly IMemoryCache _memoryCache;
-        private readonly ILogger<SportsHelper> _logger;
+        private readonly ILogger<SportService> _logger;
         private const string SPORTS_CACHE_KEY = "ALL_SPORTS";
 
         // Single semaphore for sports since we cache all sports together
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        public SportsHelper(IMemoryCache memoryCache, ILogger<SportsHelper> logger)
+        public SportService(IMemoryCache memoryCache, ILogger<SportService> logger)
         {
             _memoryCache = memoryCache;
             _logger = logger;

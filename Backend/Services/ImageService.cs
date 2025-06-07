@@ -1,6 +1,6 @@
-﻿namespace Backend.Helpers
+﻿namespace Backend.Services
 {
-    public class ImageHelper
+    public class ImageService
     {
         private const int MAX_FILE_SIZE = 5242880; // 5MB
         private static readonly string[] ALLOWED_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".webp" };

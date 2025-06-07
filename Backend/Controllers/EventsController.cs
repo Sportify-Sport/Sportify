@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Backend.Models;
-using Backend.Helpers;
+using Backend.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -240,7 +240,7 @@ namespace Backend.Controllers
                 string currentImage = Event.GetCurrentEventImage(eventId);
 
                 // Process the image
-                string imageFileName = await ImageHelper.ProcessImage(eventImage, "event", eventId, currentImage);
+                string imageFileName = await ImageService.ProcessImage(eventImage, "event", eventId, currentImage);
 
                 // Update the event image in the database
                 var (success, message) = Event.UpdateEventImage(eventId, imageFileName);
@@ -256,7 +256,7 @@ namespace Backend.Controllers
                 else
                 {
                     // Delete the newly uploaded image if database update failed
-                    ImageHelper.DeleteImage(imageFileName);
+                    ImageService.DeleteImage(imageFileName);
                     return BadRequest(new { success = false, message = message });
                 }
             }

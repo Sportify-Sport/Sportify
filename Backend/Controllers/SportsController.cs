@@ -2,7 +2,7 @@
 using Backend.BL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
-using Backend.Helpers;
+using Backend.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -12,10 +12,10 @@ namespace Backend.Controllers
     [ApiController]
     public class SportsController : ControllerBase
     {
-        private readonly SportsHelper _sportsHelper;
+        private readonly SportService _sportsHelper;
         private readonly ILogger<SportsController> _logger;
 
-        public SportsController(SportsHelper sportsHelper, ILogger<SportsController> logger)
+        public SportsController(SportService sportsHelper, ILogger<SportsController> logger)
         {
             _sportsHelper = sportsHelper;
             _logger = logger;

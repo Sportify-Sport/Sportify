@@ -177,23 +177,37 @@ public class DBservices
         return cmd;
     }
 
-
     //--------------------------------------------------------------------------------------------------
-    // This method validates user credentials and performs login operation
+    // This method logs in user and returns the complete user object
     //--------------------------------------------------------------------------------------------------
     public User LoginUser(string email, string password)
     {
+        DBservices dbServices = new DBservices();
+        var user = dbServices.GetUserByEmail(email);
+
+        if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+        {
+            return null;
+        }
+
+        return user;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method gets user some user details by email 
+    //--------------------------------------------------------------------------------------------------
+    public User GetUserByEmail(string email)
+    {
         SqlConnection con;
         SqlCommand cmd;
-        User user = null;
 
         try
         {
-            con = connect("myProjDB");
+            con = connect("myProjDB"); // create the connection
         }
         catch (Exception ex)
         {
-            // Write to log
+            // write to log
             throw (ex);
         }
 
@@ -205,56 +219,56 @@ public class DBservices
 
             if (dataReader.Read())
             {
-                string hashedPassword = dataReader["PasswordHash"].ToString();
-
-                // Verify the password
-                if (BCrypt.Net.BCrypt.Verify(password, hashedPassword))
+                return new User
                 {
-                    user = new User
-                    {
-                        UserId = Convert.ToInt32(dataReader["UserId"]),
-                        FirstName = dataReader["FirstName"].ToString(),
-                        LastName = dataReader["LastName"].ToString(),
-                        Email = dataReader["Email"].ToString(),
-                        IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
-                        IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
-                        IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"])
-                    };
-                }
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString(),
+                    Email = dataReader["Email"].ToString(),
+                    PasswordHash = dataReader["PasswordHash"].ToString(),
+                    IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
+                    IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
+                    IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"]),
+                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"])
+                };
+            }
+            else
+            {
+                return null;
             }
         }
         catch (Exception ex)
         {
-            // Write to log
+            // write to log
             throw (ex);
         }
         finally
         {
             if (con != null)
             {
+                // close the db connection
                 con.Close();
             }
         }
-
-        if (user == null)
-        {
-            return null;
-        }
-
-        return user;
     }
 
     //---------------------------------------------------------------------------------
-    // Create the SqlCommand to get user by email for login validation
+    // Create the SqlCommand using a stored procedure for getting user by email
     //---------------------------------------------------------------------------------
     private SqlCommand CreateCommandWithStoredProcedureGetUserByEmail(string spName, SqlConnection con, string email)
     {
-        SqlCommand cmd = new SqlCommand();
-        cmd.Connection = con;
-        cmd.CommandText = spName;
-        cmd.CommandTimeout = 10;
-        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
         cmd.Parameters.AddWithValue("@Email", email);
+
         return cmd;
     }
 
@@ -3900,9 +3914,15 @@ public class DBservices
                     FirstName = dataReader["FirstName"].ToString(),
                     LastName = dataReader["LastName"].ToString(),
                     Email = dataReader["Email"].ToString(),
+                    PasswordHash = dataReader["PasswordHash"].ToString(),
+                    BirthDate = Convert.ToDateTime(dataReader["BirthDate"]),
+                    Gender = dataReader["Gender"].ToString(),
+                    FavSportId = Convert.ToInt32(dataReader["FavSportId"]),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
                     IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
                     IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
-                    IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"])
+                    IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"]),
+                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"])
                 };
             }
         }
@@ -5928,5 +5948,503 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // This method saves email verification code
+    //--------------------------------------------------------------------------------------------------
+    public bool SaveEmailVerificationCode(int userId, string code, DateTime expiresAt)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureSaveEmailVerificationCode("SP_SaveEmailVerificationCode", con, userId, code, expiresAt);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["CodeId"]) > 0;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for saving email verification code
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSaveEmailVerificationCode(string spName, SqlConnection con, int userId, string code, DateTime expiresAt)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Code", code);
+        cmd.Parameters.AddWithValue("@ExpiresAt", expiresAt);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method verifies email with code
+    //--------------------------------------------------------------------------------------------------
+    public (bool IsValid, int UserId) VerifyEmailWithCode(string code)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureVerifyEmailWithCode("SP_VerifyEmailWithCode", con, code);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool isValid = Convert.ToBoolean(dataReader["IsValid"]);
+                int userId = dataReader["UserId"] != DBNull.Value ? Convert.ToInt32(dataReader["UserId"]) : 0;
+                return (isValid, userId);
+            }
+            else
+            {
+                return (false, 0);
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for verifying email with code
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureVerifyEmailWithCode(string spName, SqlConnection con, string code)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@Code", code);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method saves password reset code
+    //--------------------------------------------------------------------------------------------------
+    public bool SavePasswordResetCode(int userId, string code, DateTime expiresAt)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureSavePasswordResetCode("SP_SavePasswordResetCode", con, userId, code, expiresAt);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["CodeId"]) > 0;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for saving password reset code
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSavePasswordResetCode(string spName, SqlConnection con, int userId, string code, DateTime expiresAt)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Code", code);
+        cmd.Parameters.AddWithValue("@ExpiresAt", expiresAt);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method validates password reset code
+    //--------------------------------------------------------------------------------------------------
+    public User ValidatePasswordResetCode(string code)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureValidatePasswordResetCode("SP_ValidatePasswordResetCode", con, code);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return new User
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString(),
+                    Email = dataReader["Email"].ToString(),
+                    PasswordHash = dataReader["PasswordHash"].ToString(),
+                    BirthDate = Convert.ToDateTime(dataReader["BirthDate"]),
+                    Gender = dataReader["Gender"].ToString(),
+                    FavSportId = Convert.ToInt32(dataReader["FavSportId"]),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
+                    IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
+                    IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"]),
+                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"])
+                };
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for validating password reset code
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureValidatePasswordResetCode(string spName, SqlConnection con, string code)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@Code", code);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method updates user password
+    //--------------------------------------------------------------------------------------------------
+    public bool UpdateUserPassword(int userId, string newPasswordHash)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureUpdateUserPassword("SP_UpdateUserPassword", con, userId, newPasswordHash);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["RowsAffected"]) > 0;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for updating user password
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateUserPassword(string spName, SqlConnection con, int userId, string newPasswordHash)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@NewPasswordHash", newPasswordHash);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method marks password reset code as used
+    //--------------------------------------------------------------------------------------------------
+    public bool MarkPasswordResetCodeAsUsed(string code)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureMarkPasswordResetCodeAsUsed("SP_MarkPasswordResetCodeAsUsed", con, code);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["RowsAffected"]) > 0;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for marking password reset code as used
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureMarkPasswordResetCodeAsUsed(string spName, SqlConnection con, string code)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@Code", code);
+
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // This method revokes all user refresh tokens
+    //--------------------------------------------------------------------------------------------------
+    public int RevokeAllUserRefreshTokens(int userId, string reason)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB"); // create the connection
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureRevokeAllUserRefreshTokens("SP_RevokeAllUserRefreshTokens", con, userId, reason);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["RevokedCount"]);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            // write to log
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                // close the db connection
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand using a stored procedure for revoking all user refresh tokens
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRevokeAllUserRefreshTokens(string spName, SqlConnection con, int userId, string reason)
+    {
+        SqlCommand cmd = new SqlCommand(); // create the command object
+
+        cmd.Connection = con;              // assign the connection to the command object
+
+        cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+        cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+        cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Reason", reason);
+
+        return cmd;
+    }
 
 }

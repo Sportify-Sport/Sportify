@@ -262,8 +262,8 @@ CREATE PROCEDURE SP_GetUserById
 AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT UserId, FirstName, LastName, Email, IsGroupAdmin, IsCityOrganizer, IsEventAdmin
+    SELECT UserId, FirstName, LastName, Email, PasswordHash, BirthDate, Gender, 
+           FavSportId, CityId, IsGroupAdmin, IsCityOrganizer, IsEventAdmin, IsEmailVerified
     FROM Users
     WHERE UserId = @UserId
 END

@@ -3,7 +3,7 @@ using Backend.BL;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Backend.Models;
-using Backend.Helpers;
+using Backend.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -241,7 +241,7 @@ namespace Backend.Controllers
                 string currentImage = Group.GetCurrentGroupImage(groupId);
 
                 // Process the image
-                string imageFileName = await ImageHelper.ProcessImage(groupImage, "group", groupId, currentImage);
+                string imageFileName = await ImageService.ProcessImage(groupImage, "group", groupId, currentImage);
 
                 // Update the group image in the database
                 var (success, message) = Group.UpdateGroupImage(groupId, imageFileName);
@@ -257,7 +257,7 @@ namespace Backend.Controllers
                 else
                 {
                     // Delete the newly uploaded image if database update failed
-                    ImageHelper.DeleteImage(imageFileName);
+                    ImageService.DeleteImage(imageFileName);
                     return BadRequest(new { success = false, message = message });
                 }
             }

@@ -1,4 +1,4 @@
-using Backend.Helpers;
+using Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -33,8 +33,9 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<CityHelper>();
-builder.Services.AddScoped<SportsHelper>();
+builder.Services.AddScoped<CityService>();
+builder.Services.AddScoped<SportService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

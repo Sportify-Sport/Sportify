@@ -1,5 +1,5 @@
 ﻿using Backend.BL;
-using Backend.Helpers;
+using Backend.Services;
 using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +35,8 @@ namespace Backend.Controllers
         }
 
         [HttpGet("GetUserProfile")]
-        [Authorize(Roles = "User")]
+        //[Authorize(Roles = "User")]
+        [Authorize]
         public IActionResult GetUserProfile()
         {
             try
@@ -220,7 +221,7 @@ namespace Backend.Controllers
                 string currentImage = BL.User.GetCurrentProfileImage(userId);
 
                 // Process the image using ImageHelper
-                string imageFileName = await ImageHelper.ProcessImage(profileImage, "user", userId, currentImage);
+                string imageFileName = await ImageService.ProcessImage(profileImage, "user", userId, currentImage);
 
                 // Update the profile image in the database
                 bool success = BL.User.UpdateProfileImage(userId, imageFileName);
@@ -232,7 +233,7 @@ namespace Backend.Controllers
                 else
                 {
                     // Delete the newly uploaded image if database update failed
-                    ImageHelper.DeleteImage(imageFileName);
+                    ImageService.DeleteImage(imageFileName);
                     return NotFound(new { success = false, message = $"User with ID {userId} not found" });
                 }
             }

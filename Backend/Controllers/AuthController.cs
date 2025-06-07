@@ -1,5 +1,6 @@
 ﻿using Backend.BL;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -19,15 +20,19 @@ namespace Backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IConfiguration config)
+        public AuthController(IConfiguration config, IEmailService emailService, ILogger<AuthController> logger)
         {
             _config = config;
+            _emailService = emailService;
+            _logger = logger;
         }
-       
+
         [AllowAnonymous]
         [HttpPost("register")]
-        public IActionResult Register([FromBody] RegisterDto registerDto)
+        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
             try
             {
@@ -43,19 +48,31 @@ namespace Backend.Controllers
                     return BadRequest("Registration failed");
                 }
 
+                // Generate verification code
+                string verificationCode = GenerateVerificationCode();
+                DateTime expiresAt = DateTime.UtcNow.AddMinutes(15);
+                
+                DBservices dbServices = new DBservices();
+                dbServices.SaveEmailVerificationCode(user.UserId, verificationCode, expiresAt);
+
+                // Send welcome email with verification code
+                await _emailService.SendWelcomeEmailWithVerificationAsync(user.Email, user.FirstName, verificationCode);
+
                 var accessToken = GenerateJwtToken(user);
                 var refreshToken = GenerateRefreshToken(user.UserId);
 
                 var response = new AuthResponse
                 {
                     AccessToken = accessToken,
-                    RefreshToken = refreshToken.Token
+                    RefreshToken = refreshToken.Token,
+                    IsEmailVerified = false
                 };
 
                 return Ok(response);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error during registration");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
@@ -87,6 +104,7 @@ namespace Backend.Controllers
                 IsGroupAdmin = false,
                 IsCityOrganizer = false,
                 IsEventAdmin = false,
+                IsEmailVerified = false
             };
         }
 
@@ -115,7 +133,8 @@ namespace Backend.Controllers
                 var response = new AuthResponse
                 {
                     AccessToken = accessToken,
-                    RefreshToken = refreshToken.Token
+                    RefreshToken = refreshToken.Token,
+                    IsEmailVerified = user.IsEmailVerified
                 };
 
                 return Ok(response);
@@ -126,6 +145,198 @@ namespace Backend.Controllers
             }
         }
 
+        [Authorize] // Allow both verified and unverified users
+        [HttpPost("verify-email")]
+        public IActionResult VerifyEmail([FromBody] VerifyEmailDto verifyDto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(verifyDto.Code))
+                {
+                    return BadRequest("Verification code is required");
+                }
+
+                if (verifyDto.Code.Length != 6 || !verifyDto.Code.All(char.IsDigit))
+                {
+                    return BadRequest("Invalid verification code format");
+                }
+
+                DBservices dbServices = new DBservices();
+                var result = dbServices.VerifyEmailWithCode(verifyDto.Code);
+
+                if (!result.IsValid)
+                {
+                    return BadRequest("Invalid or expired verification code");
+                }
+
+                // Get updated user info and generate new tokens with verified status
+                var user = GetUserById(result.UserId);
+                string accessToken = GenerateJwtToken(user);
+                var refreshToken = GenerateRefreshToken(user.UserId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Email verified successfully",
+                    accessToken = accessToken,
+                    refreshToken = refreshToken.Token
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error verifying email");
+                return StatusCode(500, "An error occurred while verifying email");
+            }
+        }
+
+        [Authorize] // Allow unverified users to resend
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized();
+                }
+
+                int userId = int.Parse(userIdClaim.Value);
+                var user = GetUserById(userId);
+
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                if (user.IsEmailVerified)
+                {
+                    return BadRequest("Email is already verified");
+                }
+
+                // Generate new verification code
+                string verificationCode = GenerateVerificationCode();
+                DateTime expiresAt = DateTime.UtcNow.AddMinutes(15);
+
+                DBservices dbServices = new DBservices();
+                dbServices.SaveEmailVerificationCode(userId, verificationCode, expiresAt);
+
+                // Send verification email
+                await _emailService.SendEmailVerificationAsync(user.Email, user.FirstName, verificationCode);
+
+                return Ok(new { success = true, message = "Verification email sent successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resending verification email");
+                return StatusCode(500, "An error occurred while resending verification");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotDto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(forgotDto.Email))
+                {
+                    return BadRequest("Email is required");
+                }
+
+                DBservices dbServices = new DBservices();
+                var user = dbServices.GetUserByEmail(forgotDto.Email.ToLower());
+
+                // Always return success to prevent email enumeration
+                if (user == null)
+                {
+                    return Ok(new { success = true, message = "If the email exists, a reset code has been sent" });
+                }
+
+                // Generate 6-digit code
+                string resetCode = GenerateVerificationCode();
+                DateTime expiresAt = DateTime.UtcNow.AddMinutes(10);
+
+                // Save reset code
+                dbServices.SavePasswordResetCode(user.UserId, resetCode, expiresAt);
+
+                // Send email
+                await _emailService.SendPasswordResetCodeAsync(user.Email, user.FirstName, resetCode);
+
+                return Ok(new { success = true, message = "If the email exists, a reset code has been sent" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing forgot password request");
+                return StatusCode(500, "An error occurred");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetDto)
+        {
+            try
+            {
+                // Input validation
+                if (string.IsNullOrWhiteSpace(resetDto.Code) ||
+                    string.IsNullOrWhiteSpace(resetDto.NewPassword))
+                {
+                    return BadRequest("Reset code and new password are required");
+                }
+
+                if (resetDto.Code.Length != 6 || !resetDto.Code.All(char.IsDigit))
+                {
+                    return BadRequest("Invalid reset code format");
+                }
+
+                if (resetDto.NewPassword.Length < 8)
+                {
+                    return BadRequest("Password must be at least 8 characters long");
+                }
+
+                DBservices dbServices = new DBservices();
+
+                // Validate reset code
+                var user = dbServices.ValidatePasswordResetCode(resetDto.Code);
+                if (user == null)
+                {
+                    return BadRequest("Invalid or expired reset code");
+                }
+
+                // Hash new password
+                string newHashedPassword = BCrypt.Net.BCrypt.HashPassword(resetDto.NewPassword);
+
+                // Update password
+                dbServices.UpdateUserPassword(user.UserId, newHashedPassword);
+
+                // Mark code as used
+                dbServices.MarkPasswordResetCodeAsUsed(resetDto.Code);
+
+                // Revoke all existing refresh tokens
+                dbServices.RevokeAllUserRefreshTokens(user.UserId, "Password reset");
+
+                // Generate new tokens
+                string newAccessToken = GenerateJwtToken(user);
+                var newRefreshToken = GenerateRefreshToken(user.UserId);
+
+                // Send notification email
+                await _emailService.SendPasswordChangedNotificationAsync(user.Email, user.FirstName);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Password reset successfully",
+                    accessToken = newAccessToken,
+                    refreshToken = newRefreshToken.Token
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting password");
+                return StatusCode(500, "An error occurred while resetting password");
+            }
+        }
 
         [AllowAnonymous]
         [HttpPost("refresh-token")]
@@ -168,7 +379,8 @@ namespace Backend.Controllers
                 var response = new AuthResponse
                 {
                     AccessToken = newAccessToken,
-                    RefreshToken = newRefreshToken.Token
+                    RefreshToken = newRefreshToken.Token,
+                    IsEmailVerified = user.IsEmailVerified
                 };
 
                 return Ok(response);
@@ -253,8 +465,13 @@ namespace Backend.Controllers
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim("email", user.Email),
                 new Claim("name", $"{user.FirstName} {user.LastName}"),
-                new Claim(ClaimTypes.Role, "User")
+                new Claim("IsEmailVerified", user.IsEmailVerified.ToString().ToLower())
             };
+
+            if (user.IsEmailVerified)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+            }
 
             if (user.IsGroupAdmin)
             {
@@ -283,6 +500,12 @@ namespace Backend.Controllers
               signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private string GenerateVerificationCode()
+        {
+            Random random = new Random();
+            return random.Next(100000, 999999).ToString();
         }
 
         private RefreshToken GenerateRefreshToken(int userId, DateTime? inheritExpiryDate = null)

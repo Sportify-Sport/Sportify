@@ -19,7 +19,8 @@ CREATE TABLE Users (
     Gender NVARCHAR(1) NOT NULL CHECK (Gender IN ('M', 'F')),
 	IsCityOrganizer BIT NOT NULL DEFAULT 0,
 	IsGroupAdmin BIT NOT NULL DEFAULT 0,
-	IsEventAdmin BIT NOT NULL DEFAULT 0
+	IsEventAdmin BIT NOT NULL DEFAULT 0,
+	IsEmailVerified BIT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Groups (
@@ -158,3 +159,25 @@ CREATE TABLE AdminRefreshTokens (
     ReasonRevoked NVARCHAR(100) NULL,
     UseCount INT NOT NULL DEFAULT 0
 );
+
+CREATE TABLE EmailVerificationCodes (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    Code NVARCHAR(6) NOT NULL,
+    ExpiresAt DATETIME NOT NULL,
+    IsUsed BIT NOT NULL DEFAULT 0,
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE PasswordResetCodes (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    Code NVARCHAR(6) NOT NULL,
+    ExpiresAt DATETIME NOT NULL,
+    IsUsed BIT NOT NULL DEFAULT 0,
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
+);
+
+-- Create indexes for performance
+CREATE INDEX IX_EmailVerificationCodes_Code ON EmailVerificationCodes(Code) WHERE IsUsed = 0;
+CREATE INDEX IX_PasswordResetCodes_Code ON PasswordResetCodes(Code) WHERE IsUsed = 0;

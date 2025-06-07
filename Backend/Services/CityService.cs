@@ -6,20 +6,20 @@ using System.Runtime;
 using System.Text.Json;
 using System.Web;
 
-namespace Backend.Helpers
+namespace Backend.Services
 {
-    public class CityHelper
+    public class CityService
     {
         private readonly IMemoryCache _cache;
         private readonly HttpClient _httpClient;
-        private readonly ILogger<CityHelper> _logger;
+        private readonly ILogger<CityService> _logger;
         private const string CACHE_PREFIX = "CITY_";
         private const string API_URL = "https://data.gov.il/api/3/action/datastore_search";
         private const string RESOURCE_ID = "8f714b6f-c35c-4b40-a0e7-547b675eee0e";
 
         // Dictionary to manage locks per city ID
         private static readonly ConcurrentDictionary<int, SemaphoreSlim> _semaphores = new();
-        public CityHelper(IMemoryCache cache, IHttpClientFactory httpClientFactory, ILogger<CityHelper> logger)
+        public CityService(IMemoryCache cache, IHttpClientFactory httpClientFactory, ILogger<CityService> logger)
         {
             _cache = cache;
             _httpClient = httpClientFactory.CreateClient();

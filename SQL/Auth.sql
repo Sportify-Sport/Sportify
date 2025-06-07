@@ -78,7 +78,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT UserId, FirstName, LastName, Email, PasswordHash, IsGroupAdmin, IsCityOrganizer, IsEventAdmin
+	SELECT UserId, FirstName, LastName, Email, PasswordHash, 
+           IsGroupAdmin, IsCityOrganizer, IsEventAdmin, IsEmailVerified
     FROM Users
     WHERE Email = @Email
 END
@@ -188,5 +189,175 @@ BEGIN
     END
     
     SELECT @success AS Success;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Save email verification code>
+-- =============================================
+CREATE PROCEDURE SP_SaveEmailVerificationCode
+    @UserId INT,
+    @Code NVARCHAR(6),
+    @ExpiresAt DATETIME
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Invalidate any existing codes for this user
+    UPDATE EmailVerificationCodes 
+    SET IsUsed = 1 
+    WHERE UserId = @UserId AND IsUsed = 0;
+    
+    -- Insert new code
+    INSERT INTO EmailVerificationCodes (UserId, Code, ExpiresAt)
+    VALUES (@UserId, @Code, @ExpiresAt);
+    
+    SELECT SCOPE_IDENTITY() AS CodeId;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Verify email with code>
+-- =============================================
+CREATE PROCEDURE SP_VerifyEmailWithCode
+    @Code NVARCHAR(6)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @UserId INT;
+    DECLARE @IsValid BIT = 0;
+    
+    -- Check if code exists and is valid
+    SELECT @UserId = UserId
+    FROM EmailVerificationCodes
+    WHERE Code = @Code 
+        AND IsUsed = 0 
+        AND ExpiresAt > GETUTCDATE();
+    
+    IF @UserId IS NOT NULL
+    BEGIN
+        -- Mark email as verified
+        UPDATE Users SET IsEmailVerified = 1 WHERE UserId = @UserId;
+        
+        -- Mark code as used
+        UPDATE EmailVerificationCodes SET IsUsed = 1 WHERE Code = @Code;
+        
+        SET @IsValid = 1;
+    END
+    
+    SELECT @IsValid AS IsValid, @UserId AS UserId;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Save password reset code>
+-- =============================================
+CREATE PROCEDURE SP_SavePasswordResetCode
+    @UserId INT,
+    @Code NVARCHAR(6),
+    @ExpiresAt DATETIME
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Invalidate any existing codes for this user
+    UPDATE PasswordResetCodes 
+    SET IsUsed = 1 
+    WHERE UserId = @UserId AND IsUsed = 0;
+    
+    -- Insert new code
+    INSERT INTO PasswordResetCodes (UserId, Code, ExpiresAt)
+    VALUES (@UserId, @Code, @ExpiresAt);
+    
+    SELECT SCOPE_IDENTITY() AS CodeId;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Validate password reset code>
+-- =============================================
+CREATE PROCEDURE SP_ValidatePasswordResetCode
+    @Code NVARCHAR(6)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT prc.UserId, u.Email, u.FirstName, u.LastName, u.PasswordHash, u.BirthDate, u.Gender,
+        u.FavSportId, u.CityId, u.IsGroupAdmin, u.IsCityOrganizer, u.IsEventAdmin, u.IsEmailVerified
+    FROM PasswordResetCodes prc
+    INNER JOIN Users u ON prc.UserId = u.UserId
+    WHERE prc.Code = @Code 
+        AND prc.IsUsed = 0 
+        AND prc.ExpiresAt > GETDATE();
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Update user password>
+-- =============================================
+CREATE PROCEDURE SP_UpdateUserPassword
+    @UserId INT,
+    @NewPasswordHash NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE Users 
+    SET PasswordHash = @NewPasswordHash 
+    WHERE UserId = @UserId;
+    
+    SELECT @@ROWCOUNT AS RowsAffected;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Mark password reset code as used>
+-- =============================================
+CREATE PROCEDURE SP_MarkPasswordResetCodeAsUsed
+    @Code NVARCHAR(6)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE PasswordResetCodes 
+    SET IsUsed = 1 
+    WHERE Code = @Code;
+    
+    SELECT @@ROWCOUNT AS RowsAffected;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <7/6/2025>
+-- Description:	<Revoke all user refresh tokens>
+-- =============================================
+CREATE PROCEDURE SP_RevokeAllUserRefreshTokens
+    @UserId INT,
+    @Reason NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE RefreshTokens 
+    SET Revoked = GETDATE(), 
+        ReasonRevoked = @Reason
+    WHERE UserId = @UserId 
+        AND Revoked IS NULL;
+    
+    SELECT @@ROWCOUNT AS RevokedCount;
 END
 GO
