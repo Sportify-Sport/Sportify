@@ -1,10 +1,4 @@
 /* src/styles/dashboard.css */
-:root {
-  --error-color: #f90000;
-  --error-light: #ffebeb;
-  --error-dark: #f90000;
-  --on-error: #ffffff;
-}
 .dashboard-container {
   width: 100%;
   max-width: 1200px;
@@ -47,10 +41,13 @@
 }
 
 .stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  --grid-min-width: 200px;
   margin-bottom: 3rem;
+}
+
+.main-navigation {
+  --grid-min-width: 320px;
+  --grid-gap: 2rem;
 }
 
 .stat-card {
@@ -88,12 +85,6 @@
   opacity: 0.8;
 }
 
-.main-navigation {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 2rem;
-}
-
 .nav-card {
   background-color: var(--surface);
   border-radius: 12px;
@@ -101,12 +92,13 @@
   box-shadow: 0 2px 12px var(--shadow);
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
+  margin: 1rem;
 }
 
 .nav-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px var(--shadow-hover);
+  box-shadow: 0 8px 20px var(--shadow);
   border-color: var(--primary-light);
 }
 
@@ -128,7 +120,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
 }
 
 .card-footer span {
@@ -138,7 +130,7 @@
 
 .card-footer button {
   background-color: var(--primary-color);
-  color: var(--on-primary);
+  color: var(--on-primary, #ffffff);
   border: none;
   padding: 0.5rem 1.25rem;
   border-radius: 6px;
@@ -152,61 +144,13 @@
   transform: translateY(-1px);
 }
 
-/* Buttons in header */
-.change-city-btn,
-.logout-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-  border: 1px solid var(--border-color);
-  background-color: var(--surface);
-}
-
-.change-city-btn {
-  color: var(--text);
-}
-
-.change-city-btn:hover {
-  background-color: var(--background-hover);
-  border-color: var(--primary-light);
-  color: var(--primary-color);
-}
-
-.logout-btn {
-  color: var(--error-color);
-  border-color : var(--error-color);
-}
-
-.logout-btn:hover {
-  background-color: var(--error-color);
-  color: var(--on-error) !important;
-  border-color: var(--error-dark);
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 1.5rem 1rem;
   }
   
   .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-  
-  .main-navigation {
-    grid-template-columns: 1fr;
-  }
-  
-  .stat-card {
-    padding: 1.25rem;
-  }
-  
-  .nav-card {
-    padding: 1.5rem;
+    --grid-columns-mobile: repeat(2, 1fr);
   }
 }
 
@@ -222,33 +166,6 @@
   }
   
   .stats-cards {
-    grid-template-columns: 1fr;
+    --grid-columns-mobile: 1fr;
   }
-}
-
-.dashboard-actions button {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-  border: 1px solid var(--border-color);
-  background-color: var(--surface);
-  color: var(--text);
-}
-
-.loading-spinner {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); 
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 4px solid var(--spinner-track, rgba(0, 0, 0, 0.1));
-  border-radius: 50%;
-  border-top-color: var(--spinner-active, #10B981);
-  animation: spin 1s ease-in-out infinite;
-  will-change: transform;
-  z-index: 1000;
 }
