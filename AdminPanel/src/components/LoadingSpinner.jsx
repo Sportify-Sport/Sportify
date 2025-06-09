@@ -1,10 +1,10 @@
 import React from 'react';
 
-const LoadingSpinner = () => {
+const LoadingSpinner = ({ text = '' }) => {
   return (
     <div className="loading-container">
       <div className="loading-spinner"></div>
-      <div className="loading-text">Loading groups...</div>
+    {text && <div className="loading-text">{text}</div>}  
     </div>
   );
 };

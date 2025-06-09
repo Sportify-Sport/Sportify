@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { AUTH_ROUTES } from '../constants/authConstants';
 import useCityId from '../hooks/useCityId';
 import { useAuth } from '../hooks/useAuth';
-import useGroupSearch from '../hooks/useGroupSearch'
+import useGroupSearch from '../hooks/useGroupSearch';
 import useGroupsByCity from '../hooks/useGroupsByCity';
 import GroupCard from '../components/group/GroupCard';
 import SearchBar from '../components/group/SearchBar';
 import FilterDropdown from '../components/group/FilterDropDown';
-import LoadingSpinner from '../components/group/LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 import ShowMoreButton from '../components/group/ShowMoreButton';
 import ThemeToggle from '../components/ThemeToggle';
 import '../styles/group.css';
@@ -17,43 +17,39 @@ const GroupSelectionPage = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { cityId } = useParams();
   const cityName = location.state?.cityName;
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBy, setFilterBy] = useState('name');
   const [page, setPage] = useState(1);
   const abortControllerRef = useRef(null);
 
-  const { cityId, cityIdError, cityIdLoading } = useCityId(cityName);
-  const { searchedGroups, searchLoading, searchError, searchHasMore } = useGroupSearch(cityId, searchTerm,page);
-  const { cityGroups, cityGroupsLoading, cityGroupsError, cityGroupsHasMore } = useGroupsByCity(cityId, filterBy, page);
+  const { cityId: fetchedCityId, cityIdError, cityIdLoading } = useCityId(cityName);
+  const effectiveCityId = cityId || fetchedCityId;
+  const { searchedGroups, searchLoading, searchError, searchHasMore } = useGroupSearch(effectiveCityId, searchTerm, page);
+  const { cityGroups, cityGroupsLoading, cityGroupsError, cityGroupsHasMore } = useGroupsByCity(effectiveCityId, filterBy, page);
 
   const groups = searchTerm.trim().length >= 2 ? searchedGroups : cityGroups;
   const hasMore = searchTerm.trim().length >= 2 ? searchHasMore : cityGroupsHasMore;
   const loading = cityIdLoading || searchLoading || cityGroupsLoading;
   const error = cityIdError || searchError || cityGroupsError;
-
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    setPage(1);
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-  };
+  const [searchInputValue, setSearchInputValue] = useState('');
 
   const handleFilterChange = (e) => {
     setFilterBy(e.target.value);
     setPage(1);
   };
   const handleShowMore = () => {
-    setPage(prevPage => prevPage + 1);
+    setPage((prevPage) => prevPage + 1);
   };
   const handleBackToDashboard = () => {
     navigate(AUTH_ROUTES.DASHBOARD);
   };
   const handleChangeCity = () => {
-    navigate('/select-city');
+    navigate(AUTH_ROUTES.CITY_SELECTION);
+  };
+  const handleCreateButton = () => {
+    navigate(AUTH_ROUTES.CREATE_GROUP);
   };
   useEffect(() => {
     return () => {
@@ -63,8 +59,17 @@ const GroupSelectionPage = () => {
     };
   }, []);
 
+    useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInputValue);
+      setPage(1);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInputValue]);
+
   if (loading && groups.length === 0) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner text= "Loading groups..." />;
   }
 
   if (error) {
@@ -82,7 +87,7 @@ const GroupSelectionPage = () => {
         <button onClick={handleBackToDashboard} className="back-button">
           ← Back to Dashboard
         </button>
-        <h2>Groups in {cityName}</h2>
+        <h2>Groups in {cityName || 'Unknown'}</h2>
         <div  className="dashboard-actions">
         <ThemeToggle />
          <button onClick={handleChangeCity} className="change-city-btn">
@@ -95,10 +100,10 @@ const GroupSelectionPage = () => {
       </header>
 
       <div className="search-filter-container">
+        <button className="create-group-button" onClick={handleCreateButton}>Create</button>
         <SearchBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          handleSearchChange={handleSearchChange}
+          searchTerm={searchInputValue}
+          setSearchTerm={setSearchInputValue}
         />
         <FilterDropdown
           filterBy={filterBy}
@@ -107,18 +112,15 @@ const GroupSelectionPage = () => {
         />
       </div>
 
-      <div className="groups-grid">
+      <div className="groups-grid responsive-grid">
         {groups.map(group => (
-          <GroupCard key={group.groupId} group={group} />
+          <GroupCard key={group.groupId} group={group} cityName={cityName} />
         ))}
-        {loading && <LoadingSpinner />}
+        {loading && <LoadingSpinner text="Loading groups..." />}
       </div>
       {hasMore && (
         <div className="show-more-container">
-          <ShowMoreButton
-            onClick={handleShowMore}
-            hasMore={hasMore}
-          />
+          <ShowMoreButton onClick={handleShowMore} hasMore={hasMore} />
         </div>
       )}
       {groups.length === 0 && !loading && (

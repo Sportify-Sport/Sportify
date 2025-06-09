@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useRef, useEffect }  from 'react';
 
-const SearchBar = ({ searchTerm, setSearchTerm, handleSearchChange }) => {
+const SearchBar = ({ searchTerm, setSearchTerm }) => {
+   const inputRef = useRef(null);
+   useEffect(() => {
+    inputRef.current.focus();
+    }, []);
   return (
     <div className="search-box">
       <input
+        ref={inputRef}
         type="text"
         value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          handleSearchChange({ target: { value: e.target.value.toLowerCase() } });
-        }}
+        onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search groups by name..."
         className="search-input"
       />

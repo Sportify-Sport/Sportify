@@ -8,14 +8,15 @@ const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
-  useEffect(() => {
+  const debounceTimerRef = useRef(null);
 
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-
-    abortControllerRef.current = new AbortController();
-
     if (!searchTerm.trim() || searchTerm.trim().length < 2 || !cityId) {
       setGroups([]);
       setHasMore(false);
@@ -23,8 +24,10 @@ const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
       return;
     }
 		
+    abortControllerRef.current = new AbortController();
+    const controller = abortControllerRef.current;
 
-    const fetchGroups = async () => {
+    debounceTimerRef.current = setTimeout(async () => {
       try {
         setLoading(true);
         const { groups: newGroups, hasMore: newHasMore } = await searchGroups(
@@ -32,8 +35,9 @@ const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
           searchTerm.trim(),
           page,
           pageSize,
-          abortControllerRef.current.signal
+          controller.signal
         );
+        if (controller.signal.aborted) return;
         const transformedData = newGroups.map(group => ({
           groupId: group.groupId || group.id,
           groupName: group.groupName || group.name,
@@ -42,7 +46,8 @@ const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
           sportName: group.sportId ? SPORT_TYPES[group.sportId] : 'N/A',
           totalMembers: group.totalMembers || 1,
           gender: group.gender || 'N/A',
-          foundedAt: group.foundedAt || group.createdAt || new Date().toISOString()
+          foundedAt: group.foundedAt || group.createdAt || new Date().toISOString(),
+          cityId: group.cityId
         }));
 
         setGroups(prevGroups => page === 1 ? transformedData : [...prevGroups, ...transformedData]);
@@ -56,19 +61,25 @@ const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
            setHasMore(false);
         }
       } finally {
+        if (!controller.signal.aborted) {
         setLoading(false);
+       }
       }
-    };
-    const timeoutId = setTimeout(fetchGroups, 500);
+    }, 300);
     return () => {
-      clearTimeout(timeoutId);
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      clearTimeout(debounceTimerRef.current);
+      if (controller && !controller.signal.aborted) {
+        controller.abort();
       }
     };
   }, [cityId, searchTerm, page, pageSize]);
 
-  return { searchedGroups: groups, searchLoading: loading, searchError: error, searchHasMore: hasMore  };
+  return { 
+    searchedGroups: groups, 
+    searchLoading: loading, 
+    searchError: error, 
+    searchHasMore: hasMore  
+  };
 };
 
 export default useGroupSearch;

@@ -46,25 +46,47 @@ export const searchGroups = async (cityId, searchQuery, page, pageSize, abortSig
   };
 };
 
-export const fetchGroupsByCity = async (cityId, sortBy, page, pageSize, abortSignal) => {
-  if (!cityId) throw new Error('City ID is required');
+export const fetchGroupsByCity = async (
+  cityId, 
+  filterBy, 
+  page, 
+  pageSize, 
+  token, 
+  signal
+) => {
+  try {
+    if (!cityId) throw new Error('City ID is required');
+    const response = await fetch(
+      `${getApiBaseUrl()}/api/AdminGroups/${cityId}?sortBy=${filterBy}&page=${page}&pageSize=${pageSize}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal
+      }
+    );
 
-  const token = localStorage.getItem('adminAccessToken');
-  const url = `${getApiBaseUrl()}/api/AdminGroups/${cityId}?sortBy=${sortBy}&page=${page}&pageSize=${pageSize}`;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
 
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    signal: abortSignal
-  });
-
-  if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
+    const data = await response.json();
   
-  const data = await response.json();
-   return {
-    groups: data.groups || [],
-    hasMore: data.hasMore || false,
-    currentPage: data.currentPage || page
-  };
+    return {
+      groups: data.groups || [],
+      hasMore: data.hasMore || false,
+      currentPage: data.currentPage || page
+    };
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching groups:', error);
+      throw error;
+    }
+    return {
+      groups: [],
+      hasMore: false
+    };
+  }
 };

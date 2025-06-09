@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import getApiBaseUrl from '../config/apiConfig';
 import { AUTH_ROUTES } from '../constants/authConstants';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/dashboard.css';
 
 const DashboardPage = () => {
@@ -53,7 +54,7 @@ const DashboardPage = () => {
   };
 
   const navigateToGroups = () => {
-       navigate('/group', { 
+    navigate(`/group/${selectedCity.cityId}`, { 
     state: { 
       cityName: selectedCity.cityName 
     } 
@@ -63,7 +64,8 @@ const DashboardPage = () => {
   if (!selectedCity) {
     return (
       <div className="dashboard-container">
-        <div className="loading-spinner">No city selected. Please <button onClick={() => navigate('/select-city')}>select a city</button>.</div>
+        <LoadingSpinner text="No city selected. Please select a city." />
+        <button onClick={() => navigate('/select-city')}>Select a city</button>
       </div>
     );
   }
@@ -89,12 +91,12 @@ const DashboardPage = () => {
 
       <div className="dashboard-content">
         {loading ? (
-          <div className="loading-spinner">Loading dashboard data...</div>
+          <LoadingSpinner text= "Loading Dashboard..." />
         ) : error ? (
           <div className="error-message">{error}</div>
         ) : (
           <>
-            <div className="stats-cards">
+            <div className="stats-cards responsive-grid">
               <div className="stat-card">
                 <h3>Events</h3>
                 <p className="stat-value">{stats?.eventsCount || 0}</p>

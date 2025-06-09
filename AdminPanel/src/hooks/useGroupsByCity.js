@@ -1,53 +1,64 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchGroupsByCity } from '../services/idOfCity';
 import { SPORT_TYPES } from '../constants/sportTypes';
+import { useAuth } from './useAuth';
+import {getImageUrl} from '../utils/imageUtils'
 
-const useGroupsByCity = (cityId, filterBy, page, pageSize = 4) => {
+  const useGroupsByCity = (cityId, filterBy, page, pageSize = 4) => {
   const [groups, setGroups] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
-
+  const { currentUser } = useAuth();
   useEffect(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
 
-    abortControllerRef.current = new AbortController();
-
-    if (!cityId) {
+    const numericCityId = parseInt(cityId, 10);
+    if (!numericCityId || isNaN(numericCityId)) {
+      setGroups([]);
       setLoading(false);
       setHasMore(false);
+      setError('Invalid city ID');
       return;
     }
 
     const fetchGroups = async () => {
+      abortControllerRef.current = new AbortController();
       try {
         setLoading(true);
+        setError(null);
+        const token = currentUser?.token || localStorage.getItem('adminAccessToken');
+        if (!token) {
+          throw new Error('Authentication token missing');
+        }
         const { groups: newGroups, hasMore: newHasMore } = await fetchGroupsByCity(
-          cityId,
+          numericCityId,
           filterBy,
           page,
           pageSize,
+          token,
           abortControllerRef.current.signal
         );
-        
-        // CORRECTED: Use newGroups instead of undefined 'data'
-        const transformedData = newGroups.map(group => ({
-          groupId: group.groupId || group.id,
-          groupName: group.groupName || group.name,
-          groupImage: group.groupImage || 'default_group.png',
-          sportId: group.sportId,
-          sportName: group.sportId ? SPORT_TYPES[group.sportId] : 'N/A',
-          totalMembers: group.totalMembers || 1,
-          gender: group.gender || 'N/A',
-          foundedAt: group.foundedAt || group.createdAt || new Date().toISOString()
-        }));
+          if (abortControllerRef.current.signal.aborted) {
+          return;
+        }
 
-        setGroups(prevGroups => page === 1 ? transformedData : [...prevGroups, ...transformedData]);
-        setHasMore(newHasMore);
-        setError(null);
+         if (!newGroups) {
+          throw new Error('No groups data received');
+        }
+        const transformedData = newGroups.map(group => ({
+          groupId: group.groupId || '',
+          groupName: group.groupName || '',
+          groupImage: group.groupImage || 'default_group.png',
+          sportId: group.sportId || '',
+          sportName: group.sportId ? SPORT_TYPES[group.sportId] : 'N/A',
+          totalMembers: group.totalMembers || 0,
+          gender: group.gender || 'N/A',
+          foundedAt: group.foundedAt || group.createdAt || new Date().toISOString(),
+          cityId: group.cityId || numericCityId
+        }));
+          setGroups(prevGroups => page === 1 ? transformedData : [...prevGroups, ...transformedData]);
+          setHasMore(newHasMore);
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error("Fetch error:", error);
@@ -67,13 +78,16 @@ const useGroupsByCity = (cityId, filterBy, page, pageSize = 4) => {
         abortControllerRef.current.abort();
       }
     };
-  }, [cityId, filterBy, page, pageSize]);
-
+  }, [cityId, filterBy, page, pageSize, currentUser]);
+ const resetGroups = () => {
+    setGroups([]);
+  };
   return { 
     cityGroups: groups, 
     cityGroupsLoading: loading, 
     cityGroupsError: error, 
-    cityGroupsHasMore: hasMore 
+    cityGroupsHasMore: hasMore,
+    resetGroups
   };
 };
 

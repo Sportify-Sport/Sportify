@@ -6,6 +6,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import getApiBaseUrl from '../config/apiConfig';
 import getCityNameById from '../services/locationService';
 import { AUTH_ROUTES } from '../constants/authConstants';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/auth.css';
 
 const CitySelectionPage = () => {
@@ -86,11 +87,7 @@ const CitySelectionPage = () => {
 
   // Show loading indicator
   if (loading) {
-    return (
-      <div className="city-selection-container">
-        <div className="loading-spinner">Loading cities...</div>
-      </div>
-    );
+    return <LoadingSpinner text= "Loading Cities..." />
   }
 
   return (
