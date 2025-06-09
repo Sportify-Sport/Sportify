@@ -63,7 +63,7 @@ namespace Backend.Services
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
 
-                _logger.LogInformation("Email sent successfully to {Email}", toEmail);
+                // _logger.LogInformation("Email sent successfully to {Email}", toEmail);
             }
             catch (Exception ex)
             {
