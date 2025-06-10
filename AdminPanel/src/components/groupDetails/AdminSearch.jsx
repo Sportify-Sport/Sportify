@@ -1,6 +1,6 @@
 import React from 'react';
-import getApiBaseUrl from '../config/apiConfig';
-import LoadingSpinner from '../components/LoadingSpinner';
+import AdminSearchCard from '../../components/AdminSearchCard';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const AdminSearch = ({
   showAdminSearch,
@@ -38,23 +38,18 @@ const AdminSearch = ({
         </div>
       )}
       {adminLoading && <LoadingSpinner text="Loading admins..." />}
-      <div className="admin-results-grid responsive-grid">
+       {!adminLoading && adminResults.length === 0 && adminSearchTerm && (
+        <div className="no-results">No admins found</div>
+      )}
+      <div className="responsive-grid">
         {adminResults.map((admin) => (
-          <div
+          <AdminSearchCard
             key={admin.userId}
-            className={`admin-card ${selectedAdmin?.userId === admin.userId ? 'selected' : ''}`}
-            onClick={() => handleSelectAdmin(admin)}
-          >
-            <img
-              src={`${getApiBaseUrl()}/images/${admin.profileImage}`}
-              alt={admin.fullName}
-              className="admin-image"
-            />
-            <p><strong>Name:</strong> {admin.fullName}</p>
-            <p><strong>Email:</strong> {admin.email}</p>
-            <p><strong>Gender:</strong> {admin.gender === 'F' ? 'Female' : 'Male'}</p>
-            <p><strong>City:</strong> {admin.cityName}</p>
-          </div>
+            user={admin}
+            cityName={admin.cityName}
+            onSelect={() => handleSelectAdmin(admin)}
+            isSelected={selectedAdmin?.userId === admin.userId}
+          />
         ))}
       </div>
     </div>

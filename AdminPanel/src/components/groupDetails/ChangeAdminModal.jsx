@@ -1,5 +1,5 @@
 import React from 'react';
-import getApiBaseUrl from '../config/apiConfig';
+import getApiBaseUrl from '../../config/apiConfig';
 
 const ChangeAdminModal = ({ showChangeAdminModal, selectedAdmin, groupName, onConfirm, onCancel }) => {
   if (!showChangeAdminModal || !selectedAdmin) return null;

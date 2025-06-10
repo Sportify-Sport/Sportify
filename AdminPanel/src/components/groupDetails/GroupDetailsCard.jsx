@@ -1,5 +1,5 @@
 import React from 'react';
-import getApiBaseUrl from '../config/apiConfig';
+import getApiBaseUrl from '../../config/apiConfig';
 
 const GroupDetailsCard = ({ group, onDeleteClick, onToggleAdminSearch, showAdminSearch }) => {
   return (
