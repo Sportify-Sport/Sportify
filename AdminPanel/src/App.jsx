@@ -8,9 +8,9 @@ import LoginPage from './pages/LoginPage';
 import CitySelectionPage from './pages/CitySelectionPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
-import GroupSelectionPage from './pages/GroupSelectionPage';
-import CreateGroupPage from './pages/CreateGroupPage';
-import GroupDetailsPage from './pages/GroupDetailsPage';
+import GroupSelectionPage from './pages/groupPages/GroupSelectionPage'
+import CreateGroupPage from './pages/groupPages/CreateGroupPage';
+import GroupDetailsPage from './pages/groupPages/GroupDetailsPage';
 import './styles/global.css';
 //import './styles/App.css'
 
