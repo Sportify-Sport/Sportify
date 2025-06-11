@@ -1,0 +1,71 @@
+.admin-card {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  cursor: pointer; 
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  margin-bottom: 1rem; 
+}
+
+.admin-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px var(--shadow);
+}
+
+.admin-card.selected {
+  border-color: var(--primary-color);
+  background-color: var(--primary-light, #e8f5e9);
+}
+
+.admin-card.selected p {
+  color: var(--text, #212121);
+}
+
+.admin-card.selected p strong {
+  color: var(--text-secondary, #616161);
+}
+
+.admin-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  border: 2px solid var(--primary-light);
+}
+
+.admin-card p {
+  margin: 0.3rem 0;
+  font-size: 0.95rem;
+}
+
+.admin-card p strong {
+  color: var(--text-secondary);
+}
+
+
+@media (prefers-color-scheme: dark) {
+  .admin-card.selected {
+    background-color: var(--primary-light, #2e7d32);
+  }
+  
+  .admin-card.selected p {
+    color: var(--on-primary, #ffffff);
+  }
+  
+  .admin-card.selected p strong {
+    color: var(--on-primary-light, #c8e6c9);
+  }
+}
+
+.admin-card:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.admin-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none;
+}

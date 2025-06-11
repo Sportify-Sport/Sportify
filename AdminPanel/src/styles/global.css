@@ -11,6 +11,7 @@
   --error-dark: #f90000;
   --on-error: #ffffff;
   --success: #388e3c;
+  --on-success: #ffffff;
   --border: #e0e0e0;
   --shadow: rgba(0, 0, 0, 0.1);
   --spinner-track: rgba(0, 0, 0, 0.1);
@@ -18,6 +19,11 @@
   --input-bg: white;
   --dropdown-bg: white;
   --card-bg: white;
+  --modal-bg: white;
+  --modal-text: #333333;
+  --modal-shadow: rgba(0, 0, 0, 0.1);
+  --ok-button-bg: #4CAF50;
+  --ok-button-hover: #45a049;
   --transition-speed: 0.3s;
   --max-content-width: 1440px;
   --mobile-breakpoint: 768px;
@@ -36,11 +42,17 @@
   --error-dark: #f90000;
   --on-error: #ffffff;
   --success: #66bb6a;
+  --on-success: #ffffff;
   --border: #424242;
   --shadow: rgba(0, 0, 0, 0.5);
   --input-bg: #333;
   --dropdown-bg: #333;
   --card-bg: #222;
+  --modal-bg: #2d3748;
+  --modal-text: #f7fafc;
+  --modal-shadow: rgba(0, 0, 0, 0.3);
+  --ok-button-bg: #2f855a;
+  --ok-button-hover: #276749;
   --spinner-track: rgba(255, 255, 255, 0.1);
   --spinner-active: #0d6efd;
 }

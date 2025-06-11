@@ -20,32 +20,6 @@ export const fetchCityIdByName = async (cityName) => {
   throw new Error('No city data available');
 };
 
-export const searchGroups = async (cityId, searchQuery, page, pageSize, abortSignal) => {
-  if (!cityId) throw new Error('City ID is required');
-  if (!searchQuery) return { groups: [], hasMore: false, currentPage: page };
-
-  const token = localStorage.getItem('adminAccessToken');
-  const normalizedQuery = searchQuery.toLowerCase();
-  const url = `${getApiBaseUrl()}/api/AdminGroups/${cityId}?name=${encodeURIComponent(normalizedQuery)}&sortBy=name&page=${page}&pageSize=${pageSize}`;
-
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    signal: abortSignal
-  });
-
-  if (!response.ok) throw new Error(`Search failed: ${response.status} ${response.statusText}`);
-  
-  const data = await response.json();
- return {
-    groups: data.groups || [],
-    hasMore: data.hasMore || false,
-    currentPage: data.currentPage || page
-  };
-};
-
 export const fetchGroupsByCity = async (
   cityId, 
   filterBy, 

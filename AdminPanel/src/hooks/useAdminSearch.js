@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import getApiBaseUrl from '../config/apiConfig';
+import getCityNameById from '../services/locationService';
 
-const useAdminSearch = (cityId, cityName, adminSearchTerm) => {
+const useAdminSearch = (cityId, cityName, adminSearchTerm, citiesMap, setCitiesMap) => {
   const [adminResults, setAdminResults] = useState([]);
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState(null);
@@ -21,42 +22,54 @@ const useAdminSearch = (cityId, cityName, adminSearchTerm) => {
     }
     abortControllerRef.current = new AbortController();
 
-    const fetchAdmins = async () => {
-      try {
-        setAdminLoading(true);
-        const token = localStorage.getItem('adminAccessToken');
-        const response = await fetch(
-          `${getApiBaseUrl()}/api/AdminUsers/search?emailOrId=${encodeURIComponent(adminSearchTerm)}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            signal: abortControllerRef.current.signal,
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch admins');
+     const fetchAdmins = async () => {
+    try {
+      setAdminLoading(true);
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await fetch(
+        `${getApiBaseUrl()}/api/AdminUsers/search?emailOrId=${encodeURIComponent(adminSearchTerm)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          signal: abortControllerRef.current.signal,
         }
+      );
 
-        const data = await response.json();
-        const transformedData = data.map((admin) => ({
-          ...admin,
-          cityName: admin.cityId === parseInt(cityId) ? cityName : 'Other City',
-        }));
-        setAdminResults(transformedData);
-        setAdminError(null);
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Error fetching admins:', err);
-          setAdminError('Failed to load admins');
-          setAdminResults([]);
-        }
-      } finally {
-        setAdminLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch admins');
       }
-    };
+
+      const data = await response.json();
+      
+      const transformedData = await Promise.all(
+        data.map(async (admin) => {
+          const adminCityName = await getCityNameById(
+            admin.cityId, 
+            citiesMap, 
+            setCitiesMap
+          );
+          
+          return {
+            ...admin,
+            cityName: admin.cityId === parseInt(cityId) ? cityName : adminCityName,
+          };
+        })
+      );
+      
+      setAdminResults(transformedData);
+      setAdminError(null);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching admins:', err);
+        setAdminError('Failed to load admins');
+        setAdminResults([]);
+      }
+    } finally {
+      setAdminLoading(false);
+    }
+  };
 
     const timeoutId = setTimeout(fetchAdmins, 500);
 
