@@ -1,16 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import useGroupDetails from '../hooks/useGroupDetails';
-import useAdminSearch from '../hooks/useAdminSearch';
-import GroupDetailsCard from '../components/groupDetails/GroupDetailsCard';
-import AdminSearch from '../components/groupDetails/AdminSearch';
-import DeleteModal from '../components/groupDetails/DeleteModal';
-import ChangeAdminModal from '../components/groupDetails/ChangeAdminModal';
-import ThemeToggle from '../components/ThemeToggle';
-import getApiBaseUrl from '../config/apiConfig';
-import LoadingSpinner from '../components/LoadingSpinner'
-import '../styles/group-details.css';
+import { useAuth } from '../../hooks/useAuth';
+import useGroupDetails from '../../hooks/groupDetailsHooks/useGroupDetails';
+import useAdminSearch from '../../hooks/useAdminSearch';
+import GroupDetailsCard from '../../components/groupDetails/GroupDetailsCard';
+import AdminSearch from '../../components/groupDetails/AdminSearch';
+import DeleteModal from '../../components/groupDetails/DeleteModal';
+import ChangeAdminModal from '../../components/groupDetails/ChangeAdminModal';
+import ThemeToggle from '../../components/ThemeToggle';
+import getApiBaseUrl from '../../config/apiConfig';
+import LoadingSpinner from '../../components/LoadingSpinner'
+import '../../styles/groupStyles/group-details.css';
 
 const GroupDetailsPage = () => {
   const { groupId, cityId } = useParams();

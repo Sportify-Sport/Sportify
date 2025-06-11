@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import getApiBaseUrl from '../config/apiConfig';
-import { SPORT_TYPES } from '../constants/sportTypes';
+import getApiBaseUrl from '../../config/apiConfig';
+import { SPORT_TYPES } from '../../constants/sportTypes';
 
 const useGroupDetails = (groupId, cityId, cityName) => {
   const [group, setGroup] = useState(null);
