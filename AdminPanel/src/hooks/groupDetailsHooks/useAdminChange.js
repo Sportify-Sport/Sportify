@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import getApiBaseUrl from '../config/apiConfig';
+import getApiBaseUrl from '../../config/apiConfig';
 
 const useAdminChange = (cityId, groupId, selectedAdmin, setGroup, setAdminError, setAdminResults, setAdminSearchTerm, setSelectedAdmin, setShowAdminSearch) => {
   const handleChangeAdmin = useCallback(async () => {

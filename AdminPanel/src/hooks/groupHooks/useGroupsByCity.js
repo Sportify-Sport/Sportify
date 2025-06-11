@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchGroupsByCity } from '../services/idOfCity';
-import { SPORT_TYPES } from '../constants/sportTypes';
-import { useAuth } from './useAuth';
-import {getImageUrl} from '../utils/imageUtils'
+import { fetchGroupsByCity } from '../../services/idOfCity';
+import { SPORT_TYPES } from '../../constants/sportTypes';
+import { useAuth } from '../useAuth';
 
   const useGroupsByCity = (cityId, filterBy, page, pageSize = 4) => {
   const [groups, setGroups] = useState([]);

@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { AUTH_ROUTES } from '../constants/authConstants';
-import useCityId from '../hooks/useCityId';
-import { useAuth } from '../hooks/useAuth';
-import useGroupSearch from '../hooks/useGroupSearch';
-import useGroupsByCity from '../hooks/useGroupsByCity';
-import GroupCard from '../components/group/GroupCard';
-import SearchBar from '../components/group/SearchBar';
-import FilterDropdown from '../components/group/FilterDropDown';
-import LoadingSpinner from '../components/LoadingSpinner';
-import ShowMoreButton from '../components/group/ShowMoreButton';
-import ThemeToggle from '../components/ThemeToggle';
-import '../styles/group.css';
+import { AUTH_ROUTES } from '../../constants/authConstants';
+import useCityId from '../../hooks/useCityId';
+import { useAuth } from '../../hooks/useAuth';
+import useGroupSearch from '../../hooks/groupHooks/useGroupSearch';
+import useGroupsByCity from '../../hooks/groupHooks/useGroupsByCity';
+import GroupCard from '../../components/group/GroupCard';
+import SearchBar from '../../components/group/SearchBar';
+import FilterDropdown from '../../components/group/FilterDropDown';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ShowMoreButton from '../../components/group/ShowMoreButton';
+import ThemeToggle from '../../components/ThemeToggle';
+import '../../styles/groupStyles/group.css';
 
 const GroupSelectionPage = () => {
   const { currentUser, logout } = useAuth();

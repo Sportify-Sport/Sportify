@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import getApiBaseUrl from '../config/apiConfig';
+import getApiBaseUrl from '../../config/apiConfig';
 
 const useGroupDelete = (cityId, groupId, setGroup, handleBack) => {
   const handleDeleteGroup = useCallback(async () => {

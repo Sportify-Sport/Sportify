@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { searchGroups } from '../services/idOfCity';
-import { SPORT_TYPES } from '../constants/sportTypes';
+import { fetchGroupsByCity } from '../../services/idOfCity';
+import { SPORT_TYPES } from '../../constants/sportTypes';
 
 const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
   const [groups, setGroups] = useState([]);
@@ -30,7 +30,7 @@ const useGroupSearch = (cityId, searchTerm, page, pageSize = 10) => {
     debounceTimerRef.current = setTimeout(async () => {
       try {
         setLoading(true);
-        const { groups: newGroups, hasMore: newHasMore } = await searchGroups(
+        const { groups: newGroups, hasMore: newHasMore } = await fetchGroupsByCity(
           cityId,
           searchTerm.trim(),
           page,
