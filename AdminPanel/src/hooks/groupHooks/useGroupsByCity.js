@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchGroupsByCity } from '../../services/idOfCity';
-import { SPORT_TYPES } from '../../constants/sportTypes';
 import { useAuth } from '../useAuth';
 
-  const useGroupsByCity = (cityId, filterBy, page, pageSize = 4) => {
+  const useGroupsByCity = (cityId, sortBy = 'name', page, pageSize = 4) => {
   const [groups, setGroups] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,7 +31,8 @@ import { useAuth } from '../useAuth';
         }
         const { groups: newGroups, hasMore: newHasMore } = await fetchGroupsByCity(
           numericCityId,
-          filterBy,
+          '',
+          sortBy,
           page,
           pageSize,
           token,
@@ -41,27 +41,11 @@ import { useAuth } from '../useAuth';
           if (abortControllerRef.current.signal.aborted) {
           return;
         }
-
-         if (!newGroups) {
-          throw new Error('No groups data received');
-        }
-        const transformedData = newGroups.map(group => ({
-          groupId: group.groupId || '',
-          groupName: group.groupName || '',
-          groupImage: group.groupImage || 'default_group.png',
-          sportId: group.sportId || '',
-          sportName: group.sportId ? SPORT_TYPES[group.sportId] : 'N/A',
-          totalMembers: group.totalMembers || 0,
-          gender: group.gender || 'N/A',
-          foundedAt: group.foundedAt || group.createdAt || new Date().toISOString(),
-          cityId: group.cityId || numericCityId
-        }));
-          setGroups(prevGroups => page === 1 ? transformedData : [...prevGroups, ...transformedData]);
+          setGroups(prevGroups => page === 1 ? newGroups : [...prevGroups, ...newGroups]);
           setHasMore(newHasMore);
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error("Fetch error:", error);
-          setError(`Failed to load groups: ${error.message}`);
           setGroups([]);
           setHasMore(false);
         }
@@ -77,16 +61,15 @@ import { useAuth } from '../useAuth';
         abortControllerRef.current.abort();
       }
     };
-  }, [cityId, filterBy, page, pageSize, currentUser]);
- const resetGroups = () => {
-    setGroups([]);
-  };
+  }, [cityId, sortBy, page, pageSize, currentUser]);
+//  const resetGroups = () => {
+//     setGroups([]);
+//   };
   return { 
     cityGroups: groups, 
     cityGroupsLoading: loading, 
     cityGroupsError: error, 
-    cityGroupsHasMore: hasMore,
-    resetGroups
+    cityGroupsHasMore: hasMore
   };
 };
 

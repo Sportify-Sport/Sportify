@@ -5,11 +5,10 @@ import useCityId from '../../hooks/useCityId';
 import { useAuth } from '../../hooks/useAuth';
 import useGroupSearch from '../../hooks/groupHooks/useGroupSearch';
 import useGroupsByCity from '../../hooks/groupHooks/useGroupsByCity';
-import GroupCard from '../../components/group/GroupCard';
 import SearchBar from '../../components/group/SearchBar';
 import FilterDropdown from '../../components/group/FilterDropDown';
+import GroupsGrid from '../../components/group/GroupsGrid';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import ShowMoreButton from '../../components/group/ShowMoreButton';
 import ThemeToggle from '../../components/ThemeToggle';
 import '../../styles/groupStyles/group.css';
 
@@ -26,8 +25,8 @@ const GroupSelectionPage = () => {
 
   const { cityId: fetchedCityId, cityIdError, cityIdLoading } = useCityId(cityName);
   const effectiveCityId = cityId || fetchedCityId;
-  const { searchedGroups, searchLoading, searchError, searchHasMore } = useGroupSearch(effectiveCityId, searchTerm, page);
-  const { cityGroups, cityGroupsLoading, cityGroupsError, cityGroupsHasMore } = useGroupsByCity(effectiveCityId, filterBy, page);
+  const { searchedGroups, searchLoading, searchError, searchHasMore } = useGroupSearch(effectiveCityId, searchTerm, filterBy, page, 10);
+  const { cityGroups, cityGroupsLoading, cityGroupsError, cityGroupsHasMore } = useGroupsByCity(effectiveCityId, filterBy, page, 4);
 
   const groups = searchTerm.trim().length >= 2 ? searchedGroups : cityGroups;
   const hasMore = searchTerm.trim().length >= 2 ? searchHasMore : cityGroupsHasMore;
@@ -38,6 +37,11 @@ const GroupSelectionPage = () => {
   const handleFilterChange = (e) => {
     setFilterBy(e.target.value);
     setPage(1);
+  };
+
+  const handleSearchInputChange = (value) => {
+    setSearchInputValue(value);
+    setPage(1); 
   };
   const handleShowMore = () => {
     setPage((prevPage) => prevPage + 1);
@@ -103,29 +107,21 @@ const GroupSelectionPage = () => {
         <button className="create-group-button" onClick={handleCreateButton}>Create</button>
         <SearchBar
           searchTerm={searchInputValue}
-          setSearchTerm={setSearchInputValue}
+          setSearchTerm={handleSearchInputChange}
         />
         <FilterDropdown
           filterBy={filterBy}
           handleFilterChange={handleFilterChange}
-          disabled={!!searchTerm}
+          disabled={searchTerm.trim().length >= 2}
         />
       </div>
-
-      <div className="groups-grid responsive-grid">
-        {groups.map(group => (
-          <GroupCard key={group.groupId} group={group} cityName={cityName} />
-        ))}
-        {loading && <LoadingSpinner text="Loading groups..." />}
-      </div>
-      {hasMore && (
-        <div className="show-more-container">
-          <ShowMoreButton onClick={handleShowMore} hasMore={hasMore} />
-        </div>
-      )}
-      {groups.length === 0 && !loading && (
-        <div className="no-results">No groups found</div>
-      )}
+      <GroupsGrid
+        groups={groups}
+        loading={loading}
+        hasMore={hasMore}
+        onShowMore={handleShowMore}
+        cityName={cityName}
+      />
     </div>
   );
 };

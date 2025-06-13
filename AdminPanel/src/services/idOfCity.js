@@ -7,7 +7,6 @@ export const fetchCityIdByName = async (cityName) => {
     `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&q=${encodeURIComponent(cityName)}`
   );
   const data = await response.json();
-
   if (data.success && data.result?.records?.length > 0) {
     const record = data.result.records.find(
       r => r.city_name_en?.toLowerCase() === cityName.toLowerCase()
@@ -21,38 +20,37 @@ export const fetchCityIdByName = async (cityName) => {
 };
 
 export const fetchGroupsByCity = async (
-  cityId, 
-  filterBy, 
+  cityId,  
+  searchTerm,
+  sortBy = 'name', 
   page, 
-  pageSize, 
-  token, 
+  pageSize,
+  token,
   signal
 ) => {
   try {
     if (!cityId) throw new Error('City ID is required');
-    const response = await fetch(
-      `${getApiBaseUrl()}/api/AdminGroups/${cityId}?sortBy=${filterBy}&page=${page}&pageSize=${pageSize}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        signal
-      }
-    );
+    const url = new URL(`${getApiBaseUrl()}/api/AdminGroups/${cityId}`);
+    if (searchTerm) {
+      url.searchParams.append('name', searchTerm);
+    }
+    url.searchParams.append('sortBy', sortBy);
+    url.searchParams.append('page', page);
+    url.searchParams.append('pageSize', pageSize);
 
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      signal
+    });
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-  
-    return {
-      groups: data.groups || [],
-      hasMore: data.hasMore || false,
-      currentPage: data.currentPage || page
-    };
+   return await response.json();
   } catch (error) {
     if (error.name !== 'AbortError') {
       console.error('Error fetching groups:', error);
