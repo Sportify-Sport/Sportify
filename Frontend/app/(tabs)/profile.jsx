@@ -8,39 +8,66 @@ import {
   TextInput, 
   Alert, 
   ScrollView, 
-  FlatList
+  FlatList,
+  ActivityIndicator
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
+import { useAuth } from '../context/AuthContext';
+import EmailVerificationModal from '../components/modals/EmailVerificationModal';
 import styles from '../../styles/ProfileStyles';
 import getApiBaseUrl from "../config/apiConfig";
 
 export default function Profile() {
   const router = useRouter();
+  const { logout, token, isEmailVerified, isGuest, user } = useAuth();
 
-  // State variables (initially using placeholder values)
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
   const [name, setName] = useState('Loading...');
   const [bio, setBio] = useState('');
   const [email, setEmail] = useState('');
   const [birthdate, setBirthdate] = useState('0000-00-00');
-  const [prevBirthdate, setPrevBirthdate] = useState(birthdate);
+  const [prevBirthdate, setPrevBirthdate] = useState('0000-00-00');
   const [city, setCity] = useState('');
-  const [cityId, setCityId] = useState(''); // Stored cityId from profile API / suggestions
+  const [cityId, setCityId] = useState('');
   const [citySuggestions, setCitySuggestions] = useState([]);
-  const [gender, setGender] = useState('M'); // "M" or "F"
-  const [favoriteSport, setFavoriteSport] = useState('loading'); // "Football", "Basketball", "Marathon"
+  const [gender, setGender] = useState('M');
+  const [favoriteSport, setFavoriteSport] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [age, setAge] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const apiUrl = getApiBaseUrl();
 
-  // Fetch the user profile when the component mounts
+  useEffect(() => {
+    if (isGuest) {
+      setName("Guest User");
+      setEmail("guest@example.com");
+      return;
+    }
+    if (token) {
+      fetchUserProfile();
+    }
+  }, [token, isGuest]);
+
+  useEffect(() => {
+    if (birthdate && birthdate !== '0000-00-00') {
+      const today = new Date();
+      const birth = new Date(birthdate);
+      let calculatedAge = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        calculatedAge--;
+      }
+      setAge(calculatedAge);
+    }
+  }, [birthdate]);
+
   const fetchUserProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
       if (!token) {
         router.replace('/screens/Login');
         return;
@@ -60,42 +87,29 @@ export default function Profile() {
 
       const profileData = await profileResponse.json();
 
-      // Update state with fetched data
       setName(`${profileData.firstName} ${profileData.lastName}`);
       setEmail(profileData.email);
       const formattedBirthdate = profileData.birthDate.split('T')[0];
       setBirthdate(formattedBirthdate);
       setPrevBirthdate(formattedBirthdate);
-      setBio(profileData.bio);
+      setBio(profileData.bio || '');
       setGender(profileData.gender);
       
-      // Map favorite sport id to string
       let sport;
       switch(profileData.favSportId) {
-        case 1: 
-          sport = 'Football'; 
-          break;
-        case 2: 
-          sport = 'Basketball'; 
-          break;
-        case 3: 
-          sport = 'Marathon'; 
-          break;
-        default: 
-          sport = '';
+        case 1: sport = 'Football'; break;
+        case 2: sport = 'Basketball'; break;
+        case 3: sport = 'Marathon'; break;
+        default: sport = '';
       }
       setFavoriteSport(sport);
 
-      // Update profile image (assuming the filename is appended to a base URL)
       setProfileImage(`${apiUrl}/Images/${profileData.profileImage}`);
-
-      // Save cityId from the response for later use
       setCityId(profileData.cityId);
 
-      // Fetch the city name from the government API using cityId
       if (profileData.cityId) {
         const cityResponse = await fetch(
-        `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${profileData.cityId}}`
+          `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${profileData.cityId}}`
         );
         const cityData = await cityResponse.json();
         if (cityData.success && cityData.result && cityData.result.records) {
@@ -113,23 +127,6 @@ export default function Profile() {
     }
   };
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  // Calculate age based on birthdate
-  useEffect(() => {
-    const today = new Date();
-    const birth = new Date(birthdate);
-    let calculatedAge = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      calculatedAge--;
-    }
-    setAge(calculatedAge);
-  }, [birthdate]);
-
-  // City search function for editing mode
   const searchCities = async (query) => {
     if (query.length < 3) {
       setCitySuggestions([]);
@@ -147,18 +144,16 @@ export default function Profile() {
             name: record['city_name_en']
           }));
         setCitySuggestions(suggestions);
-      } else {
-        setCitySuggestions([]);
       }
     } catch (error) {
-      console.error('Error fetching cities from gov API:', error);
+      console.error('Error fetching cities:', error);
       setCitySuggestions([]);
     }
   };
 
   const handleCityBlur = () => {
     if (!citySuggestions.some((suggestion) => suggestion.name === city)) {
-      setCity(''); // Clear if not selected from suggestions
+      setCity('');
     }
   };
 
@@ -186,147 +181,152 @@ export default function Profile() {
     setPrevBirthdate(birthdate);
   };
 
- // Function to handle image selection and upload
-const handleChangeImage = async () => {
-  Alert.alert(
-    'Change Profile Picture',
-    'Choose an option:',
-    [
-      {
-        text: 'Take a picture',
-        onPress: async () => {
-          const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-          if (!permissionResult.granted) {
-            Alert.alert('Permission required', 'Camera permission is required to take a photo.');
-            return;
-          }
-          let result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-          });
-          if (!result.canceled) {
-            const uri = result.assets[0].uri;
-            setProfileImage(uri);
-            // Upload image to backend
-            uploadProfileImage(uri);
-          }
-        },
-      },
-      {
-        text: 'Choose from gallery',
-        onPress: async () => {
-          const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!permissionResult.granted) {
-            Alert.alert('Permission required', 'Media library permission is required to select a photo.');
-            return;
-          }
-          let result = await ImagePicker.launchImageLibraryAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-          });
-          if (!result.canceled) {
-            const uri = result.assets[0].uri;
-            setProfileImage(uri);
-            // Upload image to backend
-            uploadProfileImage(uri);
-          }
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ],
-    { cancelable: true }
-  );
-};
-
-// Helper function to upload the profile image to the backend
-const uploadProfileImage = async (imageUri) => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-      navigation.replace('/screens/Login');
+  const handleChangeImage = async () => {
+    if (isGuest) {
+      Alert.alert('Guest Mode', 'Please sign up or log in to change profile picture.');
       return;
     }
 
-    // Extract file name from the URI
-    const fileName = imageUri.split('/').pop();
-    // Determine file type (e.g., image/jpeg)
-    const match = /\.(\w+)$/.exec(fileName);
-    const fileType = match ? `image/${match[1]}` : `image`;
-
-    // Build FormData and append the image file
-    const formData = new FormData();
-    formData.append('profileImage', {
-      uri: imageUri,
-      name: fileName,
-      type: fileType,
-    });
-
-    // Upload the image with a PUT request
-    const response = await fetch(`${apiUrl}/api/Users/profile/image`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        // Do not manually set 'Content-Type'; let fetch set it automatically for multipart/form-data
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-    console.log('Image Upload Response:', data);
-    if (!response.ok) {
-      Alert.alert('Error', data.message || 'An error occurred while uploading the image.');
-    } else {
-      Alert.alert('Success', 'Profile image updated successfully.');
+    if (!isEmailVerified) {
+      Alert.alert('Email Verification Required', 'Please verify your email to change profile picture.');
+      return;
     }
-  } catch (error) {
-    console.error('Error uploading profile image:', error);
-    Alert.alert('Error', 'An error occurred while uploading the profile image.');
-  }
-};
 
-  // Function to update the user profile
+    Alert.alert(
+      'Change Profile Picture',
+      'Choose an option:',
+      [
+        {
+          text: 'Take a picture',
+          onPress: async () => {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+              Alert.alert('Permission required', 'Camera permission is required to take a photo.');
+              return;
+            }
+            let result = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.5,
+            });
+            if (!result.canceled) {
+              const uri = result.assets[0].uri;
+              setProfileImage(uri);
+              uploadProfileImage(uri);
+            }
+          },
+        },
+        {
+          text: 'Choose from gallery',
+          onPress: async () => {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permissionResult.granted) {
+              Alert.alert('Permission required', 'Media library permission is required to select a photo.');
+              return;
+            }
+            let result = await ImagePicker.launchImageLibraryAsync({
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.5,
+            });
+            if (!result.canceled) {
+              const uri = result.assets[0].uri;
+              setProfileImage(uri);
+              uploadProfileImage(uri);
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const uploadProfileImage = async (imageUri) => {
+    try {
+      setImageLoading(true);
+      
+      if (!token) {
+        router.replace('/screens/Login');
+        return;
+      }
+
+      const fileName = imageUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(fileName);
+      const fileType = match ? `image/${match[1]}` : `image`;
+
+      const formData = new FormData();
+      formData.append('profileImage', {
+        uri: imageUri,
+        name: fileName,
+        type: fileType,
+      });
+
+      const response = await fetch(`${apiUrl}/api/Users/profile/image`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        Alert.alert('Error', data.message || 'An error occurred while uploading the image.');
+      } else {
+        Alert.alert('Success', 'Profile image updated successfully.');
+      }
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      Alert.alert('Error', 'An error occurred while uploading the profile image.');
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
-    // Validate that required fields are not empty (birthdate, city, gender, favorite sport)
+    if (isGuest) {
+      Alert.alert('Guest Mode', 'Please sign up or log in to edit profile.');
+      return;
+    }
+
+    if (!isEmailVerified) {
+      Alert.alert('Email Verification Required', 'Please verify your email first.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Verify Now', onPress: () => setShowVerificationModal(true) }
+      ]);
+      return;
+    }
+
     if (!birthdate || !city || !gender || !favoriteSport) {
       Alert.alert('Missing Fields', 'Please fill in all required fields.');
       return;
     }
-  
+
     try {
-      const token = await AsyncStorage.getItem('token');
+      setLoading(true);
+      
       if (!token) {
-        navigation.replace('Index');
+        router.replace('/screens/Login');
         return;
       }
-  
-      // Map the favoriteSport string to an id
+
       let favSportId;
       switch(favoriteSport) {
-        case 'Football':
-          favSportId = 1;
-          break;
-        case 'Basketball':
-          favSportId = 2;
-          break;
-        case 'Marathon':
-          favSportId = 3;
-          break;
-        default:
-          favSportId = '';
+        case 'Football': favSportId = 1; break;
+        case 'Basketball': favSportId = 2; break;
+        case 'Marathon': favSportId = 3; break;
+        default: favSportId = '';
       }
-  
-      // Create a plain object for the update parameters
+
       const profileData = {
         BirthDate: birthdate,
         FavSportId: favSportId,
         CityId: cityId,
         Bio: bio,
-        Gender: gender === 'M' ? 'M' : 'F'
+        Gender: gender
       };
-  
-      // Send the request with JSON.stringify
+
       const response = await fetch(`${apiUrl}/api/Users/profile/details`, {
         method: 'PUT',
         headers: {
@@ -335,11 +335,9 @@ const uploadProfileImage = async (imageUri) => {
         },
         body: JSON.stringify(profileData)
       });
-  
+
       const data = await response.json();
-      console.log('Full Response:', data);
       if (!response.ok) {
-        // Show only the title from the error response
         Alert.alert('Error', data.title || 'An error occurred.');
       } else {
         Alert.alert('Success', 'Profile updated successfully.');
@@ -348,13 +346,18 @@ const uploadProfileImage = async (imageUri) => {
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'An error occurred while updating the profile.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Toggle editing mode or save if editing is active
   const handleEditPress = () => {
+    if (isGuest) {
+      Alert.alert('Guest Mode', 'Please sign up or log in to edit profile.');
+      return;
+    }
+
     if (isEditing) {
-      // When saving, run the update flow
       handleSaveProfile();
     } else {
       setIsEditing(true);
@@ -362,39 +365,105 @@ const uploadProfileImage = async (imageUri) => {
   };
 
   const handleLogout = () => {
+    if (isGuest) {
+      Alert.alert(
+        "Exit Guest Mode",
+        "Are you sure you want to exit guest mode?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", style: "destructive", onPress: () => router.replace('../screens/Login') }
+        ]
+      );
+      return;
+    }
+
     Alert.alert(
       "Confirm Logout",
       "Are you sure you want to log out?",
       [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Logout",
-          style: "destructive",
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Logout", 
+          style: "destructive", 
           onPress: async () => {
-            await AsyncStorage.removeItem('token');
+            await logout();
             router.replace('../screens/Login');
           }
         }
-      ],
-      { cancelable: true }
+      ]
     );
   };
 
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    // Refresh profile data to get updated verification status
+    fetchUserProfile();
+  };
+
+  if (isGuest) {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.imageWrapper}>
+          <Image source={{ uri: 'https://via.placeholder.com/150' }} style={styles.profileImage} />
+        </View>
+
+        <Text style={styles.name}>Guest User</Text>
+        
+        <View style={[styles.infoContainer, { marginTop: 20 }]}>
+          <Text style={styles.label}>🚀 Ready to join?</Text>
+          <Text style={styles.infoText}>
+            Sign up to create your profile, join events, and connect with other sports enthusiasts!
+          </Text>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push('../screens/Signup')}
+          >
+            <Ionicons name="person-add" size={20} color="#fff" />
+            <Text style={styles.editButtonText}>Sign Up</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#fff" />
+            <Text style={styles.logoutButtonText}>Exit</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-<View style={styles.imageWrapper}>
-  <TouchableOpacity onPress={handleChangeImage}>
-    <Image source={{ uri: profileImage }} style={styles.profileImage} />
-    <View style={styles.editIconContainer}>
-      <Ionicons name="pencil" size={20} color="#fff" />
-    </View>
-  </TouchableOpacity>
-</View>
+      {!isEmailVerified && (
+        <View style={styles.verificationBanner}>
+          <Ionicons name="warning" size={20} color="#ff6b6b" />
+          <Text style={styles.verificationText}>
+            Please verify your email to edit your profile
+          </Text>
+          <TouchableOpacity onPress={() => setShowVerificationModal(true)}>
+            <Text style={styles.verifyButton}>Verify</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-
+      <View style={styles.imageWrapper}>
+        <TouchableOpacity onPress={handleChangeImage} disabled={imageLoading}>
+          {imageLoading ? (
+            <View style={[styles.profileImage, { justifyContent: 'center', alignItems: 'center' }]}>
+              <ActivityIndicator size="large" color="#65DA84" />
+            </View>
+          ) : (
+            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          )}
+          <View style={styles.editIconContainer}>
+            <Ionicons name="pencil" size={20} color="#fff" />
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.name}>{name}</Text>
 
@@ -407,9 +476,10 @@ const uploadProfileImage = async (imageUri) => {
             maxLength={255}
             value={bio}
             onChangeText={setBio}
+            placeholder="Tell us about yourself..."
           />
         ) : (
-          <Text style={styles.infoText}>{bio}</Text>
+          <Text style={styles.infoText}>{bio || "No bio yet"}</Text>
         )}
       </View>
 
@@ -440,7 +510,7 @@ const uploadProfileImage = async (imageUri) => {
       </View>
 
       <View style={styles.infoContainer}>
-        <Text style={styles.label}>City</Text>
+        <Text style={styles.label}>City:</Text>
         {isEditing ? (
           <>
             <TextInput
@@ -513,11 +583,18 @@ const uploadProfileImage = async (imageUri) => {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.editButton}
+          style={[styles.editButton, loading && { opacity: 0.5 }]}
           onPress={handleEditPress}
+          disabled={loading}
         >
-          <Ionicons name="pencil" size={20} color="#fff" />
-          <Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="pencil" size={20} color="#fff" />
+              <Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
+            </>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.logoutButton}
@@ -527,6 +604,12 @@ const uploadProfileImage = async (imageUri) => {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
+
+      <EmailVerificationModal
+        visible={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onVerified={handleVerificationComplete}
+      />
     </ScrollView>
   );
 }

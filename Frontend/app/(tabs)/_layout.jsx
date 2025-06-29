@@ -1,8 +1,28 @@
-import { View, Text } from "react-native";
-import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons"
+import { useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
+import { Tabs, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
+import { useAuth } from "../context/AuthContext";
+
 export default function TabLayout() {
+  const { isLoading, isAuthenticated, isGuest } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isGuest) {
+      router.replace('/screens/Login');
+    }
+  }, [isLoading, isAuthenticated, isGuest]);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#3CCF4E" />
+      </View>
+    );
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -16,20 +36,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen name="explore" 
-      options={{
-        tabBarIcon: ({size, color}) => <Ionicons name="search" size={size} color={color}/>
-      }}
-      />
-      {/* <Tabs.Screen name="chat"
         options={{
-          tabBarIcon: ({ size , color }) => <Ionicons name="chatbubble" size={size} color={color}/>
+          tabBarIcon: ({size, color}) => <Ionicons name="search" size={size} color={color}/>
         }}
-      /> */}
+      />
       <Tabs.Screen name="notifications"
-      options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color}/>
-      }}
-       />
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color}/>
+        }}
+      />
       <Tabs.Screen name="profile" 
         options={{
           tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color}/>
@@ -38,6 +53,7 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
 
 // 🔍 Search & Navigation:
 // search 🔎 / search-outline 🔍 / filter 🎛️

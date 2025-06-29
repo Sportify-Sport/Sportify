@@ -1,126 +1,298 @@
-// import React, { createContext, useContext, useState, useEffect } from "react";
-// // import AsyncStorage from "@react-native-async-storage/async-storage";
-// import checkTokenValidity from "../utils/authUtils";
-// import { Alert, Platform } from "react-native";
-// import * as SecureStore from "expo-secure-store";
-// import { useRouter } from "expo-router";
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import getApiBaseUrl from '../config/apiConfig';
 
-// // Cross-platform storage
-// const Storage = {
-//   async getItem(key) {
-//     if (Platform.OS === "web") {
-//       return localStorage.getItem(key);
-//     } else {
-//       return await SecureStore.getItemAsync(key);
-//     }
-//   },
+const AuthContext = createContext({});
 
-//   async setItem(key, value) {
-//     if (Platform.OS === "web") {
-//       localStorage.setItem(key, value);
-//       return;
-//     } else {
-//       return await SecureStore.setItemAsync(key, value);
-//     }
-//   },
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-//   async removeItem(key) {
-//     if (Platform.OS === "web") {
-//       localStorage.removeItem(key);
-//       return;
-//     } else {
-//       return await SecureStore.deleteItemAsync(key);
-//     }
-//   },
-// };
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [token, setToken] = useState(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const router = useRouter();
+  const apiUrl = getApiBaseUrl();
 
-// const AuthContext = createContext();
+  useEffect(() => {
+    checkAuthState();
+  }, []);
 
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null); // User info
-//   const [token, setToken] = useState(null); // Auth token
-//   const [logoutAlertShown, setLogoutAlertShown] = useState(false);
-//   const router = useRouter();
+  const checkAuthState = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('token');
+      const guestMode = await AsyncStorage.getItem('guestMode');
+      
+      if (guestMode === 'true') {
+        setIsGuest(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (storedToken) {
+        // Decode JWT token to get user info
+        const tokenParts = storedToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const currentTime = Date.now() / 1000;
+          
+          if (payload.exp < currentTime) {
+            // Token expired, try to refresh
+            const refreshToken = await AsyncStorage.getItem('refreshToken');
+            if (refreshToken) {
+              await refreshAccessToken(refreshToken);
+            } else {
+              await logout();
+            }
+          } else {
+            setToken(storedToken);
+            setUser({
+              id: payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+              email: payload.email,
+              name: payload.name,
+              isEmailVerified: payload.IsEmailVerified === 'true'
+            });
+            setIsEmailVerified(payload.IsEmailVerified === 'true');
+            setIsAuthenticated(true);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth state:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-//   useEffect(() => {
-//     const loadSession = async () => {
-//       try {
-//         // const storedToken = await AsyncStorage.getItem("token");
-//         // const storedUser = await AsyncStorage.getItem("user");
-//         // const storedToken = await SecureStore.getItemAsync("token");
-//         // const storedUser = await SecureStore.getItemAsync("user");
-//         const storedToken = await Storage.getItem("token");
-//         const storedUser = await Storage.getItem("user");
+  const login = async (email, password) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/Auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-//         if (storedToken && storedUser) {
-//           // if (checkTokenValidity(storedToken)) {
-//           //   setUser(JSON.parse(storedUser));
-//           //   setToken(storedToken);
-//           //   setLogoutAlertShown(false);
-//           //   console.log(storedToken);
-//           //   console.log(storedUser);
-//           //   router.replace("../(tabs)");
-//           // } else {
-//           //   // Token expired, Guest
-//           //   logout();
-//           // }
-//           setUser(JSON.parse(storedUser));
-//           setToken(storedToken);
-//           setLogoutAlertShown(false);
-//           router.replace("../(tabs)");
-//         } else {
-//           // Guest
-//           setUser(null);
-//           setToken(null);
-//         }
-//       } catch (error) {
-//         console.log(error);
-//       }
-//     };
+      if (response.ok) {
+        const data = await response.json();
+        await AsyncStorage.setItem('token', data.accessToken);
+        await AsyncStorage.setItem('refreshToken', data.refreshToken);
+        await AsyncStorage.removeItem('guestMode');
+        
+        // Decode token to get user info
+        const tokenParts = data.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const userData = {
+            id: payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+            email: payload.email,
+            name: payload.name,
+            isEmailVerified: payload.IsEmailVerified === 'true'
+          };
+          
+          setUser(userData);
+          setIsEmailVerified(userData.isEmailVerified);
+          setIsAuthenticated(true);
+          setIsGuest(false);
+          setToken(data.accessToken);
+          
+          return { success: true, isEmailVerified: userData.isEmailVerified };
+        }
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.message || 'Login failed' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
 
-//     loadSession();
-//   }, []);
+  const register = async (userData) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/Auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
 
-//   const login = (newUser, newToken) => {
-//     setUser(newUser);
-//     setToken(newToken);
-//     // AsyncStorage.setItem("token", newToken);
-//     // AsyncStorage.setItem("user", JSON.stringify(newUser));
-//     // SecureStore.setItemAsync("token", newToken);
-//     // SecureStore.setItemAsync("user", JSON.stringify(newUser));
-//     Storage.setItem("token", newToken);
-//     Storage.setItem("user", JSON.stringify(newUser));
-//     setLogoutAlertShown(false);
-//     router.replace("../(tabs)");
-//   };
+      if (response.ok) {
+        const data = await response.json();
+        await AsyncStorage.setItem('token', data.accessToken);
+        await AsyncStorage.setItem('refreshToken', data.refreshToken);
+        await AsyncStorage.removeItem('guestMode');
+        
+        // Decode token
+        const tokenParts = data.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const userInfo = {
+            id: payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+            email: payload.email,
+            name: payload.name,
+            isEmailVerified: false
+          };
+          
+          setUser(userInfo);
+          setIsEmailVerified(false);
+          setIsAuthenticated(true);
+          setIsGuest(false);
+          setToken(data.accessToken);
+          
+          return { success: true };
+        }
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.message || 'Registration failed' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
 
-//   const logout = async () => {
-//     setUser(null);
-//     setToken(null);
-//     // await AsyncStorage.removeItem("token");
-//     // await AsyncStorage.removeItem("user");
-//     // await SecureStore.deleteItemAsync("token");
-//     // await SecureStore.deleteItemAsync("user");
-//     await Storage.removeItem("token");
-//     await Storage.removeItem("user");
+  const verifyEmail = async (code) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/Auth/verify-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code }),
+      });
 
-//     if (!logoutAlertShown) {
-//       setLogoutAlertShown(true);
-//       // Only show Alert on native platforms, not on web
-//       if (Platform.OS !== "web") {
-//         Alert.alert(
-//           "Session Expired",
-//           "Your session has expired. Please log in again."
-//         );
-//       } else {
-//         console.log("Session Expired. Please log in again.");
-//       }
-//     }
-//   };
+      if (response.ok) {
+        const data = await response.json();
+        await AsyncStorage.setItem('token', data.tokens.accessToken);
+        await AsyncStorage.setItem('refreshToken', data.tokens.refreshToken);
+        
+        setToken(data.tokens.accessToken);
+        setIsEmailVerified(true);
+        setUser(prev => ({ ...prev, isEmailVerified: true }));
+        
+        return { success: true };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.message || 'Invalid or expired code' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
 
-//   const value = { user, token, login, logout };
+  const resendVerification = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/Auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-//   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-// };
+      if (response.ok) {
+        return { success: true };
+      } else {
+        return { success: false, error: 'Failed to resend verification' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error' };
+    }
+  };
 
-// export const useAuth = () => useContext(AuthContext);
+  const refreshAccessToken = async (refreshToken) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/Auth/refresh-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await AsyncStorage.setItem('token', data.accessToken);
+        await AsyncStorage.setItem('refreshToken', data.refreshToken);
+        
+        setToken(data.accessToken);
+        
+        // Update user info from new token
+        const tokenParts = data.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          setUser({
+            id: payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+            email: payload.email,
+            name: payload.name,
+            isEmailVerified: payload.IsEmailVerified === 'true'
+          });
+          setIsEmailVerified(payload.IsEmailVerified === 'true');
+        }
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('guestMode');
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsEmailVerified(false);
+      setIsGuest(false);
+      setToken(null);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  const continueAsGuest = async () => {
+    try {
+      await AsyncStorage.setItem('guestMode', 'true');
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('refreshToken');
+      setIsGuest(true);
+      setIsAuthenticated(false);
+      setUser(null);
+      setIsEmailVerified(false);
+      setToken(null);
+    } catch (error) {
+      console.error('Error setting guest mode:', error);
+    }
+  };
+
+  const value = {
+    user,
+    isLoading,
+    isAuthenticated,
+    isEmailVerified,
+    isGuest,
+    token,
+    login,
+    register,
+    logout,
+    verifyEmail,
+    resendVerification,
+    continueAsGuest,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

@@ -1,104 +1,54 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from "../context/AuthContext";
+import EmailVerificationModal from "../components/modals/EmailVerificationModal";
 import styles from "../../styles/LoginStyles";
 import googleIcon from "../../assets/images/google.png";
 import guestIcon from "../../assets/images/guest-icon-design-vector.jpg";
-import getApiBaseUrl from "../config/apiConfig";
-// import jwtDecode from "jwt-decode";
-// import { useAuth } from "../context/AuthContext"
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setPasswordVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const router = useRouter();
-  // const { login } = useAuth();
+  const { login, continueAsGuest } = useAuth();
 
   const handleLogin = async () => {
-    // Reset any previous error message
-    setErrorMessage("");
-
     if (!email.trim() || !password.trim()) {
-      setErrorMessage("Please enter both email and password.");
+      Alert.alert("Error", "Please enter both email and password.");
       return;
     }
 
-    try {
-      const apiUrl = getApiBaseUrl();
-      const response = await fetch(`${apiUrl}/api/Auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    setLoading(true);
+    const result = await login(email, password);
+    setLoading(false);
 
-      if (response.status === 200) {
-        const data = await response.json();
-        const token = data.accessToken;
-        const refreshToken = data.refreshToken;
-        try {
-          await AsyncStorage.setItem('token', token);
-          await AsyncStorage.setItem('refreshToken', refreshToken);
-          console.log('Token saved successfully');
-        } catch (error) {
-          console.error('Failed to save token:', error);
-        }
-        // try {
-        //   const decodedToken = jwtDecode(token);
-        // } catch (error) {
-        //   console.log("error");
-        // }
-
-        // const roleValue =
-        //   decodedToken[
-        //     "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        //   ];
-
-        const userData = {
-          // id: decodedToken[
-          //   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-          // ],
-          // email: decodedToken.email,
-          // name: decodedToken.name,
-          // role: roleValue,
-          // roles: Array.isArray(roleValue) ? roleValue : [roleValue],
-          // permissions: data.permissions,
-        };
-
-        // login(userData, token);
-        // await AsyncStorage.setItem('token', data.token);
-        // Navigate to the index page inside your tabs folder
-        router.replace('../(tabs)');
+    if (result.success) {
+      if (!result.isEmailVerified) {
+        setShowVerificationModal(true);
       } else {
-        // If the response is not 200, get the error message
-        const errorData = await response.json();
-        setErrorMessage("Login failed");
+        router.replace('../(tabs)');
       }
-    } catch (error) {
-      console.log(error)
-      setErrorMessage("Login failed");
+    } else {
+      Alert.alert("Login Failed", result.error);
     }
   };
 
   const handleForgotPassword = () => {
-    console.log("Forgot password pressed");
+    router.push("/screens/ForgotPassword");
   };
 
-  // const handleGoogleLogin = () => {
-  //   console.log("Login with Google pressed");
-  // };
-
-  const handleGuestLogin= () => {
+  const handleGuestLogin = async () => {
+    await continueAsGuest();
     router.replace('../(tabs)');
   };
 
   const handleSignupNavigation = () => {
-    console.log("Navigate to Sign Up");
     router.push("/screens/Signup");
   };
 
@@ -106,14 +56,20 @@ const Login = () => {
     setPasswordVisible(!isPasswordVisible);
   };
 
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    router.replace('../(tabs)');
+  };
+
+  const handleSkipVerification = () => {
+    setShowVerificationModal(false);
+    router.replace('../(tabs)');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log in</Text>
       <Text style={styles.underlineTitle}>___________</Text>
-
-      {errorMessage ? (
-        <Text style={styles.errorText}>{errorMessage}</Text>
-      ) : null}
 
       <Text style={styles.label}>Your Email</Text>
       <TextInput
@@ -122,6 +78,7 @@ const Login = () => {
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       <Text style={styles.label}>Password</Text>
@@ -132,6 +89,7 @@ const Login = () => {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!isPasswordVisible}
+          autoCapitalize="none"
         />
         <TouchableOpacity onPress={togglePasswordVisibility}>
           <Ionicons
@@ -147,27 +105,37 @@ const Login = () => {
         <Text style={styles.forgotPasswordText}>Forgot password?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.continueButton} onPress={handleLogin}>
-        <Text style={styles.continueButtonText}>Continue</Text>
+      <TouchableOpacity
+        style={[styles.continueButton, loading && { opacity: 0.5 }]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.continueButtonText}>Continue</Text>
+        )}
       </TouchableOpacity>
 
       <Text style={styles.orText}>_________________ Or _________________</Text>
 
-      {/* <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-        <Image source={googleIcon} style={styles.googleIcon} />
-        <Text style={styles.googleButtonText}>Login with Google</Text>
-      </TouchableOpacity> */}
-            <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
+      <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
         <Image source={guestIcon} style={styles.guestIcon} />
-        <Text style={styles.guestButtonText}>Countinue as a guest</Text>
+        <Text style={styles.guestButtonText}>Continue as a guest</Text>
       </TouchableOpacity>
 
       <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>Don’t have an account?</Text>
+        <Text style={styles.signupText}>Don't have an account?</Text>
         <TouchableOpacity onPress={handleSignupNavigation}>
           <Text style={styles.signupLink}> Sign up</Text>
         </TouchableOpacity>
       </View>
+
+      <EmailVerificationModal
+        visible={showVerificationModal}
+        onClose={handleSkipVerification}
+        onVerified={handleVerificationComplete}
+      />
     </View>
   );
 };

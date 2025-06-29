@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native"
-export default StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         padding: 20,
         paddingBottom: 40,
@@ -129,3 +129,29 @@ export default StyleSheet.create({
         padding: 4,
       },
 });
+
+const additionalStyles = {
+  verificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff6b6b',
+  },
+  verificationText: {
+    flex: 1,
+    marginLeft: 10,
+    color: '#856404',
+    fontSize: 14,
+  },
+  verifyButton: {
+    color: '#007bff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+};
+
+export default { ...styles, ...additionalStyles };

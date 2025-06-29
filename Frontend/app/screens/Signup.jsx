@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ScrollView,
   View,
@@ -6,15 +6,15 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  FlatList
+  FlatList,
+  Alert,
+  ActivityIndicator
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
+import { useAuth } from "../context/AuthContext";
+import EmailVerificationModal from "../components/modals/EmailVerificationModal";
 import styles from "../../styles/SignupStyles";
-import getApiBaseUrl from "../config/apiConfig";
-// import jwtDecode from "jwt-decode";
-// import { useAuth } from "../context/AuthContext";
 
 const Signup = () => {
   const [firstName, setFirstName] = useState("");
@@ -26,155 +26,75 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [favoriteSport, setFavoriteSport] = useState("");
   const [city, setCity] = useState("");
-  const [cityId, setCityId] = useState(""); // Store cityId
+  const [cityId, setCityId] = useState("");
   const [citySuggestions, setCitySuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
-  // Initialize the router
   const router = useRouter();
-  // const { login } = useAuth();
+  const { register } = useAuth();
 
   const handleContinue = async () => {
-    // Date format validation (yyyy/mm/dd)
+    // Validation
     const datePattern = /^\d{4}\-(0[1-9]|1[0-2])\-(0[1-9]|[12][0-9]|3[01])$/;
     if (!datePattern.test(birthdate)) {
-      alert("Please enter a valid birthdate in the format yyyy-mm-dd.");
+      Alert.alert("Error", "Please enter a valid birthdate in the format yyyy-mm-dd.");
       return;
     }
 
-    // Password validation
     const passwordPattern =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,12}$/;
     if (!passwordPattern.test(password)) {
-      alert(
+      Alert.alert(
+        "Error",
         "Password must be 5-12 characters long and include one uppercase letter, one lowercase letter, one number, and one special character."
       );
       return;
     }
 
-    // Email validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
-      alert("Please enter a valid email address.");
+      Alert.alert("Error", "Please enter a valid email address.");
       return;
     }
 
-    // Check if all fields are filled
-    if (
-      !firstName ||
-      !lastName ||
-      !gender ||
-      !birthdate ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !favoriteSport ||
-      !cityId
-    ) {
-      alert("Please fill in all fields.");
+    if (!firstName || !lastName || !gender || !birthdate || !email || !password || !confirmPassword || !favoriteSport || !cityId) {
+      Alert.alert("Error", "Please fill in all fields.");
       return;
     }
 
-    // Confirm password check
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      Alert.alert("Error", "Passwords do not match.");
       return;
     }
 
-    // Map favorite sport to sportId
     let sportId;
-    if (favoriteSport === "Football") {
-      sportId = 1;
-    } else if (favoriteSport === "Basketball") {
-      sportId = 2;
-    } else if (favoriteSport === "Marathon") {
-      sportId = 3;
-    } else {
-      alert("Please select a valid favorite sport.");
-      return;
-    }
+    if (favoriteSport === "Football") sportId = 1;
+    else if (favoriteSport === "Basketball") sportId = 2;
+    else if (favoriteSport === "Marathon") sportId = 3;
 
-    // Map gender to "M" or "F"
     const genderValue = gender === "Male" ? "M" : "F";
 
-    // Format birthdate (mm/dd/yyyy to yyyy-mm-dd)
-    const formattedBirthdate = birthdate.split("/").reverse().join("-");
+    setLoading(true);
+    const result = await register({
+      firstName,
+      lastName,
+      birthDate: birthdate,
+      email,
+      password,
+      favSportId: sportId,
+      cityId,
+      gender: genderValue,
+    });
+    setLoading(false);
 
-    // API call
-    try {
-      const apiUrl = getApiBaseUrl();
-      const response = await fetch(`${apiUrl}/api/Auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          birthDate: formattedBirthdate,
-          email,
-          password,
-          favSportId: sportId,
-          cityId,
-          gender: genderValue, // Send "M" or "F"
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const token = data.accessToken;
-        const refreshToken = data.refreshToken;
-
-        try {
-          await AsyncStorage.setItem('token', token);
-          await AsyncStorage.setItem('refreshToken', refreshToken);
-          console.log('Token saved successfully');
-        } catch (error) {
-          console.error('Failed to save token:', error);
-        }
-        // try {
-        //   const decodedToken = jwtDecode(token);
-        // } catch (error) {
-        //   console.log("error");
-        // }
-
-        // const roleValue =
-        //   decodedToken[
-        //     "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        //   ];
-
-        const userData = {
-          // id: decodedToken[
-          //   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-          // ],
-          // email: decodedToken.email,
-          // name: decodedToken.name,
-          // role: roleValue,
-          // roles: Array.isArray(roleValue) ? roleValue : [roleValue],
-          // permissions: data.permissions,
-        };
-
-        router.replace('../(tabs)');
-      } else {
-        const errorData = await response.json();
-        alert(`Registration failed: ${errorData.message || "Unknown error"}`);
-      }
-    } catch (error) {
-      console.error("Error during registration:", error);
-      alert("An error occurred during registration -", error);
+    if (result.success) {
+      setShowVerificationModal(true);
+    } else {
+      Alert.alert("Registration Failed", result.error);
     }
   };
 
-  const handleGoogleSignup = () => {
-    // Handle Google signup logic
-    console.log("Sign up with Google pressed");
-  };
-
-  const handleSigninNavigation = () => {
-    // router.push("../(tabs)");
-    router.push("./Login")
-  };
-
-  // Search cities dynamically from the gov API
   const searchCities = async (query) => {
     if (query.length < 2) {
       setCitySuggestions([]);
@@ -189,7 +109,6 @@ const Signup = () => {
       const response = await fetch(CityApiUrl);
       const data = await response.json();
       if (data.success && data.result && data.result.records) {
-        // Map each record to get only _id and תעתיק, and filter out records without a valid תעתיק
         const suggestions = data.result.records
           .filter((record) => record["city_name_en"] && record["city_name_en"].trim() !== "")
           .map((record) => ({
@@ -197,19 +116,35 @@ const Signup = () => {
             name: record["city_name_en"],
           }));
         setCitySuggestions(suggestions);
-      } else {
-        setCitySuggestions([]);
       }
     } catch (error) {
-      console.error("Error fetching cities from gov API:", error);
+      console.error("Error fetching cities:", error);
       setCitySuggestions([]);
     }
   };
 
   const handleCityBlur = () => {
     if (!citySuggestions.some((suggestion) => suggestion.name === city)) {
-      setCity(""); // Clear the input if the city is not selected from suggestions
+      setCity("");
     }
+  };
+
+  const handleGoogleSignup = () => {
+    console.log("Sign up with Google pressed");
+  };
+
+  const handleSigninNavigation = () => {
+    router.push("./Login");
+  };
+
+  const handleVerificationComplete = () => {
+    setShowVerificationModal(false);
+    router.replace('../(tabs)');
+  };
+
+  const handleSkipVerification = () => {
+    setShowVerificationModal(false);
+    router.replace('../(tabs)');
   };
 
   return (
@@ -241,8 +176,8 @@ const Signup = () => {
           onValueChange={(itemValue) => setGender(itemValue)}
         >
           <Picker.Item label="Select Gender" value="" />
-          <Picker.Item label="Male" value="male" />
-          <Picker.Item label="Female" value="female" />
+          <Picker.Item label="Male" value="Male" />
+          <Picker.Item label="Female" value="Female" />
         </Picker>
 
         <Text style={styles.label}>Birthdate</Text>
@@ -260,6 +195,7 @@ const Signup = () => {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <Text style={styles.label}>Password</Text>
@@ -312,7 +248,6 @@ const Signup = () => {
                 onPress={() => {
                   setCity(item.name);
                   setCityId(item.id);
-                  console.log(item.name, item.id);
                   setCitySuggestions([]);
                 }}
                 style={styles.suggestionItem}
@@ -324,10 +259,15 @@ const Signup = () => {
         )}
 
         <TouchableOpacity
-          style={styles.continueButton}
+          style={[styles.continueButton, loading && { opacity: 0.5 }]}
           onPress={handleContinue}
+          disabled={loading}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.continueButtonText}>Continue</Text>
+          )}
         </TouchableOpacity>
 
         <Text style={styles.orText}>________________ Or ________________</Text>
@@ -350,6 +290,12 @@ const Signup = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <EmailVerificationModal
+        visible={showVerificationModal}
+        onClose={handleSkipVerification}
+        onVerified={handleVerificationComplete}
+      />
     </View>
   );
 };
