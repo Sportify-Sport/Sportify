@@ -1,28 +1,51 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import GroupCard from './GroupCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import ShowMoreButton from '../ShowMoreButton';
 
 const GroupsGrid = ({ groups, loading, hasMore, onShowMore, cityName }) => {
+  const sentinelRef = useRef(null);
+  const validGroups = groups?.filter((group) => group && group.groupId) || [];
+  useEffect(() => {
+    if (!hasMore || loading) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onShowMore();
+        }
+      },
+      { root: null, rootMargin: '100px', threshold: 0.1 }
+    );
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+    return () => {
+      if (sentinelRef.current) {
+        observer.unobserve(sentinelRef.current);
+      }
+    };
+  }, [hasMore, loading, onShowMore]);
+
   return (
-    <div className="groups-container">
-      <div className="groups-grid responsive-grid">
-        {groups.map(group => (
+    <div className="selection-container">
+      <div className="items-grid responsive-grid">
+        {validGroups.map((group) => (
           <GroupCard key={group.groupId} group={group} cityName={cityName} />
         ))}
       </div>
       
-      {loading && groups.length === 0 && (
+      {loading && validGroups.length === 0 && (
         <LoadingSpinner text="Loading groups..." />
       )}
       
-      <ShowMoreButton 
-        onClick={onShowMore}
-        hasMore={hasMore}
-        isLoading={loading && groups.length > 0}
-      />
+     {hasMore && !loading && (
+        <div ref={sentinelRef} className="infinite-scroll-sentinel" />
+      )}
+
+      {loading && validGroups.length > 0 && (
+        <LoadingSpinner text="Loading more groups..." />
+      )}
       
-      {groups.length === 0 && !loading && (
+      {validGroups.length === 0 && !loading && (
         <div className="no-results">No groups found</div>
       )}
     </div>

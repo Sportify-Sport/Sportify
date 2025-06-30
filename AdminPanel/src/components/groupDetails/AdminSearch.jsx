@@ -1,5 +1,5 @@
 import React from 'react';
-import AdminSearchCard from '../../components/AdminSearchCard';
+import AdminSearchCard from '../../components/actionComponents/AdminSearchCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const AdminSearch = ({

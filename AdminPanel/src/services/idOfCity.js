@@ -19,18 +19,20 @@ export const fetchCityIdByName = async (cityName) => {
   throw new Error('No city data available');
 };
 
-export const fetchGroupsByCity = async (
+export const fetchDataByCity = async (
+  endpoint, // e.g., 'AdminEvents' or 'AdminGroups'
+  responseKey, // e.g., 'events' or 'groups'
   cityId,  
-  searchTerm,
+  searchTerm = '',
   sortBy = 'name', 
-  page, 
-  pageSize,
+  page = 1, 
+  pageSize = 10,
   token,
   signal
 ) => {
   try {
     if (!cityId) throw new Error('City ID is required');
-    const url = new URL(`${getApiBaseUrl()}/api/AdminGroups/${cityId}`);
+    const url = new URL(`${getApiBaseUrl()}/api/${endpoint}/${cityId}`);
     if (searchTerm) {
       url.searchParams.append('name', searchTerm);
     }
@@ -41,24 +43,30 @@ export const fetchGroupsByCity = async (
     const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      signal
+      signal,
     });
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-   return await response.json();
+    const data = await response.json();
+   return {
+      [responseKey]: data[responseKey] || [],
+      hasMore: data.hasMore || false,
+      currentPage: page,
+    };
   } catch (error) {
     if (error.name !== 'AbortError') {
-      console.error('Error fetching groups:', error);
+      console.error(`Error fetching ${responseKey}:`, error);
       throw error;
     }
     return {
-      groups: [],
-      hasMore: false
+      [responseKey]: [],
+      hasMore: false,
+      currentPage: page,
     };
   }
 };

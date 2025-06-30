@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateGroupForm from '../../components/createGroup/CreateGroupForm';
-import MessageModal from '../../components/createGroup/MessageModal';
+import MessageModal from '../../components/actionComponents/MessageModal';
 import useAdminSearch from '../../hooks/useAdminSearch';
 import { useAuth } from '../../hooks/useAuth';
 import ThemeToggle from '../../components/ThemeToggle';
-import '../../styles/groupStyles/createGroup.css';
-import '../../styles/groupStyles/admin-card.css';
+import '../../styles/globalPagesStyles/createItem.css';
+import '../../styles/globalPagesStyles/admin-card.css';
 
 const CreateGroupPage = () => {
   const navigate = useNavigate();
@@ -51,8 +51,8 @@ const CreateGroupPage = () => {
   };
 
   return (
-    <div className="create-group-container">
-      <header className="create-group-header">
+    <div className="create-container">
+      <header className="create-header">
         <button className="back-button" onClick={() => navigate(-1)}>
           ← Back
         </button>

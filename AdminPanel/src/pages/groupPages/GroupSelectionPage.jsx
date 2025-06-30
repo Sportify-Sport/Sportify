@@ -5,12 +5,12 @@ import useCityId from '../../hooks/useCityId';
 import { useAuth } from '../../hooks/useAuth';
 import useGroupSearch from '../../hooks/groupHooks/useGroupSearch';
 import useGroupsByCity from '../../hooks/groupHooks/useGroupsByCity';
-import SearchBar from '../../components/group/SearchBar';
+import SearchBar from '../../components/actionComponents/SearchBar';
 import FilterDropdown from '../../components/group/FilterDropDown';
 import GroupsGrid from '../../components/group/GroupsGrid';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ThemeToggle from '../../components/ThemeToggle';
-import '../../styles/groupStyles/group.css';
+import '../../styles/globalPagesStyles/pages-styles.css';
 
 const GroupSelectionPage = () => {
   const { currentUser, logout } = useAuth();
@@ -86,8 +86,8 @@ const GroupSelectionPage = () => {
   }
 
   return (
-    <div className="group-selection-container">
-      <header className="group-header">
+    <div className="selection-container">
+      <header className="selection-header">
         <button onClick={handleBackToDashboard} className="back-button">
           ← Back to Dashboard
         </button>
@@ -104,16 +104,20 @@ const GroupSelectionPage = () => {
       </header>
 
       <div className="search-filter-container">
-        <button className="create-group-button" onClick={handleCreateButton}>Create</button>
+        <button className="create-button" onClick={handleCreateButton}>Create</button>
+        <div className="search-box">
         <SearchBar
           searchTerm={searchInputValue}
           setSearchTerm={handleSearchInputChange}
         />
+        </div>
+        <div className="filter-dropdown">
         <FilterDropdown
           filterBy={filterBy}
           handleFilterChange={handleFilterChange}
           disabled={searchTerm.trim().length >= 2}
         />
+      </div>
       </div>
       <GroupsGrid
         groups={groups}

@@ -14,13 +14,13 @@ const GroupCard = memo(({ group, cityName }) => {
   };
     return (
 
-    <div className="group-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+    <div className="item-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       <img 
         src={imageUrl} 
         alt={group.groupName} 
-        className="group-image"
+        className="item-image"
       />
-      <div className="group-details">
+      <div className="item-details">
         <h3>{group.groupName}</h3>
         <p><strong>City:</strong> {cityName || 'Unknown'}</p>
         <p><strong>Sport:</strong> {group.sportName || SPORT_TYPES[group.sportId] || group.sportId || 'Unknown'}</p>

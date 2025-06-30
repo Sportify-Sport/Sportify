@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchGroupsByCity } from '../../services/idOfCity';
+import { fetchDataByCity } from '../../services/idOfCity';
 import {useAuth} from '../../hooks/useAuth'
 const useGroupSearch = (cityId, searchTerm, sortBy = 'name', page, pageSize = 10) => {
   const [groups, setGroups] = useState([]);
@@ -32,7 +32,9 @@ const useGroupSearch = (cityId, searchTerm, sortBy = 'name', page, pageSize = 10
         setLoading(true);
         const token = currentUser?.token || localStorage.getItem('adminAccessToken');
         if (!token) throw new Error('Authentication required');
-        const { groups: newGroups, hasMore: newHasMore } = await fetchGroupsByCity(
+        const { groups: newGroups, hasMore: newHasMore } = await fetchDataByCity(
+          'AdminGroups',
+          'groups',
           cityId,
           searchTerm.trim(),
           sortBy,
@@ -43,7 +45,7 @@ const useGroupSearch = (cityId, searchTerm, sortBy = 'name', page, pageSize = 10
         );
         console.log('Request completed for:', searchTerm);
         if (controller.signal.aborted) return;
-        setGroups(prevGroups => page === 1 ? newGroups  : [...prevGroups, ...newGroups]);
+        setGroups((prevGroups) => (page === 1 ? newGroups  : [...prevGroups, ...newGroups]));
         setHasMore(newHasMore);
         setError(null);
       } catch (error) {
@@ -71,7 +73,7 @@ const useGroupSearch = (cityId, searchTerm, sortBy = 'name', page, pageSize = 10
     searchedGroups: groups, 
     searchLoading: loading, 
     searchError: error, 
-    searchHasMore: hasMore  
+    searchHasMore: hasMore,  
   };
 };
 

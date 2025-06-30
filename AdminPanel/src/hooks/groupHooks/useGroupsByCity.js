@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchGroupsByCity } from '../../services/idOfCity';
+import { fetchDataByCity } from '../../services/idOfCity';
 import { useAuth } from '../useAuth';
 
   const useGroupsByCity = (cityId, sortBy = 'name', page, pageSize = 4) => {
@@ -29,7 +29,9 @@ import { useAuth } from '../useAuth';
         if (!token) {
           throw new Error('Authentication token missing');
         }
-        const { groups: newGroups, hasMore: newHasMore } = await fetchGroupsByCity(
+        const { groups: newGroups, hasMore: newHasMore } = await fetchDataByCity(
+          'AdminGroups',
+          'groups',
           numericCityId,
           '',
           sortBy,
@@ -48,6 +50,8 @@ import { useAuth } from '../useAuth';
           console.error("Fetch error:", error);
           setGroups([]);
           setHasMore(false);
+          setError(error.message || 'Failed to fetch groups');
+
         }
       } finally {
         setLoading(false);
@@ -62,9 +66,6 @@ import { useAuth } from '../useAuth';
       }
     };
   }, [cityId, sortBy, page, pageSize, currentUser]);
-//  const resetGroups = () => {
-//     setGroups([]);
-//   };
   return { 
     cityGroups: groups, 
     cityGroupsLoading: loading, 
