@@ -11,8 +11,10 @@ import NotFoundPage from './pages/NotFoundPage';
 import GroupSelectionPage from './pages/groupPages/GroupSelectionPage'
 import CreateGroupPage from './pages/groupPages/CreateGroupPage';
 import GroupDetailsPage from './pages/groupPages/GroupDetailsPage';
+import EventSelectionPage from './pages/eventPages/EventSelectionPage';
+import CreateEventPage from './pages/eventPages/CreateEventPage';
+import EventDetailsPage from './pages/eventPages/EventDetailsPage';
 import './styles/global.css';
-//import './styles/App.css'
 
 function App() {
   return (
@@ -56,6 +58,25 @@ function App() {
               < GroupDetailsPage />
             </PrivateRoute>
           } />
+
+          <Route path="/event/:cityId" element={
+            <PrivateRoute>
+              <EventSelectionPage />
+            </PrivateRoute>
+          } />
+
+          <Route path="/create-event" element={
+            <PrivateRoute>
+              < CreateEventPage />
+            </PrivateRoute>
+          } />
+
+          <Route path="/event-details/:cityId/:eventId" element={
+            <PrivateRoute>
+              < EventDetailsPage />
+            </PrivateRoute>
+          } />
+
           {/* 404 route */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
