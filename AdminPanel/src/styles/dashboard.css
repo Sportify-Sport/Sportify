@@ -57,10 +57,13 @@
   box-shadow: 0 2px 12px var(--shadow);
   text-align: center;
   transition: transform 0.2s ease;
+  border: 1px solid var(--border);
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
+  box-shadow: 0 8px 20px var(--shadow);
+  border-color: var(--primary-light);
 }
 
 .stat-card h3 {

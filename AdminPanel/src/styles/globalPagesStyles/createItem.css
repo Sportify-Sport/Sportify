@@ -1,11 +1,11 @@
-.create-group-container {
+.create-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
   color: var(--text);
 }
 
-.create-group-header {
+.create-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -30,7 +30,7 @@
   transform: translateX(-3px);
 }
 
-.create-group-form {
+.create-form {
   background-color: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 4px 20px var(--shadow);
@@ -54,6 +54,7 @@
 .form-group select,
 .form-group textarea {
   width: 100%;
+  height: 50px;
   padding: 0.8rem;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -254,4 +255,24 @@
 
 .ok-button:hover {
   background-color: #45a049;
+}
+
+.datetime-group {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.datetime-group .form-group {
+  flex: 1;
+  min-width: 200px;
+}
+.startDate{
+  background-color: black;
+}
+@media (max-width: 768px) {
+  .datetime-group {
+    flex-direction: column;
+    gap: 15px;
+  }
 }

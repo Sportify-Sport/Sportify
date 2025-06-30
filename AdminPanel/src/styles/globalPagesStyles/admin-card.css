@@ -55,7 +55,7 @@
   }
   
   .admin-card.selected p strong {
-    color: var(--on-primary-light, #c8e6c9);
+    color: var(--on-primary-light, #000000);
   }
 }
 

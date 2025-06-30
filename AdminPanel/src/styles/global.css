@@ -1,8 +1,8 @@
 /* src/styles/global.css */
 :root {
-  --primary-color: #1976d2;
-  --primary-dark: #004ba0;
-  --primary-light: #63a4ff;
+  --primary-color: #3e7bb7;
+  --primary-dark: #4d7baf;
+  --primary-light: #56a5e6;
   --background: #ffffff;
   --surface: #f5f5f5;
   --text: #212121;
@@ -32,8 +32,8 @@
 
 [data-theme='dark'] {
   --primary-color: #42a5f5;
-  --primary-dark: #0077c2;
-  --primary-light: #80d6ff;
+  --primary-dark: #4d7baf;
+  --primary-light: #56a5e6;
   --background: #121212;
   --surface: #1e1e1e;
   --text: #f5f5f5;
@@ -248,28 +248,36 @@ button:disabled {
   border-color: var(--error-dark);
 }
 
-.show-more-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
+select {
+  background-color: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 15px;
+  font-size: 0.95rem;
+  height: 40px;
   cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 1em;
+  transition: all var(--transition-speed);
 }
 
-.show-more-button:hover {
-  background-color: #45a049;
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
 }
 
-.show-more-button:disabled,
-.show-more-button.loading {
-  background-color: #cccccc;
+select option {
+  background-color: var(--dropdown-bg);
+  color: var(--text);
+  padding: 8px 12px;
+}
+
+select:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
-}
-
-.show-more-container {
-  margin: 20px 0;
-  text-align: center;
 }

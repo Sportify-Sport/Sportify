@@ -43,7 +43,6 @@
   background-color: var(--ok-button-hover);
 }
 
-/* Add to MessageModal.css */
 .success-message {
   color: var(--success-text, #2f855a);
 }
