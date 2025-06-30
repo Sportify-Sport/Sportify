@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { SPORT_TYPES } from '../../constants/sportTypes';
-import FormField from './FormField';
-import AdminSearch from './AdminSearch';
-import ConfirmationDialog from './ConfirmationDialog';
-import useForm from '../../hooks/createGroupHooks/useForm';
+import FormField from '../actionComponents/FormField';
+import AdminSearch from '../actionComponents/AdminSearch';
+import ConfirmationDialog from '../actionComponents/ConfirmationDialog';
+import useForm from '../../hooks/useForm';
 import useGroupCreate from '../../hooks/createGroupHooks/useGroupCreate';
 
 const GENDER_TYPES = [
@@ -69,9 +69,12 @@ const CreateGroupForm = ({
   };
 
   const handleAdminSelect = (userId) => {
-    setFormData((prev) => ({ ...prev, adminId: userId }));
-    setErrors((prevErrors) => ({ ...prevErrors, adminId: '' }));
-  };
+  setFormData((prev) => ({
+    ...prev,
+    adminId: prev.adminId === userId ? null : userId 
+  }));
+  setErrors((prevErrors) => ({ ...prevErrors, adminId: '' }));
+};
 
   const sportOptions = Object.entries(SPORT_TYPES).map(([id, name]) => ({
     value: id,
@@ -79,7 +82,7 @@ const CreateGroupForm = ({
   }));
 
   return (
-    <div className="create-group-form">
+    <div className="create-form">
       <h2>Create New Group Form</h2>
       {errors.general && <span className="error-text">{errors.general}</span>}
       <form onSubmit={handleSubmit}>
