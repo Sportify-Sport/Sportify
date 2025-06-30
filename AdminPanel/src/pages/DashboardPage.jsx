@@ -50,7 +50,11 @@ const DashboardPage = () => {
   };
 
   const navigateToEvents = () => {
-    navigate('/events');
+    navigate(`/event/${selectedCity.cityId}`, {
+    state: {
+      cityName: selectedCity.cityName,
+    },
+  });
   };
 
   const navigateToGroups = () => {
