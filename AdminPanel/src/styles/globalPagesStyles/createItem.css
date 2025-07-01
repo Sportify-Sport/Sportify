@@ -267,9 +267,17 @@
   flex: 1;
   min-width: 200px;
 }
-.startDate{
-  background-color: black;
+
+#startDate,
+#endDate {
+  cursor: pointer;
 }
+
+#startTime,
+#endTime {
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .datetime-group {
     flex-direction: column;
