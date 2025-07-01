@@ -13,7 +13,11 @@ const useGroupNavigation = (cityId, cityName, logout) => {
     navigate('/login'); 
   }, [logout, navigate]);
 
-  return { handleBack, handleLogout };
+  const navigateToGroupLogs = useCallback((groupId) => {
+    navigate(`/logs/group/${groupId}`);
+  }, [navigate]);
+
+  return { handleBack, handleLogout, navigateToGroupLogs };
 };
 
 export default useGroupNavigation;

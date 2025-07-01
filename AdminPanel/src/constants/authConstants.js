@@ -8,5 +8,5 @@ export const AUTH_ROUTES = {
   GROUP_DETAILS: '/group-details/:cityId/:groupId',
   EVENT_SELECTION: '/event/:cityId',
   EVENT_DETAILS: '/event-details/:cityId/:eventId',
-
+  LOGS: '/logs/:type/:id',
 };

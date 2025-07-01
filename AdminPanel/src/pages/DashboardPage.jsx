@@ -14,7 +14,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  
+  const cityId = selectedCity?.cityId;
   // Fetch dashboard stats
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -47,6 +47,14 @@ const DashboardPage = () => {
   
   const handleChangeCity = () => {
     navigate('/select-city');
+  };
+
+  const handleCityLogsClick = () => {
+    if (cityId) {
+      navigate(AUTH_ROUTES.LOGS.replace(':type', 'city').replace(':id', cityId));
+    } else {
+      console.error('No city selected');
+    }
   };
 
   const navigateToEvents = () => {
@@ -82,6 +90,9 @@ const DashboardPage = () => {
           <h1 className="dashboard-title">Admin Dashboard</h1>
           <div className="dashboard-actions">
             <ThemeToggle />
+            <button className="change-city-btn" onClick={handleCityLogsClick}>
+              City Logs
+            </button>
             <button onClick={handleChangeCity} className="change-city-btn">
               Change City
             </button>

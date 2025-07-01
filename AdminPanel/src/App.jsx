@@ -14,6 +14,7 @@ import GroupDetailsPage from './pages/groupPages/GroupDetailsPage';
 import EventSelectionPage from './pages/eventPages/EventSelectionPage';
 import CreateEventPage from './pages/eventPages/CreateEventPage';
 import EventDetailsPage from './pages/eventPages/EventDetailsPage';
+import LogsPage from './pages/LogsPage';
 import './styles/global.css';
 
 function App() {
@@ -76,6 +77,13 @@ function App() {
               < EventDetailsPage />
             </PrivateRoute>
           } />
+
+          <Route path="/logs/:type/:id"  element={
+            <PrivateRoute>
+              < LogsPage />
+            </PrivateRoute>
+          } />
+
 
           {/* 404 route */}
           <Route path="*" element={<NotFoundPage />} />

@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import useGroupDetails from '../../hooks/groupDetailsHooks/useGroupDetails';
 import useAdminSearch from '../../hooks/useAdminSearch';
+import useGroupNavigation from '../../hooks/groupDetailsHooks/useGroupNavigation'
 import GroupDetailsCard from '../../components/groupDetails/GroupDetailsCard';
 import AdminSearch from '../../components/groupDetails/AdminSearch';
 import DeleteModal from '../../components/groupDetails/DeleteModal';
@@ -22,6 +23,7 @@ const GroupDetailsPage = () => {
   const [showAdminSearch, setShowAdminSearch] = useState(false);
   const [showChangeAdminModal, setShowChangeAdminModal] = useState(false);
   const [adminSearchTerm, setAdminSearchTerm] = useState('');
+  const { navigateToGroupLogs } = useGroupNavigation(cityId, cityName, logout);
 
   const { group, groupLoading, groupError, setGroup } = useGroupDetails(groupId, cityId, cityName);
   const { adminResults, adminLoading, adminError, setAdminError, selectedAdmin, setSelectedAdmin, handleSelectAdmin } =
@@ -133,6 +135,7 @@ const GroupDetailsPage = () => {
     );
   }
 
+
   return (
     <div className="group-details-container">
       <header className="group-details-header">
@@ -142,6 +145,9 @@ const GroupDetailsPage = () => {
         <h1>{group?.groupName}</h1>
         <div className="dashboard-actions">
           <ThemeToggle />
+          <button onClick={() => navigateToGroupLogs(groupId)}>
+            View Group Logs
+          </button>
           <button onClick={logout} className="logout-btn">
             Log Out
           </button>

@@ -13,7 +13,10 @@ const useEventNavigation = (cityId, cityName, logout) => {
     navigate('/login');
   }, [logout, navigate]);
 
-  return { handleBack, handleLogout };
+  const navigateToEventLogs = useCallback((eventId) => {
+    navigate(`/logs/event/${eventId}`);
+  }, [navigate]);
+  return { handleBack, handleLogout, navigateToEventLogs };
 };
 
 export default useEventNavigation;

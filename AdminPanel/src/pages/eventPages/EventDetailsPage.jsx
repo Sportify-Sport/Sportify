@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import useEventDetails from '../../hooks/eventDetailsHooks/useEventDetails';
 import useAdminSearch from '../../hooks/useAdminSearch';
@@ -22,6 +22,7 @@ const EventDetailsPage = () => {
   const [showAdminSearch, setShowAdminSearch] = useState(false);
   const [showChangeAdminModal, setShowChangeAdminModal] = useState(false);
   const [adminSearchTerm, setAdminSearchTerm] = useState('');
+  const { navigateToEventLogs } = useEventNavigation(cityId, cityName, logout);
 
   const { event, eventLoading, eventError, setEvent } = useEventDetails(eventId, cityId, cityName);
   const { adminResults, adminLoading, adminError, setAdminError, selectedAdmin, setSelectedAdmin, handleSelectAdmin, setAdminResults  } =
@@ -80,6 +81,9 @@ const EventDetailsPage = () => {
         <h1>{event?.eventName}</h1>
         <div className="dashboard-actions">
           <ThemeToggle />
+          <button onClick={() => navigateToEventLogs(eventId)}>
+            View Event Logs
+          </button>
           <button onClick={handleLogout} className="logout-btn">
             Log Out
           </button>
