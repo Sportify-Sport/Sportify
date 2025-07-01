@@ -1,5 +1,6 @@
 import React from 'react';
 import AdminSearchCard from './AdminSearchCard';
+import LoadingSpinner from '../../components/LoadingSpinner';
 const AdminSearch = ({
   adminSearchTerm,
   onAdminSearch,
@@ -27,8 +28,11 @@ const AdminSearch = ({
         className={error ? 'error' : ''}
       />
       {adminSearchError && <span className="error-text">{adminSearchError}</span>}
-      {adminSearchLoading && <div className="loading-text">Searching...</div>}
+      {adminSearchLoading && <LoadingSpinner text="Loading admins..." />}
       {error && <span className="error-text">{error}</span>}
+      {!adminSearchLoading && adminUsers.length === 0 && adminSearchTerm && (
+        <div className="no-results">No admins found</div>
+      )}
       <div className="responsive-grid">
         {adminUsers.map((user) => (
           <AdminSearchCard
