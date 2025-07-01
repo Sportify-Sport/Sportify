@@ -81,7 +81,10 @@ const CreateEventForm = ({
   };
 
   const handleAdminSelect = (userId) => {
-    setFormData((prev) => ({ ...prev, adminId: userId }));
+    setFormData((prev) => ({
+        ...prev,
+        adminId: prev.adminId === userId ? null : userId
+      }));
     setErrors((prevErrors) => ({ ...prevErrors, adminId: '' }));
   };
 
