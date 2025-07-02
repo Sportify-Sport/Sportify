@@ -977,7 +977,7 @@ public class DBservices
                 eventDetails.CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]);
                 eventDetails.IsPublic = Convert.ToBoolean(dataReader["IsPublic"]);
                 eventDetails.WinnerId = dataReader["WinnerId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["WinnerId"]);
-                eventDetails.WaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]);
+                eventDetails.MaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]);
                 eventDetails.MinAge = Convert.ToInt32(dataReader["MinAge"]);
                 eventDetails.Gender = dataReader["Gender"].ToString();
                 eventDetails.ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]);

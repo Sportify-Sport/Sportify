@@ -40,7 +40,7 @@ BEGIN
       AND StartDatetime >= GETDATE()
     ORDER BY NEWID();
 END
-
+GO
 
 -- =============================================
 -- Author:		<Mohamed Abo Full>
