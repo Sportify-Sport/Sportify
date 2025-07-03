@@ -349,3 +349,31 @@ BEGIN
     END CATCH
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <3/7/2025>
+-- Description:	<Get all active events (not ended)>
+-- =============================================
+CREATE PROCEDURE SP_GetActiveEvents
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        EventId,
+        EventName,
+        ProfileImage,
+        StartDatetime,
+        EndDatetime,
+        CityId,
+        SportId,
+        MinAge,
+        Gender,
+        Description
+    FROM [Events]
+    WHERE IsPublic = 1
+        AND EndDatetime >= GETDATE()  -- Not ended
+    ORDER BY StartDatetime;
+END
+GO

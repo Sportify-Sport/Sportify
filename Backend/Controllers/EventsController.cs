@@ -14,30 +14,63 @@ namespace Backend.Controllers
     public class EventsController : ControllerBase
     {
         private readonly ILogger<EventsController> _logger;
+        private readonly IRecommendationService _recommendationService;
 
-        public EventsController(ILogger<EventsController> logger)
+        public EventsController(ILogger<EventsController> logger, IRecommendationService recommendationService)
         {
             _logger = logger;
+            _recommendationService = recommendationService;
         }
 
         [AllowAnonymous]
-        [HttpGet("eventDetialsWithoutStatus/{eventId}")]
-        public IActionResult GetEventDetailsWithoutStatus(int eventId)
+        [HttpGet("recommendations")]
+        public async Task<IActionResult> GetRecommendations([FromQuery] int count = 5)
         {
             try
             {
-                var eventDetails = Event.GetEventDetailsWithoutStatus(eventId);
-
-                if (eventDetails == null)
+                // Validate count
+                if (count <= 0 || count > 20)
                 {
-                    return NotFound(new { success = false, message = $"Event with ID {eventId} not found" });
+                    return BadRequest(new { success = false, message = "Count must be between 1 and 20" });
                 }
 
-                return Ok(new { success = true, data = eventDetails });
+                // Check if user is authenticated
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+                if (userIdClaim == null)
+                {
+                    // User not authenticated - return random events
+                    var randomEvents = Event.GetRandomEvents(count);
+                    return Ok(new
+                    {
+                        success = true,
+                        data = randomEvents,
+                        message = "Please log in for personalized recommendations",
+                        isRecommended = false
+                    });
+                }
+
+                // Get user ID
+                int userId = int.Parse(userIdClaim.Value);
+
+                // Get recommendations
+                var result = await _recommendationService.GetRecommendedEventsAsync(userId, count);
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = $"An error occurred while retrieving event details: {ex.Message}" });
+                _logger.LogError(ex, "Error getting recommendations");
+
+                // Fallback to random events
+                var randomEvents = Event.GetRandomEvents(count);
+                return Ok(new
+                {
+                    success = true,
+                    data = randomEvents,
+                    message = "An error occurred. Showing random events.",
+                    isRecommended = false
+                });
             }
         }
 
@@ -59,6 +92,27 @@ namespace Backend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("eventDetialsWithoutStatus/{eventId}")]
+        public IActionResult GetEventDetailsWithoutStatus(int eventId)
+        {
+            try
+            {
+                var eventDetails = Event.GetEventDetailsWithoutStatus(eventId);
+
+                if (eventDetails == null)
+                {
+                    return NotFound(new { success = false, message = $"Event with ID {eventId} not found" });
+                }
+
+                return Ok(new { success = true, data = eventDetails });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"An error occurred while retrieving event details: {ex.Message}" });
             }
         }
 

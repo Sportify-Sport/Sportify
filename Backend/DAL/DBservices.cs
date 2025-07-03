@@ -6517,5 +6517,74 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // Get all active events (not ended)
+    //--------------------------------------------------------------------------------------------------
+    public List<EventForRecommendation> GetActiveEvents()
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetActiveEvents("SP_GetActiveEvents", con);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            List<EventForRecommendation> activeEventsList = new List<EventForRecommendation>();
+
+            while (dataReader.Read())
+            {
+                var eventData = new EventForRecommendation
+                {
+                    EventId = Convert.ToInt32(dataReader["EventId"]),
+                    EventName = dataReader["EventName"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    StartDatetime = Convert.ToDateTime(dataReader["StartDatetime"]),
+                    EndDatetime = Convert.ToDateTime(dataReader["EndDatetime"]),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    SportId = Convert.ToInt32(dataReader["SportId"]),
+                    MinAge = Convert.ToInt32(dataReader["MinAge"]),
+                    Gender = dataReader["Gender"].ToString(),
+                    Description = dataReader["Description"].ToString()
+                };
+                activeEventsList.Add(eventData);
+            }
+
+            return activeEventsList;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting active events
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetActiveEvents(string spName, SqlConnection con)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        return cmd;
+    }
 
 }
