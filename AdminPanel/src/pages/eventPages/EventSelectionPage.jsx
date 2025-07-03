@@ -96,7 +96,7 @@ const EventSelectionPage = () => {
         <button onClick={handleBackToDashboard} className="back-button">
           ← Back to Dashboard
         </button>
-        <h2>Events in {cityName || 'Unknown'}</h2>
+        <h1>Events in {cityName || 'Unknown'}</h1>
         <div className="dashboard-actions">
           <ThemeToggle />
           <button onClick={handleChangeCity} className="change-city-btn">

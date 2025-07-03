@@ -17,8 +17,8 @@ const ThemeToggle = () => {
           aria-label="Toggle dark mode"
         />
         <span className="toggle-slider">
-          <span className={`toggle-icon moon ${darkMode ? 'hidden' : ''}`}>🌙</span>
-          <span className={`toggle-icon sun ${!darkMode ? 'hidden' : ''}`}>☀️</span>
+          <span className={`toggle-icon moon ${darkMode ? 'hidden' : ''}`}>☀️</span>
+          <span className={`toggle-icon sun ${!darkMode ? 'hidden' : ''}`}>🌙</span>
         </span>
       </label>
     </div>

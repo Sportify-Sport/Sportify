@@ -1,6 +1,6 @@
 /* src/styles/global.css */
 :root {
-  --primary-color: #3e7bb7;
+  --primary-color: #3481ce;
   --primary-dark: #4d7baf;
   --primary-light: #56a5e6;
   --background: #ffffff;
@@ -31,7 +31,7 @@
 }
 
 [data-theme='dark'] {
-  --primary-color: #42a5f5;
+  --primary-color: #3481ce;
   --primary-dark: #4d7baf;
   --primary-light: #56a5e6;
   --background: #121212;

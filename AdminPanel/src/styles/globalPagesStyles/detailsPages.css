@@ -311,6 +311,7 @@
   background: var(--surface);
   padding: 1rem;
   border-radius: 8px;
+  flex-wrap: wrap;
 }
 
 .search-input {
@@ -321,12 +322,39 @@
   background-color: var(--input-bg);
   color: var(--text);
   transition: all 0.3s ease;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .search-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.change-admin-btn {
+  background-color: var(--primary-color);
+  color: var(--on-primary, #ffffff);
+  border: none;
+  padding: 0.8rem 1.2rem;
+  text-align: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.change-admin-btn:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.change-admin-btn:disabled {
+  background-color: var(--disabled-bg, #e0e0e0);
+  color: var(--disabled-text, #9e9e9e);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .admin-results-grid {
@@ -618,6 +646,24 @@
     padding: 0.7rem 1.5rem;
     font-size: 0.9rem;
   }
+  
+  .search-bar-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .change-admin-btn {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 360px) {
@@ -660,6 +706,16 @@
   
   .delete-btn, .change-admin-btn, .confirm-btn, .cancel-btn {
     padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+  }
+  
+  .search-input {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  
+  .change-admin-btn {
+    padding: 0.6rem 0.8rem;
     font-size: 0.85rem;
   }
 }

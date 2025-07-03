@@ -91,7 +91,7 @@ const GroupSelectionPage = () => {
         <button onClick={handleBackToDashboard} className="back-button">
           ← Back to Dashboard
         </button>
-        <h2>Groups in {cityName || 'Unknown'}</h2>
+        <h1>Groups in {cityName || 'Unknown'}</h1>
         <div  className="dashboard-actions">
         <ThemeToggle />
          <button onClick={handleChangeCity} className="change-city-btn">

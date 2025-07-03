@@ -12,7 +12,8 @@ import DeleteModal from '../../components/groupDetails/DeleteModal';
 import ChangeAdminModal from '../../components/groupDetails/ChangeAdminModal';
 import ThemeToggle from '../../components/ThemeToggle';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import '../../styles/eventStyle/event-details.css';
+//import '../../styles/eventStyle/event-details.css';
+import '../../styles/globalPagesStyles/detailsPages.css';
 
 const EventDetailsPage = () => {
   const { eventId, cityId } = useParams();
@@ -81,7 +82,7 @@ const EventDetailsPage = () => {
         <h1>{event?.eventName}</h1>
         <div className="dashboard-actions">
           <ThemeToggle />
-          <button onClick={() => navigateToEventLogs(eventId)}>
+          <button onClick={() => navigateToEventLogs(eventId)} className="change-city-btn">
             View Event Logs
           </button>
           <button onClick={handleLogout} className="logout-btn">

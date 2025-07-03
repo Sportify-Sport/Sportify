@@ -11,8 +11,8 @@ import ChangeAdminModal from '../../components/groupDetails/ChangeAdminModal';
 import ThemeToggle from '../../components/ThemeToggle';
 import getApiBaseUrl from '../../config/apiConfig';
 import LoadingSpinner from '../../components/LoadingSpinner'
-import '../../styles/groupStyles/group-details.css';
-
+//import '../../styles/groupStyles/group-details.css';
+import '../../styles/globalPagesStyles/detailsPages.css';
 const GroupDetailsPage = () => {
   const { groupId, cityId } = useParams();
   const { logout } = useAuth();
@@ -145,7 +145,7 @@ const GroupDetailsPage = () => {
         <h1>{group?.groupName}</h1>
         <div className="dashboard-actions">
           <ThemeToggle />
-          <button onClick={() => navigateToGroupLogs(groupId)}>
+          <button onClick={() => navigateToGroupLogs(groupId)} className="change-city-btn">
             View Group Logs
           </button>
           <button onClick={logout} className="logout-btn">
