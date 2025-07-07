@@ -99,7 +99,23 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontWeight: '500',
     },
-
+    cancelButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',  
+        backgroundColor: '#333',
+        paddingVertical: 10,
+        width: '50%',
+        borderRadius: 25,
+        marginTop: 10,
+    },
+    cancelButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        marginLeft: 10,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
     suggestionItem: {
         padding: 10,
         backgroundColor: '#f0f0f0',
@@ -109,49 +125,49 @@ const styles = StyleSheet.create({
     suggestionText: {
         fontSize: 16,
         color: '#333',
-    }, 
-     imageWrapper: {
+    },
+    imageWrapper: {
         marginBottom: 10,
         position: 'relative',      // make children positionable
         alignSelf: 'center',   // or 'center', depending on your layout
-      },
-      profileImage: {
+    },
+    profileImage: {
         width: 130,                // or whatever size you need
         height: 130,
         borderRadius: 65,
-      },
-      editIconContainer: {
+    },
+    editIconContainer: {
         position: 'absolute',
         bottom: 0,
         right: 0,
         backgroundColor: '#2563EB', // Tailwind “blue‑600”
         borderRadius: 12,           // half of width/height for circle
         padding: 4,
-      },
+    },
 });
 
 const additionalStyles = {
-  verificationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff3cd',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ff6b6b',
-  },
-  verificationText: {
-    flex: 1,
-    marginLeft: 10,
-    color: '#856404',
-    fontSize: 14,
-  },
-  verifyButton: {
-    color: '#007bff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
+    verificationBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff3cd',
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 20,
+        borderLeftWidth: 4,
+        borderLeftColor: '#ff6b6b',
+    },
+    verificationText: {
+        flex: 1,
+        marginLeft: 10,
+        color: '#856404',
+        fontSize: 14,
+    },
+    verifyButton: {
+        color: '#007bff',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
 };
 
 export default { ...styles, ...additionalStyles };
