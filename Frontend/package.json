@@ -67,9 +67,5 @@
     "react-test-renderer": "^19.0.0",
     "typescript": "~5.8.3"
   },
-  "private": true,
-  "overrides": {
-    "undici": ">=6.21.2",
-    "brace-expansion": ">=2.0.2"
-  }
+  "private": true
 }
