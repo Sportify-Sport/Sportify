@@ -1,4 +1,5 @@
 ﻿using Backend.BL;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,9 +13,11 @@ namespace Backend.Controllers
     public class EventParticipantsController : ControllerBase
     {
         private readonly ILogger<EventParticipantsController> _logger;
+        private readonly IPushNotificationService _pushNotificationService;
 
-        public EventParticipantsController(ILogger<EventParticipantsController> logger)
+        public EventParticipantsController(ILogger<EventParticipantsController> logger, IPushNotificationService pushNotificationService)
         {
+            _pushNotificationService = pushNotificationService;
             _logger = logger;
         }
 
@@ -183,7 +186,7 @@ namespace Backend.Controllers
 
         [Authorize(Roles = "EventAdmin")]
         [HttpPost("{eventId}/remove-player/{playerUserId}")]
-        public IActionResult RemovePlayerFromEvent(int eventId, int playerUserId)
+        public async Task<IActionResult> RemovePlayerFromEvent(int eventId, int playerUserId)
         {
             int adminUserId = 0;
             try
@@ -200,6 +203,18 @@ namespace Backend.Controllers
 
                 if (result.Success)
                 {
+                    await NotificationHelper.SendUserNotificationAsync(
+                        _pushNotificationService,
+                        playerUserId,
+                        "Removed from Event",
+                        "You have been removed from an event.",
+                        "removed_from_event",
+                        new Dictionary<string, object>
+                        {
+                            { "eventId", eventId }
+                        }
+                    );
+
                     _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully removed player {PlayerUserId} from event {EventId}",
                         adminName, adminUserId, playerUserId, eventId);
                     return Ok(new { success = true, message = "Player has been removed from the event" });
@@ -221,7 +236,7 @@ namespace Backend.Controllers
 
         [Authorize(Roles = "EventAdmin")]
         [HttpPost("events/{eventId}/process-request/{requestUserId}/{approve}")]
-        public IActionResult AdminProcessJoinRequest(int eventId, int requestUserId, bool approve)
+        public async Task<IActionResult> AdminProcessJoinRequest(int eventId, int requestUserId, bool approve)
         {
             int adminUserId = 0;
             try
@@ -239,6 +254,22 @@ namespace Backend.Controllers
                 if (result.Success)
                 {
                     string action = approve ? "approved" : "rejected";
+
+                    await NotificationHelper.SendUserNotificationAsync(
+                        _pushNotificationService,
+                        requestUserId,
+                        approve ? "Join Request Approved! 🎉" : "Join Request Rejected",
+                        approve ?
+                            "Your request to join the event has been approved. Welcome aboard!" :
+                            "Unfortunately, your request to join the event has been rejected.",
+                        "join_request_response",
+                        new Dictionary<string, object>
+                        {
+                            { "eventId", eventId },
+                            { "approved", approve }
+                        }
+                    );
+
                     _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) {Action} join request from user {RequestUserId} for event {EventId}",
                         adminName, adminUserId, action, requestUserId, eventId);
                     return Ok(new

@@ -179,6 +179,36 @@ CREATE TABLE PasswordResetCodes (
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 
--- Create indexes for performance
 CREATE INDEX IX_EmailVerificationCodes_Code ON EmailVerificationCodes(Code) WHERE IsUsed = 0;
 CREATE INDEX IX_PasswordResetCodes_Code ON PasswordResetCodes(Code) WHERE IsUsed = 0;
+
+CREATE TABLE UserPushNotificationTokens (
+    TokenId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    PushToken NVARCHAR(500) NOT NULL,
+    DeviceId NVARCHAR(255) NOT NULL,
+    Platform NVARCHAR(50) NOT NULL CHECK (Platform IN ('ios', 'android')),
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    LastUsedAt DATETIME NULL,
+    FailureCount INT DEFAULT 0,
+    CONSTRAINT UQ_UserDevice UNIQUE(UserId, DeviceId)
+);
+
+CREATE TABLE NotificationHistory (
+    NotificationId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    Title NVARCHAR(255) NOT NULL,
+    Body NVARCHAR(1000) NOT NULL,
+    NotificationData NVARCHAR(MAX) NULL, -- JSON data
+    SentAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    IsRead BIT NOT NULL DEFAULT 0,
+    ReadAt DATETIME NULL,
+    NotificationType NVARCHAR(100) NULL,
+    RelatedEntityId INT NULL,
+    RelatedEntityType NVARCHAR(50) NULL
+);
+
+CREATE INDEX IX_UserPushTokens_UserId_Active ON UserPushNotificationTokens(UserId, IsActive);
+CREATE INDEX IX_NotificationHistory_UserId_SentAt ON NotificationHistory(UserId, SentAt DESC);

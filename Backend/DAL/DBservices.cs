@@ -6587,4 +6587,585 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // Register or update user push notification token
+    //--------------------------------------------------------------------------------------------------
+    public bool RegisterOrUpdatePushToken(int userId, string pushToken, string deviceId, string platform)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureRegisterOrUpdatePushToken("SP_RegisterOrUpdateUserPushNotificationToken", con, userId, pushToken, deviceId, platform);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["Success"]);
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for registering or updating push token
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRegisterOrUpdatePushToken(string spName, SqlConnection con, int userId, string pushToken, string deviceId, string platform)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@PushToken", pushToken);
+        cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+        cmd.Parameters.AddWithValue("@Platform", platform);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get active push tokens for users
+    //--------------------------------------------------------------------------------------------------
+    public List<UserPushNotificationToken> GetActivePushTokensForUsers(List<int> userIds)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetActivePushTokens("SP_GetActiveUserPushNotificationTokens", con, string.Join(",", userIds));
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            List<UserPushNotificationToken> tokens = new List<UserPushNotificationToken>();
+
+            while (dataReader.Read())
+            {
+                var token = new UserPushNotificationToken
+                {
+                    TokenId = Convert.ToInt32(dataReader["TokenId"]),
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    PushToken = dataReader["PushToken"].ToString(),
+                    DeviceId = dataReader["DeviceId"].ToString(),
+                    Platform = dataReader["Platform"].ToString(),
+                    FailureCount = Convert.ToInt32(dataReader["FailureCount"])
+                };
+                tokens.Add(token);
+            }
+
+            return tokens;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting active push tokens
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetActivePushTokens(string spName, SqlConnection con, string userIds)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserIds", userIds);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get event notification recipients
+    //--------------------------------------------------------------------------------------------------
+    public List<int> GetEventNotificationRecipients(int eventId, string recipientType)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetEventNotificationRecipients("SP_GetEventNotificationRecipients", con, eventId, recipientType);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            List<int> recipients = new List<int>();
+
+            while (dataReader.Read())
+            {
+                recipients.Add(Convert.ToInt32(dataReader["UserId"]));
+            }
+
+            return recipients;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting event notification recipients
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventNotificationRecipients(string spName, SqlConnection con, int eventId, string recipientType)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+        cmd.Parameters.AddWithValue("@RecipientType", recipientType);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get group notification recipients
+    //--------------------------------------------------------------------------------------------------
+    public List<int> GetGroupNotificationRecipients(int groupId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetGroupNotificationRecipients("SP_GetGroupNotificationRecipients", con, groupId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            List<int> recipients = new List<int>();
+
+            while (dataReader.Read())
+            {
+                recipients.Add(Convert.ToInt32(dataReader["UserId"]));
+            }
+
+            return recipients;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting group notification recipients
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupNotificationRecipients(string spName, SqlConnection con, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Save notification history
+    //--------------------------------------------------------------------------------------------------
+    public void SaveNotificationHistory(int userId, string title, string body, string notificationData, string notificationType, int? relatedEntityId, string relatedEntityType)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureSaveNotificationHistory("SP_SaveNotificationHistory", con, userId, title, body, notificationData, notificationType, relatedEntityId, relatedEntityType);
+
+        try
+        {
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for saving notification history
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSaveNotificationHistory(string spName, SqlConnection con, int userId, string title, string body, string notificationData, string notificationType, int? relatedEntityId, string relatedEntityType)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Title", title);
+        cmd.Parameters.AddWithValue("@Body", body);
+        cmd.Parameters.AddWithValue("@NotificationData", notificationData ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@NotificationType", notificationType ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@RelatedEntityId", relatedEntityId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@RelatedEntityType", relatedEntityType ?? (object)DBNull.Value);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Mark push token as invalid
+    //--------------------------------------------------------------------------------------------------
+    public void MarkPushTokenAsInvalid(string pushToken)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureMarkPushTokenAsInvalid("SP_MarkPushTokenAsInvalid", con, pushToken);
+
+        try
+        {
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for marking push token as invalid
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureMarkPushTokenAsInvalid(string spName, SqlConnection con, string pushToken)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@PushToken", pushToken);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Increment token failure count
+    //--------------------------------------------------------------------------------------------------
+    public void IncrementTokenFailureCount(string pushToken)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureIncrementTokenFailureCount("SP_IncrementTokenFailureCount", con, pushToken);
+
+        try
+        {
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for incrementing token failure count
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIncrementTokenFailureCount(string spName, SqlConnection con, string pushToken)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@PushToken", pushToken);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get user ID from group join request
+    //--------------------------------------------------------------------------------------------------
+    public int GetUserIdFromGroupJoinRequest(int requestId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetUserIdFromGroupJoinRequest("SP_GetUserIdFromGroupJoinRequest", con, requestId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToInt32(dataReader["RequesterUserId"]);
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user ID from group join request
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUserIdFromGroupJoinRequest(string spName, SqlConnection con, int requestId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@RequestId", requestId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get user notification history
+    //--------------------------------------------------------------------------------------------------
+    public List<NotificationHistoryItem> GetUserNotificationHistory(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetUserNotificationHistory("SP_GetUserNotificationHistory", con, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            List<NotificationHistoryItem> notifications = new List<NotificationHistoryItem>();
+
+            while (dataReader.Read())
+            {
+                var notification = new NotificationHistoryItem
+                {
+                    NotificationId = Convert.ToInt32(dataReader["NotificationId"]),
+                    UserId = userId,
+                    Title = dataReader["Title"].ToString(),
+                    Body = dataReader["Body"].ToString(),
+                    NotificationData = dataReader["NotificationData"].ToString(),
+                    SentAt = Convert.ToDateTime(dataReader["SentAt"]),
+                    IsRead = Convert.ToBoolean(dataReader["IsRead"]),
+                    ReadAt = dataReader["ReadAt"] != DBNull.Value ? Convert.ToDateTime(dataReader["ReadAt"]) : (DateTime?)null,
+                    NotificationType = dataReader["NotificationType"].ToString(),
+                    RelatedEntityId = dataReader["RelatedEntityId"] != DBNull.Value ? Convert.ToInt32(dataReader["RelatedEntityId"]) : (int?)null,
+                    RelatedEntityType = dataReader["RelatedEntityType"].ToString()
+                };
+                notifications.Add(notification);
+            }
+
+            return notifications;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user notification history
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUserNotificationHistory(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Mark notification as read
+    //--------------------------------------------------------------------------------------------------
+    public bool MarkNotificationAsRead(int notificationId, int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureMarkNotificationAsRead("SP_MarkNotificationAsRead", con, notificationId, userId);
+
+        try
+        {
+            cmd.ExecuteNonQuery();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for marking notification as read
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureMarkNotificationAsRead(string spName, SqlConnection con, int notificationId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@NotificationId", notificationId);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        return cmd;
+    }
+
 }

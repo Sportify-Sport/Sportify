@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Backend.Models;
+using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Backend.Models;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -13,10 +14,12 @@ namespace Backend.Controllers
     public class AdminGroupsController : ControllerBase
     {
         private readonly ILogger<AdminGroupsController> _logger;
+        private readonly IPushNotificationService _pushNotificationService;
 
-        public AdminGroupsController(ILogger<AdminGroupsController> logger)
+        public AdminGroupsController(ILogger<AdminGroupsController> logger, IPushNotificationService pushNotificationService)
         {
             _logger = logger;
+            _pushNotificationService = pushNotificationService;
         }
 
         [HttpGet("{cityId}")]
@@ -166,7 +169,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost("create")]
-        public IActionResult CreateGroup([FromBody] CreateGroupDto groupDto)
+        public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDto groupDto)
         {
             try
             {
@@ -264,6 +267,19 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to create group" });
                 }
 
+                // Notify the new group admin
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    groupDto.AdminId,
+                    "You're a Group Admin! 👥",
+                    $"You are now the admin of '{groupDto.GroupName}' group.",
+                    "group_admin_assigned",
+                    new Dictionary<string, object>
+                    {
+                        { "groupId", groupId }
+                    }
+                );
+
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) created group {GroupName} (ID: {GroupId}) for city {CityId} with {NewAdmin} as group admin",
                     userName, userId, groupDto.GroupName, groupId, groupDto.CityId, groupDto.AdminId);
 
@@ -282,10 +298,7 @@ namespace Backend.Controllers
         }
 
         [HttpPut("{cityId}/change-admin/{groupId}")]
-        public IActionResult ChangeGroupAdmin(
-            int cityId,
-            int groupId,
-            [FromBody] ChangeGroupAdminDto changeAdminDto)
+        public async Task<IActionResult> ChangeGroupAdmin(int cityId, int groupId, [FromBody] ChangeGroupAdminDto changeAdminDto)
         {
             try
             {
@@ -354,6 +367,32 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to change group admin" });
                 }
 
+                // Notify the old admin
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    currentAdmin.UserId,
+                    "Admin Role Transferred",
+                    "You are no longer the admin of this group. Admin role has been transferred.",
+                    "group_admin_removed",
+                    new Dictionary<string, object>
+                    {
+                        { "groupId", groupId }
+                    }
+                );
+
+                // Notify the new admin
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    changeAdminDto.UserId,
+                    "You're the New Group Admin! 👥",
+                    "You have been assigned as the new admin of this group.",
+                    "group_admin_assigned",
+                    new Dictionary<string, object>
+                    {
+                        { "groupId", groupId }
+                    }
+                );
+
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) changed admin for group {GroupId} from user {OldAdminId} to user {NewAdminId} in city {CityId}",
                     userName, currentUserId, groupId, currentAdmin.UserId, changeAdminDto.UserId, cityId);
 
@@ -371,7 +410,7 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("{cityId}/group/{groupId}")]
-        public IActionResult DeleteGroup(int cityId, int groupId)
+        public async Task<IActionResult> DeleteGroup(int cityId, int groupId)
         {
             try
             {
@@ -410,6 +449,15 @@ namespace Backend.Controllers
                 {
                     return StatusCode(500, new { success = false, message = "Failed to delete group" });
                 }
+
+                // Notify all group members (including admin)
+                await NotificationHelper.SendGroupNotificationAsync(
+                    _pushNotificationService,
+                    groupId,
+                    "Group Deleted ❌",
+                    "A group you were a member of has been deleted.",
+                    "group_deleted"
+                );
 
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) deleted group {GroupId} in city {CityId}",
                     userName, userId, groupId, cityId);

@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Backend.BL;
+﻿using Backend.BL;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
+using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,10 +16,12 @@ namespace Backend.Controllers
     public class AdminEventsController : ControllerBase
     {
         private readonly ILogger<AdminEventsController> _logger;
+        private readonly IPushNotificationService _pushNotificationService;
 
-        public AdminEventsController(ILogger<AdminEventsController> logger)
+        public AdminEventsController(ILogger<AdminEventsController> logger, IPushNotificationService pushNotificationService)
         {
             _logger = logger;
+            _pushNotificationService = pushNotificationService;
         }
 
         [HttpGet("{cityId}")]
@@ -158,7 +161,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost("create")]
-        public IActionResult CreateEvent([FromBody] CreateEventDto eventDto)
+        public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto eventDto)
         {
             try
             {
@@ -274,6 +277,19 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to create event" });
                 }
 
+                // Notify the new event admin
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    eventDto.AdminId,
+                    "You're an Event Admin! 🏆",
+                    $"You are now the admin of '{eventDto.EventName}' event.",
+                    "event_admin_assigned",
+                    new Dictionary<string, object>
+                    {
+                        { "eventId", eventId }
+                    }
+                );
+
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) created event {EventName} (ID: {EventId}) for city {CityId} with {NewAdmin} as event admin",
                     userName, userId, eventDto.EventName, eventId, eventDto.CityId, eventDto.AdminId);
 
@@ -292,10 +308,7 @@ namespace Backend.Controllers
         }
 
         [HttpPut("{cityId}/change-admin/{eventId}")]
-        public IActionResult ChangeEventAdmin(
-            int cityId,
-            int eventId,
-            [FromBody] ChangeEventAdminDto changeAdminDto)
+        public async Task<IActionResult> ChangeEventAdmin(int cityId, int eventId, [FromBody] ChangeEventAdminDto changeAdminDto)
         {
             try
             {
@@ -355,6 +368,32 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to change event admin" });
                 }
 
+                // Notify the old admin
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    currentAdmin.UserId,
+                    "Admin Role Transferred",
+                    "You are no longer the admin of this event. Admin role has been transferred.",
+                    "event_admin_removed",
+                    new Dictionary<string, object>
+                    {
+                        { "eventId", eventId }
+                    }
+                );
+
+                // Notify the new admin
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    changeAdminDto.UserId,
+                    "You're the New Event Admin! 🏆",
+                    "You have been assigned as the new admin of this event.",
+                    "event_admin_assigned",
+                    new Dictionary<string, object>
+                    {
+                        { "eventId", eventId }
+                    }
+                );
+
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) changed admin for event {EventId} from user {OldAdminId} to user {NewAdminId} in city {CityId}",
                     userName, currentUserId, eventId, currentAdmin.UserId, changeAdminDto.UserId, cityId);
 
@@ -372,7 +411,7 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("{cityId}/event/{eventId}")]
-        public IActionResult DeleteEvent(int cityId, int eventId)
+        public async Task<IActionResult> DeleteEvent(int cityId, int eventId)
         {
             try
             {
@@ -404,6 +443,8 @@ namespace Backend.Controllers
                     return NotFound(new { success = false, message = "Event not found" });
                 }
 
+                var currentAdmin = dbServices.GetEventAdmin(eventId);
+
                 // Delete the event
                 bool success = dbServices.DeleteEvent(eventId);
 
@@ -411,6 +452,27 @@ namespace Backend.Controllers
                 {
                     return StatusCode(500, new { success = false, message = "Failed to delete event" });
                 }
+
+                // Notify all event participants (includes groups and individual participants)
+                await NotificationHelper.SendEventNotificationAsync(
+                    _pushNotificationService,
+                    eventId,
+                    "Event Cancelled ❌",
+                    "An event you were participating in has been cancelled.",
+                    "event_deleted"
+                );
+
+                await NotificationHelper.SendUserNotificationAsync(
+                    _pushNotificationService,
+                    currentAdmin.UserId,
+                    "Event Deleted",
+                    "The event you were administering has been deleted.",
+                    "event_deleted",
+                    new Dictionary<string, object>
+                    {
+                        { "eventId", eventId }
+                    }
+                );
 
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) deleted event {EventId} in city {CityId}",
                     userName, userId, eventId, cityId);

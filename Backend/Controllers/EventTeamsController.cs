@@ -1,4 +1,5 @@
 ﻿using Backend.BL;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,9 +13,11 @@ namespace Backend.Controllers
     public class EventTeamsController : ControllerBase
     {
         private readonly ILogger<EventTeamsController> _logger;
+        private readonly IPushNotificationService _pushNotificationService;
 
-        public EventTeamsController(ILogger<EventTeamsController> logger)
+        public EventTeamsController(ILogger<EventTeamsController> logger, IPushNotificationService pushNotificationService)
         {
+            _pushNotificationService = pushNotificationService;
             _logger = logger;
         }
 
@@ -122,7 +125,7 @@ namespace Backend.Controllers
 
         [Authorize(Roles = "EventAdmin")]
         [HttpDelete("team-events/{eventId}/groups/{groupId}")]
-        public IActionResult RemoveGroupFromEvent(int eventId, int groupId)
+        public async Task<IActionResult> RemoveGroupFromEvent(int eventId, int groupId)
         {
             int adminUserId = 0;
             try
@@ -144,6 +147,14 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
+                await NotificationHelper.SendGroupNotificationAsync(
+                    _pushNotificationService,
+                    groupId,
+                    "Group Removed from Event",
+                    "Your group has been removed from an event.",
+                    "group_removed_from_event"
+                );
+
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully removed group {GroupId} from event {EventId}",
                     adminName, adminUserId, groupId, eventId);
                 return Ok(new { success = true, message = "Group successfully removed from event" });
@@ -158,7 +169,7 @@ namespace Backend.Controllers
 
         [Authorize(Roles = "EventAdmin")]
         [HttpPost("team-events/{eventId}/groups/{groupId}")]
-        public IActionResult AddGroupToEvent(int eventId, int groupId)
+        public async Task<IActionResult> AddGroupToEvent(int eventId, int groupId)
         {
             int adminUserId = 0;
             try
@@ -179,6 +190,14 @@ namespace Backend.Controllers
                         adminName, adminUserId, groupId, eventId, result.ErrorMessage);
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
+
+                await NotificationHelper.SendGroupNotificationAsync(
+                    _pushNotificationService,
+                    groupId,
+                    "Group Added to Event! 🎉",
+                    "Your group has been added to a new event. Check it out!",
+                    "group_added_to_event"
+                );
 
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully added group {GroupId} to event {EventId}",
                     adminName, adminUserId, groupId, eventId);

@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Backend.BL;
+﻿using Backend.BL;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Backend.Controllers
@@ -12,10 +13,12 @@ namespace Backend.Controllers
     public class GroupMembersController : ControllerBase
     {
         private readonly ILogger<GroupMembersController> _logger;
+        private readonly IPushNotificationService _pushNotificationService;
 
-        public GroupMembersController(ILogger<GroupMembersController> logger)
+        public GroupMembersController(ILogger<GroupMembersController> logger, IPushNotificationService pushNotificationService)
         {
             _logger = logger;
+            _pushNotificationService = pushNotificationService;
         }
 
 
@@ -174,7 +177,7 @@ namespace Backend.Controllers
 
         [HttpPost("{groupId}/join-requests/{requestId}/approve")]
         [Authorize(Roles = "GroupAdmin")]
-        public IActionResult ApproveJoinRequest(int groupId, int requestId)
+        public async Task<IActionResult> ApproveJoinRequest(int groupId, int requestId)
         {
             try
             {
@@ -192,6 +195,27 @@ namespace Backend.Controllers
 
                 if (success)
                 {
+                    var dbServices = new DBservices();
+                    int userId = dbServices.GetUserIdFromGroupJoinRequest(requestId);
+
+                    if (userId == 0)
+                    {
+                        return NotFound(new { success = false, message = "Join request not found" });
+                    }
+
+                    // Send notification to the user
+                    await NotificationHelper.SendUserNotificationAsync(
+                        _pushNotificationService,
+                        userId,
+                        "Welcome to the Group! 🎉",
+                        "Your request to join the group has been approved!",
+                        "group_join_approved",
+                        new Dictionary<string, object>
+                        {
+                            { "groupId", groupId }
+                        }
+                    );
+
                     _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) approved join request {RequestId} for group {GroupId}",
                         adminName, currentUserId, requestId, groupId);
                     return Ok(new { success = true, message = message });
@@ -212,7 +236,7 @@ namespace Backend.Controllers
 
         [HttpPost("{groupId}/join-requests/{requestId}/reject")]
         [Authorize(Roles = "GroupAdmin")]
-        public IActionResult RejectJoinRequest(int groupId, int requestId)
+        public async Task<IActionResult> RejectJoinRequest(int groupId, int requestId)
         {
             try
             {
@@ -230,6 +254,27 @@ namespace Backend.Controllers
 
                 if (rejected)
                 {
+                    var dbServices = new DBservices();
+                    int userId = dbServices.GetUserIdFromGroupJoinRequest(requestId);
+
+                    if (userId == 0)
+                    {
+                        return NotFound(new { success = false, message = "Join request not found" });
+                    }
+
+                    // Send notification to the user
+                    await NotificationHelper.SendUserNotificationAsync(
+                        _pushNotificationService,
+                        userId,
+                        "Group Request Rejected",
+                        "Your request to join the group has been rejected.",
+                        "group_join_rejected",
+                        new Dictionary<string, object>
+                        {
+                            { "groupId", groupId }
+                        }
+                    );
+
                     _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) rejected join request {RequestId} for group {GroupId}",
                        adminName, currentUserId, requestId, groupId);
                     return Ok(new { success = true, message = "Join request rejected successfully" });
@@ -251,7 +296,7 @@ namespace Backend.Controllers
 
         [HttpDelete("{groupId}/members/{userId}")]
         [Authorize(Roles = "GroupAdmin")]
-        public IActionResult RemoveGroupMember(int groupId, int userId)
+        public async Task<IActionResult> RemoveGroupMember(int groupId, int userId)
         {
             try
             {
@@ -276,6 +321,19 @@ namespace Backend.Controllers
 
                 if (success)
                 {
+                    // Send notification to the removed member
+                    await NotificationHelper.SendUserNotificationAsync(
+                        _pushNotificationService,
+                        userId,
+                        "Removed from Group",
+                        "You have been removed from a group.",
+                        "removed_from_group",
+                        new Dictionary<string, object>
+                        {
+                            { "groupId", groupId }
+                        }
+                    );
+
                     _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) removed member {UserId} from group {GroupId}",
                         adminName, currentUserId, userId, groupId);
                     return Ok(new { success = true, message = message });
