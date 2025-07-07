@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TextInput, 
-  Alert, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ScrollView,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,7 +31,6 @@ export default function Profile() {
   const [bio, setBio] = useState('');
   const [email, setEmail] = useState('');
   const [birthdate, setBirthdate] = useState('0000-00-00');
-  const [prevBirthdate, setPrevBirthdate] = useState('0000-00-00');
   const [city, setCity] = useState('');
   const [cityId, setCityId] = useState('');
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -40,6 +41,14 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [prevName, setPrevName] = useState('');
+  const [prevBio, setPrevBio] = useState('');
+  const [prevCity, setPrevCity] = useState('');
+  const [prevCityId, setPrevCityId] = useState('');
+  const [prevGender, setPrevGender] = useState('');
+  const [prevFavoriteSport, setPrevFavoriteSport] = useState('');
+  const [prevBirthdate, setPrevBirthdate] = useState('0000-00-00');
+
   const apiUrl = getApiBaseUrl();
 
   useEffect(() => {
@@ -88,24 +97,28 @@ export default function Profile() {
       const profileData = await profileResponse.json();
 
       setName(`${profileData.firstName} ${profileData.lastName}`);
+      setPrevName(`${profileData.firstName} ${profileData.lastName}`);
       setEmail(profileData.email);
       const formattedBirthdate = profileData.birthDate.split('T')[0];
       setBirthdate(formattedBirthdate);
       setPrevBirthdate(formattedBirthdate);
       setBio(profileData.bio || '');
+      setPrevBio(profileData.bio || '');
       setGender(profileData.gender);
-      
+      setPrevGender(profileData.gender);
+
       let sport;
-      switch(profileData.favSportId) {
+      switch (profileData.favSportId) {
         case 1: sport = 'Football'; break;
         case 2: sport = 'Basketball'; break;
         case 3: sport = 'Marathon'; break;
         default: sport = '';
       }
       setFavoriteSport(sport);
-
+      setPrevFavoriteSport(sport);
       setProfileImage(`${apiUrl}/Images/${profileData.profileImage}`);
       setCityId(profileData.cityId);
+      setPrevCityId(profileData.cityId);
 
       if (profileData.cityId) {
         const cityResponse = await fetch(
@@ -113,11 +126,12 @@ export default function Profile() {
         );
         const cityData = await cityResponse.json();
         if (cityData.success && cityData.result && cityData.result.records) {
-          const record = cityData.result.records.find(r => 
+          const record = cityData.result.records.find(r =>
             r._id.toString() === profileData.cityId.toString()
           );
           if (record) {
             setCity(record['city_name_en']);
+            setPrevCity(record?.['city_name_en'] || '');
           }
         }
       }
@@ -245,7 +259,7 @@ export default function Profile() {
   const uploadProfileImage = async (imageUri) => {
     try {
       setImageLoading(true);
-      
+
       if (!token) {
         router.replace('/screens/Login');
         return;
@@ -289,7 +303,6 @@ export default function Profile() {
       Alert.alert('Guest Mode', 'Please sign up or log in to edit profile.');
       return;
     }
-
     if (!isEmailVerified) {
       Alert.alert('Email Verification Required', 'Please verify your email first.', [
         { text: 'Cancel', style: 'cancel' },
@@ -298,54 +311,70 @@ export default function Profile() {
       return;
     }
 
-    if (!birthdate || !city || !gender || !favoriteSport) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields.');
+    // 1) Validate full name has at least two parts:
+    const parts = name.trim().split(' ');
+    if (parts.length !== 2) {
+      Alert.alert(
+        'Invalid Name',
+        'Please enter your full name as "FirstName LastName".'
+      );
+      return;
+    }
+    const [firstName, lastName] = parts;
+
+    // 2) Check if anything changed:
+    const nothingChanged =
+      name === prevName &&
+      birthdate === prevBirthdate &&
+      gender === prevGender &&      // you'll also need prevGender/useState similar to prevName
+      favoriteSport === prevFavoriteSport &&
+      cityId === prevCityId &&
+      bio === prevBio;
+    if (nothingChanged) {
+      Alert.alert('No Changes', 'You have not made any changes.');
       return;
     }
 
+    // 3) Build payload including name:
+    const payload = {
+      FirstName: firstName,
+      LastName: lastName,
+      BirthDate: birthdate,
+      Gender: gender,
+      FavSportId: favoriteSport === 'Football' ? 1 :
+        favoriteSport === 'Basketball' ? 2 :
+          favoriteSport === 'Marathon' ? 3 : null,
+      CityId: cityId,
+      Bio: bio
+    };
+
     try {
       setLoading(true);
-      
-      if (!token) {
-        router.replace('/screens/Login');
-        return;
-      }
-
-      let favSportId;
-      switch(favoriteSport) {
-        case 'Football': favSportId = 1; break;
-        case 'Basketball': favSportId = 2; break;
-        case 'Marathon': favSportId = 3; break;
-        default: favSportId = '';
-      }
-
-      const profileData = {
-        BirthDate: birthdate,
-        FavSportId: favSportId,
-        CityId: cityId,
-        Bio: bio,
-        Gender: gender
-      };
-
       const response = await fetch(`${apiUrl}/api/Users/profile/details`, {
         method: 'PUT',
         headers: {
           'Authorization': 'Bearer ' + token,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(profileData)
+        body: JSON.stringify(payload)
       });
-
       const data = await response.json();
       if (!response.ok) {
-        Alert.alert('Error', data.title || 'An error occurred.');
-      } else {
-        Alert.alert('Success', 'Profile updated successfully.');
-        setIsEditing(false);
+        throw new Error(data.title || data.message || 'Update failed');
       }
+
+      // 4) On success, update prev‑states and UI:
+      setPrevName(name);
+      setPrevBirthdate(birthdate);
+      setPrevGender(gender);
+      setPrevFavoriteSport(favoriteSport);
+      setPrevCityId(cityId);
+      setPrevBio(bio);
+
+      Alert.alert('Success', 'Profile updated successfully.');
+      setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'An error occurred while updating the profile.');
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -382,9 +411,9 @@ export default function Profile() {
       "Are you sure you want to log out?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Logout", 
-          style: "destructive", 
+        {
+          text: "Logout",
+          style: "destructive",
           onPress: async () => {
             await logout();
             router.replace('../screens/Login');
@@ -408,7 +437,7 @@ export default function Profile() {
         </View>
 
         <Text style={styles.name}>Guest User</Text>
-        
+
         <View style={[styles.infoContainer, { marginTop: 20 }]}>
           <Text style={styles.label}>🚀 Ready to join?</Text>
           <Text style={styles.infoText}>
@@ -468,6 +497,20 @@ export default function Profile() {
       <Text style={styles.name}>{name}</Text>
 
       <View style={styles.infoContainer}>
+        <Text style={styles.label}>Full name:</Text>
+        {isEditing ? (
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="FirstName LastName"
+          />
+        ) : (
+          <Text style={styles.infoText}>{name}</Text>
+        )}
+      </View>
+
+      <View style={styles.infoContainer}>
         <Text style={styles.label}>Bio:</Text>
         {isEditing ? (
           <TextInput
@@ -493,11 +536,9 @@ export default function Profile() {
           <Text style={styles.label}>Birthdate:</Text>
           {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: '#f0f0f0' }]}
               value={birthdate}
-              onChangeText={setBirthdate}
-              onBlur={handleBirthdateBlur}
-              placeholder="yyyy-mm-dd"
+              editable={false}
             />
           ) : (
             <Text style={styles.infoText}>{birthdate}</Text>
@@ -551,18 +592,16 @@ export default function Profile() {
         <View style={[styles.infoContainer, styles.halfWidth]}>
           <Text style={styles.label}>Gender:</Text>
           {isEditing ? (
-            <Picker
-              selectedValue={gender}
-              onValueChange={(itemValue) => setGender(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Male" value="M" />
-              <Picker.Item label="Female" value="F" />
-            </Picker>
+            <TextInput
+              style={[styles.input, { backgroundColor: '#f0f0f0' }]}
+              value={gender === 'M' ? 'Male' : 'Female'}
+              editable={false}
+            />
           ) : (
             <Text style={styles.infoText}>{gender === 'M' ? 'Male' : 'Female'}</Text>
           )}
         </View>
+
         <View style={[styles.infoContainer, styles.halfWidth]}>
           <Text style={styles.label}>Favorite Sport:</Text>
           {isEditing ? (
@@ -581,6 +620,7 @@ export default function Profile() {
         </View>
       </View>
 
+      {/* --- Save & Logout row --- */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.editButton, loading && { opacity: 0.5 }]}
@@ -592,10 +632,13 @@ export default function Profile() {
           ) : (
             <>
               <Ionicons name="pencil" size={20} color="#fff" />
-              <Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
+              <Text style={styles.editButtonText}>
+                {isEditing ? 'Save' : 'Edit'}
+              </Text>
             </>
           )}
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
@@ -604,6 +647,27 @@ export default function Profile() {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
+
+      {/* --- Cancel button, only in edit mode, below the row --- */}
+      {isEditing && (
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => {
+              // revert all fields
+              setName(prevName);
+              setBio(prevBio);
+              setCity(prevCity);
+              setCityId(prevCityId);
+              setGender(prevGender);
+              setFavoriteSport(prevFavoriteSport);
+              setBirthdate(prevBirthdate);
+              setIsEditing(false);
+            }}
+          >
+            <Ionicons name="close-circle-outline" size={20} color="#fff" />
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+      )}
 
       <EmailVerificationModal
         visible={showVerificationModal}
