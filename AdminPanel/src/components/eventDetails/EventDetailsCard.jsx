@@ -2,7 +2,7 @@ import React from 'react';
 import { SPORT_TYPES } from '../../constants/sportTypes';
 import getApiBaseUrl from '../../config/apiConfig';
 
-const EventDetailsCard = ({ event, onDeleteClick, onToggleAdminSearch, showAdminSearch }) => {
+const EventDetailsCard = ({ event, onDeleteClick, onToggleAdminSearch, showAdminSearch, onEditClick }) => {
   // Format date to MM/DD/YYYY HH:MM
   const formatDate = (date) => {
     if (!date) return 'N/A';
@@ -88,6 +88,9 @@ const EventDetailsCard = ({ event, onDeleteClick, onToggleAdminSearch, showAdmin
             </button>
             <button onClick={onToggleAdminSearch} className="change-admin-btn">
               {showAdminSearch ? 'Cancel Admin Change' : 'Change Admin'}
+            </button>
+            <button onClick={onEditClick} className="edit-details-btn">
+              Edit Details
             </button>
           </div>
         </div>

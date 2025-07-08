@@ -224,7 +224,7 @@
   border-top: 1px solid var(--border);
 }
 
-.delete-btn, .edit-admin-btn, .change-admin-btn, .confirm-btn, .cancel-btn {
+.delete-btn, .edit-admin-btn, .change-admin-btn, .confirm-btn, .cancel-btn, .edit-details-btn {
   padding: 0.8rem 1.8rem;
   border-radius: 8px;
   font-weight: 600;
@@ -284,6 +284,27 @@
   transform: none;
 }
 
+.edit-details-btn {
+  background-color: var(--primary-color);
+  color: var(--on-primary, #ffffff);
+  border: none;
+  min-width: 140px;
+  text-align: center;
+}
+
+.edit-details-btn:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.edit-details-btn:disabled {
+  background-color: var(--disabled-bg, #e0e0e0);
+  color: var(--disabled-text, #9e9e9e);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .admin-search-container {
   margin-top: 2rem;
   padding: 2rem;
@@ -330,7 +351,7 @@
 .search-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
 }
 
 .change-admin-btn {
@@ -448,47 +469,162 @@
   transform: translateY(-1px);
 }
 
-.admin-card p[data-gender="F"] {
-  color: #e91e63;
+/* Styles for EditDetailsModal */
+.edit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
 }
 
-.admin-card p[data-gender="M"] {
-  color: #2196f3;
+.edit-modal-content {
+  background-color: var(--modal-bg, #ffffff) !important;
+  color: var(--modal-text, #333333) !important;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 30px var(--modal-shadow, rgba(0, 0, 0, 0.3)) !important;
+  animation: modalFadeIn 0.3s ease;
+  position: relative;
 }
 
-.admin-card p[data-gender]::before {
+.edit-modal-content h2 {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+  color: var(--primary-color, #3481ce) !important;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary, #757575);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--border, #e0e0e0) !important;
+  border-radius: 8px;
+  background-color: var(--input-bg, #ffffff) !important;
+  color: var(--text, #333333) !important;
+  font-size: 1rem;
+  transition: all var(--transition-speed, 0.3s) ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #3481ce) !important;
+  box-shadow: 0 0 0 2px rgba(52, 129, 206, 0.2) !important;
+}
+
+.form-group textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.form-group input[type="file"] {
+  padding: 0.4rem;
+  background-color: transparent !important;
+}
+
+.error-message {
+  color: var(--error, #d32f2f) !important;
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-left: 4px solid var(--error, #d32f2f);
+  background-color: rgba(211, 47, 47, 0.1) !important;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.modal-button {
+  padding: 0.8rem 1.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-speed, 0.3s) ease;
+}
+
+.cancel-button {
+  background-color: transparent !important;
+  color: var(--text, #333333) !important;
+  border: 1px solid var(--border, #e0e0e0) !important;
+}
+
+.cancel-button:hover {
+  background-color: var(--surface, #f5f5f5) !important;
+  transform: translateY(-2px);
+}
+
+.confirm-button {
+  background-color: var(--ok-button-bg, #4CAF50) !important;
+  color: var(--on-success, #ffffff) !important;
+  border: none;
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: var(--ok-button-hover, #45a049) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+}
+
+.confirm-button:disabled {
+  background-color: var(--disabled-bg, #e0e0e0) !important;
+  color: var(--disabled-text, #9e9e9e) !important;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.confirm-button.loading {
+  background-color: var(--disabled-bg, #e0e0e0) !important;
+  cursor: wait;
+  position: relative;
+}
+
+.confirm-button.loading::after {
   content: "";
-  display: inline-block;
-  width: 10px;
-  height: 10px;
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--border, #e0e0e0);
+  border-top-color: var(--primary-color, #3481ce);
   border-radius: 50%;
-  margin-right: 6px;
+  animation: spin 1s linear infinite;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-.admin-card p[data-gender="F"]::before {
-  background-color: #e91e63;
-}
-
-.admin-card p[data-gender="M"]::before {
-  background-color: #2196f3;
-}
-
-@media (max-width: 1024px) {
-  .group-details-container {
-    padding: 1.5rem;
-  }
-  
-  .group-info-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-  
-  .group-info h2 {
-    font-size: 1.6rem;
-  }
-  
-  .group-description {
-    font-size: 1rem;
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
   }
 }
 
@@ -521,7 +657,6 @@
   }
   
   .group-description {
-    font-size: 1rem;
     margin-bottom: 1rem;
   }
   
@@ -563,9 +698,29 @@
     gap: 1rem;
   }
   
-  .delete-btn, .change-admin-btn {
+  .delete-btn, .change-admin-btn, .edit-details-btn {
     width: 100%;
     justify-content: center;
+  }
+  
+  .edit-modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+  
+  .edit-modal-content h2 {
+    font-size: 1.3rem;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    padding: 0.7rem 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .modal-button {
+    padding: 0.7rem 1.5rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -593,7 +748,7 @@
   .group-info-grid {
     grid-template-columns: 1fr;
     gap: 0.6rem;
-    margin-top: 0.8rem;
+    margin-top: 1rem;
   }
   
   .group-info-item {
@@ -642,7 +797,7 @@
     padding-top: 1.5rem;
   }
   
-  .delete-btn, .change-admin-btn, .confirm-btn, .cancel-btn {
+  .delete-btn, .change-admin-btn, .edit-details-btn, .confirm-btn, .cancel-btn {
     padding: 0.7rem 1.5rem;
     font-size: 0.9rem;
   }
@@ -663,6 +818,40 @@
     width: 100%;
     padding: 0.7rem 1rem;
     font-size: 0.9rem;
+  }
+  
+  .edit-modal-content {
+    padding: 1rem;
+  }
+  
+  .edit-modal-content h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group label {
+    font-size: 0.8rem;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .modal-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+    width: 100%;
   }
 }
 
@@ -704,7 +893,7 @@
     height: 45px;
   }
   
-  .delete-btn, .change-admin-btn, .confirm-btn, .cancel-btn {
+  .delete-btn, .change-admin-btn, .edit-details-btn, .confirm-btn, .cancel-btn {
     padding: 0.6rem 1.2rem;
     font-size: 0.85rem;
   }
@@ -717,6 +906,10 @@
   .change-admin-btn {
     padding: 0.6rem 0.8rem;
     font-size: 0.85rem;
+  }
+  
+  .edit-modal-content {
+    padding: 0.8rem;
   }
 }
 

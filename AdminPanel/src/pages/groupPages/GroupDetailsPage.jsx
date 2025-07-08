@@ -11,7 +11,6 @@ import ChangeAdminModal from '../../components/groupDetails/ChangeAdminModal';
 import ThemeToggle from '../../components/ThemeToggle';
 import getApiBaseUrl from '../../config/apiConfig';
 import LoadingSpinner from '../../components/LoadingSpinner'
-//import '../../styles/groupStyles/group-details.css';
 import '../../styles/globalPagesStyles/detailsPages.css';
 const GroupDetailsPage = () => {
   const { groupId, cityId } = useParams();

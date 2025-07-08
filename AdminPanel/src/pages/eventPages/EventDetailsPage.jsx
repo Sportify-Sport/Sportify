@@ -10,9 +10,9 @@ import EventDetailsCard from '../../components/eventDetails/EventDetailsCard';
 import AdminSearch from '../../components/groupDetails/AdminSearch';
 import DeleteModal from '../../components/groupDetails/DeleteModal';
 import ChangeAdminModal from '../../components/groupDetails/ChangeAdminModal';
+import EditDetailsModal from '../../components/eventDetails/EditDetailsModal';
 import ThemeToggle from '../../components/ThemeToggle';
 import LoadingSpinner from '../../components/LoadingSpinner';
-//import '../../styles/eventStyle/event-details.css';
 import '../../styles/globalPagesStyles/detailsPages.css';
 
 const EventDetailsPage = () => {
@@ -22,10 +22,11 @@ const EventDetailsPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAdminSearch, setShowAdminSearch] = useState(false);
   const [showChangeAdminModal, setShowChangeAdminModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [adminSearchTerm, setAdminSearchTerm] = useState('');
   const { navigateToEventLogs } = useEventNavigation(cityId, cityName, logout);
 
-  const { event, eventLoading, eventError, setEvent } = useEventDetails(eventId, cityId, cityName);
+  const { event, eventLoading, eventError, setEvent, updateEventImage, refreshEventDetails } = useEventDetails(eventId, cityId, cityName);
   const { adminResults, adminLoading, adminError, setAdminError, selectedAdmin, setSelectedAdmin, handleSelectAdmin, setAdminResults  } =
     useAdminSearch(cityId, cityName, adminSearchTerm);
   const { handleDeleteEvent } = useEventDelete(cityId, eventId, setEvent, useEventNavigation(cityId, cityName, logout).handleBack);
@@ -59,6 +60,15 @@ const EventDetailsPage = () => {
     }
     setShowChangeAdminModal(true);
   }, [selectedAdmin, setAdminError]);
+
+  	
+  const handleUpdate = useCallback((updatedEntity) => {
+    updateEventImage(updatedEntity);
+    if (updatedEntity.eventImage) {
+      refreshEventDetails();
+    }
+    setShowEditModal(false);
+  }, [updateEventImage, refreshEventDetails]);
 
   if (eventLoading) {
     return <LoadingSpinner text="Loading event details..." />;
@@ -96,6 +106,7 @@ const EventDetailsPage = () => {
         onDeleteClick={() => setShowDeleteModal(true)}
         onToggleAdminSearch={toggleAdminSearch}
         showAdminSearch={showAdminSearch}
+        onEditClick={() => setShowEditModal(true)}        
       />
 
       <AdminSearch
@@ -123,6 +134,15 @@ const EventDetailsPage = () => {
         groupName={event?.eventName}
         onConfirm={handleChangeAdmin}
         onCancel={() => setShowChangeAdminModal(false)}
+      />
+
+      <EditDetailsModal
+        showEditModal={showEditModal}
+        entity={event}
+        entityId={eventId}
+        entityType="event"
+        onCancel={() => setShowEditModal(false)}
+        onUpdate={handleUpdate}
       />
     </div>
   );
