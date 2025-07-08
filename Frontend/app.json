@@ -23,8 +23,7 @@
       "package": "com.ruppin.sportify",
       "permissions": [
         "android.permission.VIBRATE"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "web": {
       "bundler": "metro",
