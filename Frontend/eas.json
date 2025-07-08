@@ -5,7 +5,6 @@
   },
   "build": {
     "development": {
-      "workingDirectory": "Frontend",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
@@ -16,11 +15,9 @@
       }
     },
     "preview": {
-      "workingDirectory": "Frontend",
       "distribution": "internal"
     },
     "production": {
-      "workingDirectory": "Frontend",
       "autoIncrement": true
     }
   },
