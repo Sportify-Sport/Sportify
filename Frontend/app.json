@@ -21,7 +21,9 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.ruppin.sportify",
-      "permissions": ["android.permission.VIBRATE"],
+      "permissions": [
+        "android.permission.VIBRATE"
+      ],
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -49,7 +51,9 @@
           "icon": "./assets/notification-icon.png",
           "color": "#3CCF4E",
           "defaultChannel": "default",
-          "sounds": ["./assets/notification.wav"]
+          "sounds": [
+            "./assets/notification.wav"
+          ]
         }
       ]
     ],
