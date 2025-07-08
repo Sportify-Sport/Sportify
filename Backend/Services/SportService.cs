@@ -6,16 +6,14 @@ namespace Backend.Services
     public class SportService
     {
         private readonly IMemoryCache _memoryCache;
-        private readonly ILogger<SportService> _logger;
         private const string SPORTS_CACHE_KEY = "ALL_SPORTS";
 
         // Single semaphore for sports since we cache all sports together
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        public SportService(IMemoryCache memoryCache, ILogger<SportService> logger)
+        public SportService(IMemoryCache memoryCache)
         {
             _memoryCache = memoryCache;
-            _logger = logger;
         }
 
         // Gets all sports with caching and thread safety
@@ -40,8 +38,6 @@ namespace Backend.Services
                         return sports;
                     }
 
-                    _logger.LogDebug("Fetching sports from database");
-
                     // Only one thread will reach here
                     var sportsFromDb = Sport.GetAllSports();
 
@@ -61,7 +57,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving sports");
                 throw;
             }
         }
@@ -82,7 +77,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving sport {SportId}", sportId);
                 throw;
             }
         }
@@ -105,7 +99,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating sport {SportId}", sportId);
                 return false;
             }
         }
@@ -125,7 +118,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting sport name for {SportId}", sportId);
                 return null;
             }
         }
@@ -138,7 +130,6 @@ namespace Backend.Services
         public void ClearCache()
         {
             _memoryCache.Remove(SPORTS_CACHE_KEY);
-            _logger.LogInformation("Sports cache cleared");
         }
     }
 }

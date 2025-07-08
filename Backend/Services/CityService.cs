@@ -12,18 +12,16 @@ namespace Backend.Services
     {
         private readonly IMemoryCache _cache;
         private readonly HttpClient _httpClient;
-        private readonly ILogger<CityService> _logger;
         private const string CACHE_PREFIX = "CITY_";
         private const string API_URL = "https://data.gov.il/api/3/action/datastore_search";
         private const string RESOURCE_ID = "8f714b6f-c35c-4b40-a0e7-547b675eee0e";
 
         // Dictionary to manage locks per city ID
         private static readonly ConcurrentDictionary<int, SemaphoreSlim> _semaphores = new();
-        public CityService(IMemoryCache cache, IHttpClientFactory httpClientFactory, ILogger<CityService> logger)
+        public CityService(IMemoryCache cache, IHttpClientFactory httpClientFactory)
         {
             _cache = cache;
             _httpClient = httpClientFactory.CreateClient();
-            _logger = logger;
         }
 
         public async Task<bool> IsCityValidAsync(int cityId)
@@ -40,7 +38,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating city {CityId}", cityId);
                 return false;
             }
         }
@@ -85,7 +82,6 @@ namespace Backend.Services
                     return cachedCity;
                 }
 
-                // Only one thread will reach here per city ID
                 // Call external API
                 var cityFromApi = await FetchCityFromApiAsync(cityId);
 
@@ -100,7 +96,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching city {CityId}", cityId);
                 return null;
             }
             finally
@@ -127,8 +122,6 @@ namespace Backend.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                //_logger.LogWarning("City API returned status code {StatusCode} for city {CityId}",
-                    //response.StatusCode, cityId);
                 return null;
             }
 

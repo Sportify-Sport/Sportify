@@ -13,12 +13,10 @@ namespace Backend.Controllers
     public class SportsController : ControllerBase
     {
         private readonly SportService _sportsHelper;
-        private readonly ILogger<SportsController> _logger;
 
-        public SportsController(SportService sportsHelper, ILogger<SportsController> logger)
+        public SportsController(SportService sportsHelper)
         {
             _sportsHelper = sportsHelper;
-            _logger = logger;
         }
 
         [AllowAnonymous]
@@ -32,7 +30,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving sports");
                 return StatusCode(500, "An error occurred while retrieving sports");
             }
         }

@@ -14,12 +14,10 @@ namespace Backend.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly IPushNotificationService _pushNotificationService;
-        private readonly ILogger<NotificationController> _logger;
 
-        public NotificationController(IPushNotificationService pushNotificationService, ILogger<NotificationController> logger)
+        public NotificationController(IPushNotificationService pushNotificationService)
         {
             _pushNotificationService = pushNotificationService;
-            _logger = logger;
         }
 
         [Authorize(Roles = "User")]
@@ -67,7 +65,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error registering push token");
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
@@ -176,7 +173,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending admin notification");
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
@@ -201,7 +197,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting notification history");
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
@@ -226,7 +221,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error marking notification as read");
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }

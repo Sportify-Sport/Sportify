@@ -60,8 +60,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting recommendations");
-
                 // Fallback to random events
                 var randomEvents = Event.GetRandomEvents(count);
                 return Ok(new

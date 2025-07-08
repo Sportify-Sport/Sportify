@@ -8,7 +8,6 @@ namespace Backend.Services
     public class EmbeddingService : IEmbeddingService, IDisposable
     {
         private readonly InferenceSession _session;
-        private readonly ILogger<EmbeddingService> _logger;
         private readonly Dictionary<string, int> _vocabulary;
         private readonly int _maxLength = 256;
         private readonly int _padTokenId = 0;
@@ -18,10 +17,8 @@ namespace Backend.Services
 
         public bool IsModelLoaded { get; private set; }
 
-        public EmbeddingService(ILogger<EmbeddingService> logger, IWebHostEnvironment env)
+        public EmbeddingService(IWebHostEnvironment env)
         {
-            _logger = logger;
-
             try
             {
                 var modelPath = Path.Combine(env.WebRootPath, "ml-models", "model.onnx");
@@ -29,7 +26,6 @@ namespace Backend.Services
 
                 if (!File.Exists(modelPath))
                 {
-                    _logger.LogError("ONNX model not found at {ModelPath}", modelPath);
                     IsModelLoaded = false;
                     return;
                 }
@@ -38,11 +34,9 @@ namespace Backend.Services
                 _vocabulary = LoadVocabulary(vocabPath);
                 IsModelLoaded = true;
 
-                _logger.LogInformation("ONNX sentence transformer model loaded successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load ONNX model");
                 IsModelLoaded = false;
             }
         }
@@ -51,7 +45,6 @@ namespace Backend.Services
         {
             if (!IsModelLoaded)
             {
-                _logger.LogWarning("Model not loaded, returning zero vector");
                 return new float[384]; // all-MiniLM-L6-v2 has 384 dimensions
             }
 
@@ -97,7 +90,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating embedding");
                 return new float[384];
             }
         }
@@ -165,17 +157,14 @@ namespace Backend.Services
                     {
                         vocab[lines[i].Trim()] = i;
                     }
-                    _logger.LogInformation("Loaded vocabulary with {Count} tokens", vocab.Count);
                 }
                 else
                 {
                     vocab = CreateSportsVocabulary();
-                    _logger.LogWarning("Vocabulary file not found, using sports vocabulary");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading vocabulary");
                 vocab = CreateSportsVocabulary();
             }
 

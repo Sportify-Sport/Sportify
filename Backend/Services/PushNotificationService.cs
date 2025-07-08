@@ -6,13 +6,11 @@ namespace Backend.Services
 {
     public class PushNotificationService : IPushNotificationService
     {
-        private readonly ILogger<PushNotificationService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly string _expoPushUrl = "https://exp.host/--/api/v2/push/send";
 
-        public PushNotificationService(ILogger<PushNotificationService> logger, IHttpClientFactory httpClientFactory)
+        public PushNotificationService(IHttpClientFactory httpClientFactory)
         {
-            _logger = logger;
             _httpClientFactory = httpClientFactory;
         }
 
@@ -22,7 +20,6 @@ namespace Backend.Services
             {
                 if (request.UserIds == null || !request.UserIds.Any())
                 {
-                    _logger.LogWarning("No user IDs provided for notification");
                     return false;
                 }
 
@@ -32,7 +29,6 @@ namespace Backend.Services
 
                 if (!tokens.Any())
                 {
-                    _logger.LogInformation("No active push tokens found for users");
                     return true; // Not an error, users might not have tokens
                 }
 
@@ -78,7 +74,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending notification");
                 return false;
             }
         }
@@ -105,13 +100,11 @@ namespace Backend.Services
                 }
                 else
                 {
-                    _logger.LogError($"Expo push service error: {response.StatusCode} - {responseContent}");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending batch to Expo");
                 return false;
             }
         }
@@ -127,8 +120,6 @@ namespace Backend.Services
 
                 if (ticket.status == "error")
                 {
-                    _logger.LogWarning($"Push notification failed for token {message.to}: {ticket.message}");
-
                     // Handle different error types
                     if (ticket.details?.ToString()?.Contains("DeviceNotRegistered") == true ||
                         ticket.message?.Contains("InvalidCredentials") == true)
@@ -172,25 +163,21 @@ namespace Backend.Services
                 // Validate input
                 if (string.IsNullOrWhiteSpace(request.PushToken))
                 {
-                    _logger.LogWarning("Empty push token provided");
                     return false;
                 }
 
                 if (!request.PushToken.StartsWith("ExponentPushToken[") || !request.PushToken.EndsWith("]"))
                 {
-                    _logger.LogWarning("Invalid Expo push token format");
                     return false;
                 }
 
                 if (string.IsNullOrWhiteSpace(request.DeviceId))
                 {
-                    _logger.LogWarning("Empty device ID provided");
                     return false;
                 }
 
                 if (request.Platform != "ios" && request.Platform != "android")
                 {
-                    _logger.LogWarning("Invalid platform provided");
                     return false;
                 }
 
@@ -199,7 +186,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error registering push token");
                 return false;
             }
         }
@@ -213,7 +199,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting event recipients");
                 return new List<int>();
             }
         }
@@ -227,7 +212,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting group recipients");
                 return new List<int>();
             }
         }
@@ -241,7 +225,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting notification history");
                 return new List<NotificationHistoryItem>();
             }
         }
@@ -255,7 +238,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error marking notification as read");
                 return false;
             }
         }

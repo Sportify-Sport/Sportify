@@ -7,18 +7,12 @@ namespace Backend.Services
         private readonly IEmbeddingService _embeddingService;
         private readonly CityService _cityService;
         private readonly SportService _sportService;
-        private readonly ILogger<RecommendationService> _logger;
 
-        public RecommendationService(
-            IEmbeddingService embeddingService,
-            CityService cityService,
-            SportService sportService,
-            ILogger<RecommendationService> logger)
+        public RecommendationService(IEmbeddingService embeddingService, CityService cityService, SportService sportService)
         {
             _embeddingService = embeddingService;
             _cityService = cityService;
             _sportService = sportService;
-            _logger = logger;
         }
 
         public async Task<RecommendationResult> GetRecommendedEventsAsync(int userId, int count = 5)
@@ -31,7 +25,6 @@ namespace Backend.Services
 
                 if (userProfileObj == null)
                 {
-                    _logger.LogWarning("User {UserId} not found", userId);
                     return GetRandomEventsResult(count, "User not found. Showing random events.");
                 }
 
@@ -46,14 +39,12 @@ namespace Backend.Services
 
                 if (activeEvents == null || activeEvents.Count == 0)
                 {
-                    _logger.LogInformation("No active events found");
                     return GetRandomEventsResult(count, "No active events available. Showing random events.");
                 }
 
                 // Check if ML model is loaded
                 if (!_embeddingService.IsModelLoaded)
                 {
-                    _logger.LogWarning("ML model not loaded");
                     return GetRandomEventsFromList(activeEvents, count, "Recommendation system unavailable. Showing active events.");
                 }
 
@@ -121,7 +112,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating recommendations for user {UserId}", userId);
                 return GetRandomEventsResult(count, "An error occurred. Showing random events.");
             }
         }
@@ -147,7 +137,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error building user profile");
                 return "sports enthusiast";
             }
         }
@@ -176,7 +165,6 @@ namespace Backend.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing event {EventId}", evt.EventId);
                 }
             }
 
@@ -207,7 +195,6 @@ namespace Backend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error building event string");
                 return $"Sports event {evt.EventName}";
             }
         }
