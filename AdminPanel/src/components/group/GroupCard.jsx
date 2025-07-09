@@ -2,10 +2,26 @@ import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SPORT_TYPES } from '../../constants/sportTypes';
 import { getImageUrl } from '../../utils/imageUtils';
+import getApiBaseUrl from '../../config/apiConfig';
 
 const GroupCard = memo(({ group, cityName }) => {
   const navigate = useNavigate();
-  const imageUrl = getImageUrl(group.groupImage);
+
+  	
+  const getSafeImageUrl = () => {
+    if (!group.groupImage) {
+      return `${getApiBaseUrl()}/images/default_group.png`;
+    }
+    
+    // Check if it's a full URL or just a filename
+    if (group.groupImage.startsWith('http') || group.groupImage.includes('/')) {
+      return group.groupImage;
+    }
+    
+    // For new groups or when we just have the filename
+    return `${getApiBaseUrl()}/images/${group.groupImage}`;
+  };
+  const imageUrl = getSafeImageUrl();
 
   const handleCardClick = () => {
     navigate(`/group-details/${group.cityId}/${group.groupId}`, {
@@ -19,6 +35,9 @@ const GroupCard = memo(({ group, cityName }) => {
         src={imageUrl} 
         alt={group.groupName} 
         className="item-image"
+        onError={(e) => {
+          e.target.src = `${getApiBaseUrl()}/images/default_group.png`;
+        }}
       />
       <div className="item-details">
         <h3>{group.groupName}</h3>

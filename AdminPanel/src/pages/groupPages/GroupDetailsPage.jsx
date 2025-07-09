@@ -3,8 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import useGroupDetails from '../../hooks/groupDetailsHooks/useGroupDetails';
 import useAdminSearch from '../../hooks/useAdminSearch';
-import useGroupNavigation from '../../hooks/groupDetailsHooks/useGroupNavigation'
+import useGroupNavigation from '../../hooks/groupDetailsHooks/useGroupNavigation';
 import GroupDetailsCard from '../../components/groupDetails/GroupDetailsCard';
+import GroupEditDetailsModal from '../../components/groupDetails/GroupEditDetailsModal';
 import AdminSearch from '../../components/groupDetails/AdminSearch';
 import DeleteModal from '../../components/groupDetails/DeleteModal';
 import ChangeAdminModal from '../../components/groupDetails/ChangeAdminModal';
@@ -21,10 +22,11 @@ const GroupDetailsPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAdminSearch, setShowAdminSearch] = useState(false);
   const [showChangeAdminModal, setShowChangeAdminModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [adminSearchTerm, setAdminSearchTerm] = useState('');
   const { navigateToGroupLogs } = useGroupNavigation(cityId, cityName, logout);
 
-  const { group, groupLoading, groupError, setGroup } = useGroupDetails(groupId, cityId, cityName);
+  const { group, groupLoading, groupError, setGroup, updateGroupImage, refreshGroupDetails } = useGroupDetails(groupId, cityId, cityName);
   const { adminResults, adminLoading, adminError, setAdminError, selectedAdmin, setSelectedAdmin, handleSelectAdmin } =
     useAdminSearch(cityId, cityName, adminSearchTerm);
 
@@ -121,6 +123,15 @@ const GroupDetailsPage = () => {
     setShowChangeAdminModal(true);
   }, [selectedAdmin, setAdminError]);
 
+	
+  const handleUpdate = useCallback((updatedEntity) => {
+    updateGroupImage(updatedEntity);
+    if (updatedEntity.groupImage) {
+      refreshGroupDetails();
+    }
+    setShowEditModal(false);
+  }, [updateGroupImage, refreshGroupDetails]);
+
   if (groupLoading) {
     return <LoadingSpinner text="Loading group details..." />;
   }
@@ -158,6 +169,7 @@ const GroupDetailsPage = () => {
         onDeleteClick={() => setShowDeleteModal(true)}
         onToggleAdminSearch={toggleAdminSearch}
         showAdminSearch={showAdminSearch}
+        onEditClick={() => setShowEditModal(true)}
       />
 
       <AdminSearch
@@ -185,6 +197,15 @@ const GroupDetailsPage = () => {
         groupName={group?.groupName}
         onConfirm={handleChangeAdmin}
         onCancel={() => setShowChangeAdminModal(false)}
+      />
+      	
+      <GroupEditDetailsModal
+        showEditModal={showEditModal}
+        entity={group}
+        entityId={groupId}
+        entityType="group"
+        onCancel={() => setShowEditModal(false)}
+        onUpdate={handleUpdate}
       />
     </div>
   );

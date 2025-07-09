@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import getApiBaseUrl from '../../config/apiConfig';
 import { SPORT_TYPES } from '../../constants/sportTypes';
 
@@ -7,8 +7,7 @@ const useGroupDetails = (groupId, cityId, cityName) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchGroupDetails = async () => {
+    const fetchGroupDetails = useCallback(async () => {
       try {
         const token = localStorage.getItem('adminAccessToken');
         const response = await fetch(`${getApiBaseUrl()}/api/AdminGroups/${cityId}/group/${groupId}`, {
@@ -35,12 +34,35 @@ const useGroupDetails = (groupId, cityId, cityName) => {
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchGroupDetails();
   }, [groupId, cityId, cityName]);
+ 
+  useEffect(() => {
+    fetchGroupDetails();
+  }, [fetchGroupDetails]);
 
-  return { group, groupLoading: loading, groupError: error, setGroup };
+  const updateGroupImage = useCallback((updatedEntity) => {
+    setGroup((prevGroup) => ({
+      ...prevGroup,
+      ...updatedEntity,
+      groupImage: updatedEntity.groupImage 
+        ? `${updatedEntity.groupImage}?t=${Date.now()}`
+        : prevGroup.groupImage
+    }));
+  }, []);
+
+  const refreshGroupDetails = useCallback(async () => {
+    setLoading(true);
+    await fetchGroupDetails();
+  }, [fetchGroupDetails]);
+
+  return { 
+    group, 
+    loading, 
+    error, 
+    setGroup,
+    updateGroupImage,
+    refreshGroupDetails
+  };
 };
 
 export default useGroupDetails;
