@@ -1,6 +1,7 @@
 // screens/EventDetails.jsx
 import React, { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from "expo-router";
 
 // Import our hooks
@@ -170,107 +171,111 @@ export default function EventDetails() {
     refreshing || membersLoading || requestsLoading || groupsLoading;
 
   return (
-    <View className="flex-1 bg-gray-100">
-      <AlertNotification
-        visible={alert.visible}
-        message={alert.message}
-        type={alert.type}
-        onHide={hideAlert}
-      />
-
-      <UserDetailsModal
-        visible={userModalVisible}
-        user={selectedUser}
-        onClose={() => setUserModalVisible(false)}
-      />
-
-      <ScrollView
-        className="flex-1 p-4"
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={onRefresh}
-            colors={["#65DA84"]}
-            tintColor="#65DA84"
-          />
-        }
-      >
-        <EventHeader event={event} />
-
-        <EventDetailsCard
-          event={event}
-          sportsMap={sportsMap}
-          handleLocationPress={handleLocationPress}
+    <SafeAreaView className="flex-1">
+      <View className="flex-1 bg-gray-100">
+        <AlertNotification
+          visible={alert.visible}
+          message={alert.message}
+          type={alert.type}
+          onHide={hideAlert}
         />
 
-        {/* Event Actions - Join/Leave buttons */}
-        {event && (
-          <EventActions
-            event={event}
-            isLoggedIn={isLoggedIn}
-            onJoinAsSpectator={joinAsSpectator}
-            onJoinAsPlayer={joinAsPlayer}
-            onCancelRequest={cancelRequest}
-            onLeaveEvent={leaveEvent}
-            onCancelSpectating={cancelSpectating}
-          />
-        )}
+        <UserDetailsModal
+          visible={userModalVisible}
+          user={selectedUser}
+          onClose={() => setUserModalVisible(false)}
+        />
 
-        {/* Add to Calendar button, rendered only after event details are loaded */}
-        {(isParticipant || isAdmin) && (
-          <AddToCalendarButton event={event} />
-        )}
-
-        {/* Admin features for participant events */}
-        {isAdmin && isParticipantEvent && (
-          <>
-            <EventMembers
-              members={members}
-              loading={membersLoading}
-              hasMore={membersHasMore}
-              expanded={membersExpanded}
-              onToggleExpand={toggleMembers}
-              onViewDetails={handleViewMemberDetails}
-              onRemoveMember={handleRemoveMember}
+        <ScrollView
+          className="flex-1 p-4"
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={onRefresh}
+              colors={["#65DA84"]}
+              tintColor="#65DA84"
             />
+          }
+        >
+          <EventHeader event={event} />
 
-            <PendingRequests
-              requests={requests}
-              loading={requestsLoading}
-              hasMore={requestsHasMore}
-              expanded={requestsExpanded}
-              onToggleExpand={toggleRequests}
-              onViewDetails={handleViewRequestDetails}
-              onApprove={approveRequest}
-              onReject={rejectRequest}
-            />
-          </>
-        )}
-
-        {/* Group features for team events */}
-        {isTeamEvent && (
-          <EventGroups
-            groups={groups}
-            loading={groupsLoading}
-            hasMore={groupsHasMore}
-            expanded={groupsExpanded}
-            onToggleExpand={toggleGroups}
-            onRemoveGroup={handleRemoveGroup}
-            isAdmin={isAdmin}
-            token={token}
-          />
-        )}
-
-        {/* Group search for admins of team events */}
-        {isAdmin && isTeamEvent && (
-          <GroupSearch
+          <EventDetailsCard
             event={event}
-            token={token}
             sportsMap={sportsMap}
-            onAddGroup={refreshGroups}
+            handleLocationPress={handleLocationPress}
           />
-        )}
-      </ScrollView>
-    </View>
+
+          {/* Event Actions - Join/Leave buttons */}
+          {event && (
+            <EventActions
+              event={event}
+              isLoggedIn={isLoggedIn}
+              onJoinAsSpectator={joinAsSpectator}
+              onJoinAsPlayer={joinAsPlayer}
+              onCancelRequest={cancelRequest}
+              onLeaveEvent={leaveEvent}
+              onCancelSpectating={cancelSpectating}
+            />
+          )}
+
+          {/* Add to Calendar button, rendered only after event details are loaded */}
+          {(isParticipant || isAdmin) && (
+            <AddToCalendarButton event={event} />
+          )}
+
+          {/* Admin features for participant events */}
+          {isAdmin && isParticipantEvent && (
+            <>
+              <EventMembers
+                members={members}
+                loading={membersLoading}
+                hasMore={membersHasMore}
+                expanded={membersExpanded}
+                onToggleExpand={toggleMembers}
+                onViewDetails={handleViewMemberDetails}
+                onRemoveMember={handleRemoveMember}
+              />
+
+              <PendingRequests
+                requests={requests}
+                loading={requestsLoading}
+                hasMore={requestsHasMore}
+                expanded={requestsExpanded}
+                onToggleExpand={toggleRequests}
+                onViewDetails={handleViewRequestDetails}
+                onApprove={approveRequest}
+                onReject={rejectRequest}
+              />
+
+            </>
+          )}
+
+          {/* Group features for team events */}
+          {isTeamEvent && (
+            <EventGroups
+              groups={groups}
+              loading={groupsLoading}
+              hasMore={groupsHasMore}
+              expanded={groupsExpanded}
+              onToggleExpand={toggleGroups}
+              onRemoveGroup={handleRemoveGroup}
+              isAdmin={isAdmin}
+              token={token}
+            />
+
+          )}
+
+          {/* Group search for admins of team events */}
+          {isAdmin && isTeamEvent && (
+            <GroupSearch
+              event={event}
+              token={token}
+              sportsMap={sportsMap}
+              onAddGroup={refreshGroups}
+            />
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }

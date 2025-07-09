@@ -22,7 +22,7 @@ export default function Index() {
   const [refreshing, setRefreshing] = useState(false);
   
   // Use custom hooks to fetch data
-  const { token, loading: authLoading, refreshAuth } = useAuth();
+  const { token, loading: authLoading } = useAuth();
   const { sportsList, sportsMap, refreshSports } = useSports(token);
   const { 
     recommendedEvents, 
@@ -42,14 +42,13 @@ export default function Index() {
       await Promise.all([
         refreshData(),
         refreshSports(),
-        refreshAuth()
       ]);
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshData, refreshSports, refreshAuth]);
+  }, [refreshData, refreshSports]);
   
   // Show loading state if any data is still loading
   if (authLoading || dataLoading) {

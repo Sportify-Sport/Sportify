@@ -13,7 +13,7 @@ export default function EventHeader({ event }) {
   
   return (
     <View className="mb-4">
-      <View className="flex-row justify-between items-center mb-4">
+      <View className="flex-row justify-between items-center">
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={28} color="#333" />
         </TouchableOpacity>

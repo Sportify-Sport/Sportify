@@ -1,6 +1,7 @@
 // screens/GroupDetails.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
 import getApiBaseUrl from '../config/apiConfig';
@@ -180,7 +181,7 @@ export default function GroupDetails() {
           `${apiUrl}/api/Groups/${group.groupId}/upcoming-events?page=1&pageSize=3`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         const json = await r.json();
         if (json.success) setEvents(json.data);
       } catch (e) {
@@ -399,83 +400,85 @@ export default function GroupDetails() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <ScrollView className="p-6">
-        <Header
-          groupName={group.groupName}
-          groupImage={group.groupImage}
-        />
+    <SafeAreaView className="flex-1">
+      <View className="flex-1 bg-gray-50">
+        <ScrollView className="p-6">
+          <Header
+            groupName={group.groupName}
+            groupImage={group.groupImage}
+          />
 
-        <DetailsCard
-          group={group}
-          sportsMap={sportsMap}
-        />
+          <DetailsCard
+            group={group}
+            sportsMap={sportsMap}
+          />
 
-        {isLoggedIn && (
-          <TeamMembers
-            members={members}
-            displayCount={membersDisplayCount}
-            pageSize={PAGE_SIZE}
-            hasMore={membersHasMore}
-            onToggle={handleToggleMembers}
+          {isLoggedIn && (
+            <TeamMembers
+              members={members}
+              displayCount={membersDisplayCount}
+              pageSize={PAGE_SIZE}
+              hasMore={membersHasMore}
+              onToggle={handleToggleMembers}
+              isAdmin={group.isAdmin}
+              currentUserId={currentUserId}
+              onShowDetails={handleShowMemberDetails}
+              onRemove={handleRemoveMember}
+              events={events}
+            />
+          )}
+
+          <JoinRequestButton
+            isLoggedIn={isLoggedIn}
+            isMember={group.isMember}
             isAdmin={group.isAdmin}
-            currentUserId={currentUserId}
-            onShowDetails={handleShowMemberDetails}
-            onRemove={handleRemoveMember}
-            events={events}
+            hasPending={group.hasPendingRequest}
+            onRequest={handleRequestToJoin}
+            onCancel={handleCancelRequestToJoin}
           />
-        )}
 
-        <JoinRequestButton
-          isLoggedIn={isLoggedIn}
-          isMember={group.isMember}
-          isAdmin={group.isAdmin}
-          hasPending={group.hasPendingRequest}
-          onRequest={handleRequestToJoin}
-          onCancel={handleCancelRequestToJoin}
+          {isLoggedIn && group.isAdmin && (
+            <JoinRequests
+              requests={requests}
+              displayCount={requestsDisplayCount}
+              pageSize={PAGE_SIZE}
+              hasMore={requestsHasMore}
+              onToggle={handleToggleRequests}
+              onDetails={handleShowRequestUserDetails}
+              onAccept={handleAcceptRequest}
+              onReject={handleRejectRequest}
+            />
+          )}
+
+          {isLoggedIn && group.isAdmin && (
+            <NotificationEditor
+              message={notificationMessage}
+              onChange={setNotificationMessage}
+              onSend={handleSendNotification}
+              onEdit={() => setEditModalVisible(true)}
+            />
+          )}
+
+          {isLoggedIn && group.isMember && !group.isAdmin && (
+            <LeaveGroupButton onLeave={() => handleLeaveGroup(group)} />
+          )}
+
+        </ScrollView>
+
+        <EditGroupModal
+          visible={editModalVisible}
+          group={group}
+          setGroup={setGroup}
+          onClose={() => setEditModalVisible(false)}
+          onSave={handleSaveGroup}
         />
 
-        {isLoggedIn && group.isAdmin && (
-          <JoinRequests
-            requests={requests}
-            displayCount={requestsDisplayCount}
-            pageSize={PAGE_SIZE}
-            hasMore={requestsHasMore}
-            onToggle={handleToggleRequests}
-            onDetails={handleShowRequestUserDetails}
-            onAccept={handleAcceptRequest}
-            onReject={handleRejectRequest}
-          />
-        )}
-
-        {isLoggedIn && group.isAdmin && (
-          <NotificationEditor
-            message={notificationMessage}
-            onChange={setNotificationMessage}
-            onSend={handleSendNotification}
-            onEdit={() => setEditModalVisible(true)}
-          />
-        )}
-
-        {isLoggedIn && group.isMember && !group.isAdmin && (
-          <LeaveGroupButton onLeave={() => handleLeaveGroup(group)} />
-        )}
-
-      </ScrollView>
-
-      <EditGroupModal
-        visible={editModalVisible}
-        group={group}
-        setGroup={setGroup}
-        onClose={() => setEditModalVisible(false)}
-        onSave={handleSaveGroup}
-      />
-
-      <UserDetailsModal
-        visible={userModalVisible}
-        user={selectedUser}
-        onClose={() => setUserModalVisible(false)}
-      />
-    </View>
+        <UserDetailsModal
+          visible={userModalVisible}
+          user={selectedUser}
+          onClose={() => setUserModalVisible(false)}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
