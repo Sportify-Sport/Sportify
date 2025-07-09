@@ -24,3 +24,6 @@ export const getCityNameById = async (id, citiesMap, setCitiesMap) => {
   }
   return 'Unknown';
 };
+
+export default {};
+

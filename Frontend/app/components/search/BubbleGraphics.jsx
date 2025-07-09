@@ -21,3 +21,5 @@ export const BubbleGraphics = () => (
     <View className="absolute h-20 w-20 rounded-full bg-green-400 right-3 top-20 opacity-90 shadow-lg" />
   </View>
 );
+
+export default {};

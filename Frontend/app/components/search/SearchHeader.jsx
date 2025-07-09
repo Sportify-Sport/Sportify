@@ -60,3 +60,5 @@ export const SearchHeader = ({ search, setSearch, type, filters, router, searchI
     </View>
   );
 };
+
+export default {};

@@ -76,3 +76,5 @@ export const SearchItem = ({ item, onPress }) => (
     </View>
   </TouchableOpacity>
 );
+
+export default {};

@@ -9,3 +9,5 @@ export const SuggestionItem = ({ item, onPress }) => (
     <Text className="text-base text-gray-900">{item.title || item.name}</Text>
   </TouchableOpacity>
 );
+
+export default {};

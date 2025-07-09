@@ -53,4 +53,4 @@ export const FilterProvider = ({ children }) => {
 export const useFilters = () => useContext(FilterContext);
 
 // Add this default export if you actually want to use this file as a route
-export default FilterProvider;
+export default {};

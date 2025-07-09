@@ -89,3 +89,5 @@ export const areFiltersApplied = (filters) => {
   delete filterValues.resetSearch;
   return Object.values(filterValues).some(value => value != null);
 };
+
+export default {};

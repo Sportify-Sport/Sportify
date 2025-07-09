@@ -203,3 +203,5 @@ export const useSearch = () => {
     router,
   };
 };
+
+export default {};
