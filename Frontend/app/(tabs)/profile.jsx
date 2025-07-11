@@ -21,7 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import EmailVerificationModal from '../components/modals/EmailVerificationModal';
 import styles from '../../styles/ProfileStyles';
 import getApiBaseUrl from "../config/apiConfig";
-import ChangePassModal from '../components/profile/ChangePassModal';
+import ChangePassModal from '../components/modals/ChangePassModal';
 
 export default function Profile() {
   const router = useRouter();

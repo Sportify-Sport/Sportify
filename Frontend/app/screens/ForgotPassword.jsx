@@ -13,6 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import getApiBaseUrl from '../config/apiConfig';
+import { useAuth } from "../context/AuthContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -22,8 +24,9 @@ export default function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: email, 2: code & password
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const router = useRouter();
+  const { login } = useAuth();
   const apiUrl = getApiBaseUrl();
 
   const handleSendCode = async () => {
@@ -82,15 +85,36 @@ export default function ForgotPassword() {
         body: JSON.stringify({ code, newPassword }),
       });
 
-      if (response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await response.json() : await response.text();
+
+      if (response.ok && data.tokens) {
+        await AsyncStorage.multiSet([
+          ['token', data.tokens.accessToken],
+          ['refreshToken', data.tokens.refreshToken],
+        ]);
+
         Alert.alert('Success', 'Password reset successfully', [
-          { text: 'OK', onPress: () => router.replace('/screens/Login') }
+          {
+            text: 'OK',
+            onPress: async () => {
+              const loginResult = await login(email, newPassword);
+              if (!loginResult.success) {
+                Alert.alert('Login Failed', loginResult.error);
+                return;
+              }
+              router.replace('../(tabs)');
+            }
+          }
         ]);
       } else {
-        const data = await response.json();
-        Alert.alert('Error', data.message || 'Failed to reset password');
+        const errorMessage =
+          typeof data === 'object' && data !== null
+            ? data.message || JSON.stringify(data)
+            : data;
+        Alert.alert('Error', errorMessage);
       }
-    } catch (error) {
+    } catch (err) {
       Alert.alert('Error', 'Network error occurred');
     } finally {
       setLoading(false);
@@ -111,7 +135,7 @@ export default function ForgotPassword() {
 
       <Text style={styles.title}>Forgot Password</Text>
       <Text style={styles.subtitle}>
-        {step === 1 
+        {step === 1
           ? 'Enter your email to receive a reset code'
           : 'Enter the code sent to your email and create a new password'
         }
