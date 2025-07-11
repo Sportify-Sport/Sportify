@@ -21,6 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import EmailVerificationModal from '../components/modals/EmailVerificationModal';
 import styles from '../../styles/ProfileStyles';
 import getApiBaseUrl from "../config/apiConfig";
+import ChangePassModal from '../components/profile/ChangePassModal';
 
 export default function Profile() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function Profile() {
   const [prevGender, setPrevGender] = useState('');
   const [prevFavoriteSport, setPrevFavoriteSport] = useState('');
   const [prevBirthdate, setPrevBirthdate] = useState('0000-00-00');
+  const [isPassModalVisible, setIsPassModalVisible] = useState(false);
 
   const apiUrl = getApiBaseUrl();
 
@@ -531,6 +533,18 @@ export default function Profile() {
         <Text style={styles.infoText}>{email}</Text>
       </View>
 
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>Password:</Text>
+        <TouchableOpacity onPress={() => setIsPassModalVisible(true)} style={styles.changePassButton}>
+          <Text style={styles.changePassText}>Change Password</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ChangePassModal
+        visible={isPassModalVisible}
+        onClose={() => setIsPassModalVisible(false)}
+      />
+
       <View style={styles.infoRow}>
         <View style={[styles.infoContainer, styles.halfWidth]}>
           <Text style={styles.label}>Birthdate:</Text>
@@ -650,23 +664,23 @@ export default function Profile() {
 
       {/* --- Cancel button, only in edit mode, below the row --- */}
       {isEditing && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => {
-              // revert all fields
-              setName(prevName);
-              setBio(prevBio);
-              setCity(prevCity);
-              setCityId(prevCityId);
-              setGender(prevGender);
-              setFavoriteSport(prevFavoriteSport);
-              setBirthdate(prevBirthdate);
-              setIsEditing(false);
-            }}
-          >
-            <Ionicons name="close-circle-outline" size={20} color="#fff" />
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => {
+            // revert all fields
+            setName(prevName);
+            setBio(prevBio);
+            setCity(prevCity);
+            setCityId(prevCityId);
+            setGender(prevGender);
+            setFavoriteSport(prevFavoriteSport);
+            setBirthdate(prevBirthdate);
+            setIsEditing(false);
+          }}
+        >
+          <Ionicons name="close-circle-outline" size={20} color="#fff" />
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
       )}
 
       <EmailVerificationModal
