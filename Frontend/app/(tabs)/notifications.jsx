@@ -74,62 +74,12 @@ export default function NotificationsScreen() {
       markAsRead(notification.notificationId);
     }
 
-    // Parse notification data
-    let data = {};
-    let actualType = notification.notificationType;
-
-    try {
-      if (notification.notificationData) {
-        data = JSON.parse(notification.notificationData);
-        // If notificationType is empty, try to get it from notificationData
-        if (!actualType && data.type) {
-          actualType = data.type;
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing notification data:', error);
-    }
-
-    // Handle navigation based on notification type
-    switch (actualType) {
-      case 'admin_message':
-        if (notification.relatedEntityType === 'Event' && notification.relatedEntityId) {
-          router.push(`/events/${notification.relatedEntityId}`);
-        } else if (notification.relatedEntityType === 'Group' && notification.relatedEntityId) {
-          router.push(`/groups/${notification.relatedEntityId}`);
-        }
-        break;
-
-      case 'event_created':
-      case 'event_admin_assigned':
-      case 'event_deleted':
-      case 'join_request_response':
-      case 'join_request_approved':
-      case 'removed_from_event':
-        if (data.eventId || notification.relatedEntityId) {
-          router.push(`/events/${data.eventId || notification.relatedEntityId}`);
-        }
-        break;
-
-      case 'group_created':
-      case 'group_admin_assigned':
-      case 'group_deleted':
-      case 'group_join_approved':
-      case 'group_join_rejected':
-      case 'removed_from_group':
-        if (data.groupId || notification.relatedEntityId) {
-          router.push({
-            pathname: "../screens/GroupDetails",
-            params: {
-              groupId: data.groupId || notification.relatedEntityId,
-            },
-          });
-        }
-        break;
-
-      default:
-        console.log('Unknown notification type:', actualType);
-    }
+    router.push({
+      pathname: '../screens/NotificationDetails',
+      params: {
+        notification: JSON.stringify(notification),
+      },
+    });
   };
 
   const getNotificationIcon = (notification) => {
