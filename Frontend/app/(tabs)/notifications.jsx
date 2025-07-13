@@ -31,7 +31,7 @@ export default function NotificationsScreen() {
       if (!token) return;
 
       const result = await NotificationService.getNotificationHistory(token);
-      
+
       if (result.success) {
         setNotifications(result.notifications || []);
       } else {
@@ -54,12 +54,12 @@ export default function NotificationsScreen() {
   const markAsRead = async (notificationId) => {
     try {
       const result = await NotificationService.markNotificationAsRead(notificationId, token);
-      
+
       if (result.success) {
-        setNotifications(prev => 
-          prev.map(notif => 
-            notif.NotificationId === notificationId 
-              ? { ...notif, IsRead: true, ReadAt: new Date().toISOString() }
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif.notificationId === notificationId
+              ? { ...notif, isRead: true, readAt: new Date().toISOString() }
               : notif
           )
         );
@@ -70,53 +70,79 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = (notification) => {
-    if (!notification.IsRead) {
-      markAsRead(notification.NotificationId);
+    if (!notification.isRead) {
+      markAsRead(notification.notificationId);
     }
-    
+
     // Parse notification data
     let data = {};
+    let actualType = notification.notificationType;
+
     try {
-      data = notification.NotificationData ? JSON.parse(notification.NotificationData) : {};
+      if (notification.notificationData) {
+        data = JSON.parse(notification.notificationData);
+        // If notificationType is empty, try to get it from notificationData
+        if (!actualType && data.type) {
+          actualType = data.type;
+        }
+      }
     } catch (error) {
       console.error('Error parsing notification data:', error);
     }
-    
+
     // Handle navigation based on notification type
-    switch (notification.NotificationType) {
+    switch (actualType) {
       case 'admin_message':
-        if (notification.RelatedEntityType === 'Event' && notification.RelatedEntityId) {
-          router.push(`/events/${notification.RelatedEntityId}`);
-        } else if (notification.RelatedEntityType === 'Group' && notification.RelatedEntityId) {
-          router.push(`/groups/${notification.RelatedEntityId}`);
+        if (notification.relatedEntityType === 'Event' && notification.relatedEntityId) {
+          router.push(`/events/${notification.relatedEntityId}`);
+        } else if (notification.relatedEntityType === 'Group' && notification.relatedEntityId) {
+          router.push(`/groups/${notification.relatedEntityId}`);
         }
         break;
-      
+
       case 'event_created':
       case 'event_admin_assigned':
       case 'event_deleted':
       case 'join_request_response':
-        if (notification.RelatedEntityId) {
-          router.push(`/events/${notification.RelatedEntityId}`);
+      case 'join_request_approved':
+      case 'removed_from_event':
+        if (data.eventId || notification.relatedEntityId) {
+          router.push(`/events/${data.eventId || notification.relatedEntityId}`);
         }
         break;
-      
+
       case 'group_created':
       case 'group_admin_assigned':
       case 'group_deleted':
       case 'group_join_approved':
       case 'group_join_rejected':
-        if (notification.RelatedEntityId) {
-          router.push(`/groups/${notification.RelatedEntityId}`);
+      case 'removed_from_group':
+        if (data.groupId || notification.relatedEntityId) {
+          router.push({
+            pathname: "../screens/GroupDetails",
+            params: {
+              groupId: data.groupId || notification.relatedEntityId,
+            },
+          });
         }
         break;
-      
+
       default:
-        console.log('Unknown notification type:', notification.NotificationType);
+        console.log('Unknown notification type:', actualType);
     }
   };
 
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = (notification) => {
+    let type = notification.notificationType;
+
+    // If notificationType is empty, try to parse from notificationData
+    if (!type && notification.notificationData) {
+      try {
+        const data = JSON.parse(notification.notificationData);
+        type = data.type || type;
+      } catch (e) { }
+    }
+
     switch (type) {
       case 'admin_message': return 'megaphone';
       case 'event_created': return 'calendar';
@@ -126,6 +152,7 @@ export default function NotificationsScreen() {
       case 'group_deleted': return 'people-outline';
       case 'group_admin_assigned': return 'shield-checkmark';
       case 'join_request_response': return 'checkmark-circle';
+      case 'join_request_approved': return 'checkmark-circle';
       case 'group_join_approved': return 'checkmark-circle';
       case 'group_join_rejected': return 'close-circle';
       case 'removed_from_event': return 'exit';
@@ -134,7 +161,17 @@ export default function NotificationsScreen() {
     }
   };
 
-  const getNotificationColor = (type) => {
+  const getNotificationColor = (notification) => {
+    let type = notification.notificationType;
+
+    // If notificationType is empty, try to parse from notificationData
+    if (!type && notification.notificationData) {
+      try {
+        const data = JSON.parse(notification.notificationData);
+        type = data.type || type;
+      } catch (e) { }
+    }
+
     switch (type) {
       case 'admin_message': return '#FF6B6B';
       case 'event_created': return '#4ECDC4';
@@ -142,8 +179,11 @@ export default function NotificationsScreen() {
       case 'group_created': return '#45B7D1';
       case 'group_deleted': return '#E74C3C';
       case 'join_request_response': return '#96CEB4';
+      case 'join_request_approved': return '#96CEB4';
       case 'group_join_approved': return '#96CEB4';
       case 'group_join_rejected': return '#FF6B6B';
+      case 'removed_from_event': return '#E74C3C';
+      case 'removed_from_group': return '#E74C3C';
       default: return '#BDC3C7';
     }
   };
@@ -164,36 +204,51 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       style={[
         styles.notificationItem,
-        !item.IsRead && styles.unreadNotification
+        !item.isRead && styles.unreadNotification
       ]}
       onPress={() => handleNotificationPress(item)}
     >
       <View style={styles.notificationIcon}>
-        <Ionicons 
-          name={getNotificationIcon(item.NotificationType)} 
-          size={24} 
-          color={getNotificationColor(item.NotificationType)} 
+        <Ionicons
+          name={getNotificationIcon(item)}
+          size={24}
+          color={getNotificationColor(item)}
         />
       </View>
-      
+
       <View style={styles.notificationContent}>
         <Text style={[
           styles.notificationTitle,
-          !item.IsRead && styles.unreadText
+          !item.isRead && styles.unreadText
         ]}>
-          {item.Title}
+          {item.title}
         </Text>
         <Text style={styles.notificationBody} numberOfLines={2}>
-          {item.Body}
+          {item.body}
         </Text>
         <Text style={styles.notificationTime}>
-          {formatDate(item.SentAt)}
+          {formatDate(item.sentAt)}
         </Text>
       </View>
-      
-      {!item.IsRead && <View style={styles.unreadIndicator} />}
+
+      {!item.isRead && <View style={styles.unreadIndicator} />}
     </TouchableOpacity>
   );
+
+  const markAllAsRead = async () => {
+    try {
+      const unreadNotifications = notifications.filter(n => !n.isRead);
+
+      for (const notif of unreadNotifications) {
+        await markAsRead(notif.notificationId);
+      }
+
+      Alert.alert('Success', 'All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      Alert.alert('Error', 'Failed to mark all as read');
+    }
+  };
 
   if (loading) {
     return (
@@ -208,24 +263,20 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Notifications</Text>
-        {notifications.some(n => !n.IsRead) && (
-          <TouchableOpacity 
+        {notifications.some(n => !n.isRead) && (
+          <TouchableOpacity
             style={styles.markAllButton}
-            onPress={async () => {
-              for (const notif of notifications.filter(n => !n.IsRead)) {
-                await markAsRead(notif.NotificationId);
-              }
-            }}
+            onPress={markAllAsRead}
           >
             <Text style={styles.markAllText}>Mark all read</Text>
           </TouchableOpacity>
         )}
       </View>
-      
+
       <FlatList
         data={notifications}
         renderItem={renderNotification}
-        keyExtractor={(item) => item.NotificationId.toString()}
+        keyExtractor={(item) => item.notificationId.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
