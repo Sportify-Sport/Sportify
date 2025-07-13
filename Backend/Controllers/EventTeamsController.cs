@@ -138,6 +138,10 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid event ID or group ID" });
                 }
 
+                var dbServices = new DBservices();
+                var eventName = dbServices.GetEventName(eventId);
+                var groupName = dbServices.GetGroupName(groupId);
+
                 var result = EventTeam.RemoveGroupFromEvent(eventId, groupId, adminUserId);
 
                 if (!result.Success)
@@ -150,8 +154,8 @@ namespace Backend.Controllers
                 await NotificationHelper.SendGroupNotificationAsync(
                     _pushNotificationService,
                     groupId,
-                    "Group Removed from Event",
-                    "Your group has been removed from an event.",
+                    "Removed from Event",
+                    $"Your group '{groupName}' has been removed from the event '{eventName}'.",
                     "group_removed_from_event"
                 );
 
@@ -191,11 +195,15 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = result.ErrorMessage });
                 }
 
+                var dbServices = new DBservices();
+                var eventName = dbServices.GetEventName(eventId);
+                var groupName = dbServices.GetGroupName(groupId);
+
                 await NotificationHelper.SendGroupNotificationAsync(
                     _pushNotificationService,
                     groupId,
-                    "Group Added to Event! 🎉",
-                    "Your group has been added to a new event. Check it out!",
+                    "Added to Event! 🎉",
+                    $"Your group '{groupName}' has been added to the event '{eventName}'. Check it out!",
                     "group_added_to_event"
                 );
 

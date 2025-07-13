@@ -267,3 +267,37 @@ BEGIN
     ORDER BY SentAt DESC;
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/7/2025>
+-- Description:	<Get Event Name>
+-- =============================================
+CREATE PROCEDURE SP_GetEventName
+    @EventId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT EventName
+    FROM [Events]
+    WHERE EventId = @EventId;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/7/2025>
+-- Description:	<Get Group Name>
+-- =============================================
+CREATE PROCEDURE SP_GetGroupName
+    @GroupId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT GroupName
+    FROM Groups
+    WHERE GroupId = @GroupId;
+END
+GO

@@ -23,38 +23,7 @@ namespace Backend.Services
                     return false;
                 }
 
-                // Get active push tokens for users
                 var dbServices = new DBservices();
-                var tokens = dbServices.GetActivePushTokensForUsers(request.UserIds);
-
-                if (!tokens.Any())
-                {
-                    return true; // Not an error, users might not have tokens
-                }
-
-                // Group messages in batches (Expo recommends max 100)
-                var batches = tokens.Chunk(100);
-                var allSuccess = true;
-
-                foreach (var batch in batches)
-                {
-                    var messages = batch.Select(token => new ExpoPushMessage
-                    {
-                        to = token.PushToken,
-                        title = request.Title,
-                        body = request.Body,
-                        data = request.Data ?? new Dictionary<string, object>
-                        {
-                            { "notificationType", request.NotificationType ?? "general" },
-                            { "eventId", request.EventId },
-                            { "groupId", request.GroupId },
-                            { "timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds() }
-                        }
-                    }).ToList();
-
-                    var batchSuccess = await SendBatchToExpoAsync(messages, batch.ToList());
-                    allSuccess = allSuccess && batchSuccess;
-                }
 
                 // Save notification history
                 foreach (var userId in request.UserIds)
@@ -70,7 +39,51 @@ namespace Backend.Services
                     );
                 }
 
-                return allSuccess;
+                var tokens = dbServices.GetActivePushTokensForUsers(request.UserIds);
+
+                if (!tokens.Any())
+                {
+                    return true; // No active push tokens found for users
+                }
+
+                var batches = tokens.Chunk(100);
+                var successCount = 0;
+
+                foreach (var batch in batches)
+                {
+                    var messages = batch.Select(token => new ExpoPushMessage
+                    {
+                        to = token.PushToken,
+                        title = request.Title,
+                        body = request.Body,
+                        data = request.Data ?? new Dictionary<string, object>()
+                    }).ToList();
+
+                    foreach (var message in messages)
+                    {
+                        if (!message.data.ContainsKey("notificationType") && !string.IsNullOrEmpty(request.NotificationType))
+                        {
+                            message.data["notificationType"] = request.NotificationType;
+                        }
+                        if (!message.data.ContainsKey("type") && !string.IsNullOrEmpty(request.NotificationType))
+                        {
+                            message.data["type"] = request.NotificationType;
+                        }
+                        if (request.EventId.HasValue)
+                        {
+                            message.data["eventId"] = request.EventId.Value;
+                        }
+                        if (request.GroupId.HasValue)
+                        {
+                            message.data["groupId"] = request.GroupId.Value;
+                        }
+                    }
+
+                    var batchSuccess = await SendBatchToExpoAsync(messages, batch.ToList());
+                    if (batchSuccess) successCount += batch.Count();
+                }
+
+                return true; // Always return true if we saved to history
             }
             catch (Exception ex)
             {

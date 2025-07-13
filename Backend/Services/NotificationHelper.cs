@@ -24,6 +24,9 @@ namespace Backend.Services
 
                 if (recipients.Any())
                 {
+                    var dbServices = new DBservices();
+                    var eventName = dbServices.GetEventName(eventId);
+
                     await pushService.SendNotificationAsync(new PushNotificationRequest
                     {
                         Title = title,
@@ -34,7 +37,8 @@ namespace Backend.Services
                         Data = new Dictionary<string, object>
                         {
                             { "type", notificationType },
-                            { "eventId", eventId }
+                            { "eventId", eventId },
+                            { "eventName", eventName }
                         }
                     });
                 }
@@ -63,6 +67,9 @@ namespace Backend.Services
 
                 if (recipients.Any())
                 {
+                    var dbServices = new DBservices();
+                    var groupName = dbServices.GetGroupName(groupId);
+
                     await pushService.SendNotificationAsync(new PushNotificationRequest
                     {
                         Title = title,
@@ -73,7 +80,8 @@ namespace Backend.Services
                         Data = new Dictionary<string, object>
                         {
                             { "type", notificationType },
-                            { "groupId", groupId }
+                            { "groupId", groupId },
+                            { "groupName", groupName }
                         }
                     });
                 }

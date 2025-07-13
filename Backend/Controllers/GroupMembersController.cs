@@ -197,6 +197,7 @@ namespace Backend.Controllers
                 {
                     var dbServices = new DBservices();
                     int userId = dbServices.GetUserIdFromGroupJoinRequest(requestId);
+                    var groupName = dbServices.GetGroupName(groupId);
 
                     if (userId == 0)
                     {
@@ -208,11 +209,12 @@ namespace Backend.Controllers
                         _pushNotificationService,
                         userId,
                         "Welcome to the Group! 🎉",
-                        "Your request to join the group has been approved!",
+                        $"Your request to join the group '{groupName}' has been approved!",
                         "group_join_approved",
                         new Dictionary<string, object>
                         {
-                            { "groupId", groupId }
+                            { "groupId", groupId },
+                            { "groupName", groupName }
                         }
                     );
 
@@ -256,6 +258,7 @@ namespace Backend.Controllers
                 {
                     var dbServices = new DBservices();
                     int userId = dbServices.GetUserIdFromGroupJoinRequest(requestId);
+                    var groupName = dbServices.GetGroupName(groupId);
 
                     if (userId == 0)
                     {
@@ -267,11 +270,12 @@ namespace Backend.Controllers
                         _pushNotificationService,
                         userId,
                         "Group Request Rejected",
-                        "Your request to join the group has been rejected.",
+                        $"Your request to join the group '{groupName}' has been rejected.",
                         "group_join_rejected",
                         new Dictionary<string, object>
                         {
-                            { "groupId", groupId }
+                            { "groupId", groupId },
+                            { "groupName", groupName }
                         }
                     );
 
@@ -321,16 +325,20 @@ namespace Backend.Controllers
 
                 if (success)
                 {
+                    var dbServices = new DBservices();
+                    var groupName = dbServices.GetGroupName(groupId);
+
                     // Send notification to the removed member
                     await NotificationHelper.SendUserNotificationAsync(
                         _pushNotificationService,
                         userId,
                         "Removed from Group",
-                        "You have been removed from a group.",
+                        $"You have been removed from the group '{groupName}'.",
                         "removed_from_group",
                         new Dictionary<string, object>
                         {
-                            { "groupId", groupId }
+                            { "groupId", groupId },
+                            { "groupName", groupName }
                         }
                     );
 

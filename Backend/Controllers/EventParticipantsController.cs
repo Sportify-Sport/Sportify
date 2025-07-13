@@ -201,17 +201,21 @@ namespace Backend.Controllers
 
                 var result = EventParticipant.RemovePlayerFromEvent(eventId, playerUserId, adminUserId);
 
+                var dbServices = new DBservices();
+                var eventName = dbServices.GetEventName(eventId);
+
                 if (result.Success)
                 {
                     await NotificationHelper.SendUserNotificationAsync(
                         _pushNotificationService,
                         playerUserId,
                         "Removed from Event",
-                        "You have been removed from an event.",
+                        $"You have been removed from the event '{eventName}'.",
                         "removed_from_event",
                         new Dictionary<string, object>
                         {
-                            { "eventId", eventId }
+                            { "eventId", eventId },
+                            { "eventName", eventName }
                         }
                     );
 
@@ -255,17 +259,21 @@ namespace Backend.Controllers
                 {
                     string action = approve ? "approved" : "rejected";
 
+                    var dbServices = new DBservices();
+                    var eventName = dbServices.GetEventName(eventId);
+
                     await NotificationHelper.SendUserNotificationAsync(
                         _pushNotificationService,
                         requestUserId,
                         approve ? "Join Request Approved! 🎉" : "Join Request Rejected",
                         approve ?
-                            "Your request to join the event has been approved. Welcome aboard!" :
-                            "Unfortunately, your request to join the event has been rejected.",
+                            $"Your request to join the event '{eventName}' has been approved. Welcome aboard!" :
+                            $"Unfortunately, your request to join the event '{eventName}' has been rejected.",
                         "join_request_response",
                         new Dictionary<string, object>
                         {
                             { "eventId", eventId },
+                            { "eventName", eventName },
                             { "approved", approve }
                         }
                     );

@@ -367,16 +367,19 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to change group admin" });
                 }
 
+                var groupName = dbServices.GetGroupName(groupId);
+
                 // Notify the old admin
                 await NotificationHelper.SendUserNotificationAsync(
                     _pushNotificationService,
                     currentAdmin.UserId,
                     "Admin Role Transferred",
-                    "You are no longer the admin of this group. Admin role has been transferred.",
+                    $"You are no longer the admin of the group '{groupName}'. Admin role has been transferred.",
                     "group_admin_removed",
                     new Dictionary<string, object>
                     {
-                        { "groupId", groupId }
+                        { "groupId", groupId },
+                        { "groupName", groupName }
                     }
                 );
 
@@ -385,11 +388,12 @@ namespace Backend.Controllers
                     _pushNotificationService,
                     changeAdminDto.UserId,
                     "You're the New Group Admin! 👥",
-                    "You have been assigned as the new admin of this group.",
+                    $"You have been assigned as the new admin of the group '{groupName}'.",
                     "group_admin_assigned",
                     new Dictionary<string, object>
                     {
-                        { "groupId", groupId }
+                        { "groupId", groupId },
+                        { "groupName", groupName }
                     }
                 );
 
@@ -442,6 +446,10 @@ namespace Backend.Controllers
                     return NotFound(new { success = false, message = "Group not found" });
                 }
 
+                // Get group name and recipients
+                var groupName = dbServices.GetGroupName(groupId);
+                var recipients = await _pushNotificationService.GetGroupRecipientsAsync(groupId);
+
                 // Delete the group
                 bool success = dbServices.DeleteGroup(groupId);
 
@@ -450,14 +458,23 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to delete group" });
                 }
 
-                // Notify all group members (including admin)
-                await NotificationHelper.SendGroupNotificationAsync(
-                    _pushNotificationService,
-                    groupId,
-                    "Group Deleted ❌",
-                    "A group you were a member of has been deleted.",
-                    "group_deleted"
-                );
+                if (recipients.Any())
+                {
+                    // Send notifications to the saved recipients
+                    await _pushNotificationService.SendNotificationAsync(new PushNotificationRequest
+                    {
+                        Title = "Group Deleted ❌",
+                        Body = $"The group '{groupName}' has been deleted.",
+                        UserIds = recipients,
+                        NotificationType = "group_deleted",
+                        Data = new Dictionary<string, object>
+                        {
+                            { "type", "group_deleted" },
+                            { "groupId", groupId },
+                            { "groupName", groupName }
+                        }
+                    });
+                }
 
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) deleted group {GroupId} in city {CityId}",
                     userName, userId, groupId, cityId);

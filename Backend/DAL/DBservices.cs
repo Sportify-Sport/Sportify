@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Data.SqlClient;
-using System.Data;
-using System.Text;
-using Backend.BL;
-using System.Data.Common;
-using System.Net;
-using Microsoft.AspNetCore.Identity;
+﻿using Backend.BL;
 using Backend.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Net;
 using System.Reflection;
+using System.Text;
+using System.Web;
 
 public class DBservices
 {
@@ -7167,5 +7168,124 @@ public class DBservices
         cmd.Parameters.AddWithValue("@UserId", userId);
         return cmd;
     }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get event name by ID
+    //--------------------------------------------------------------------------------------------------
+    public string GetEventName(int eventId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureGetEventName("SP_GetEventName", con, eventId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return dataReader["EventName"].ToString();
+            }
+
+            return "Unknown Event";
+
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting event name
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetEventName(string spName, SqlConnection con, int eventId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@EventId", eventId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get group name by ID
+    //--------------------------------------------------------------------------------------------------
+    public string GetGroupName(int groupId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureGetGroupName("SP_GetGroupName", con, groupId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return dataReader["GroupName"].ToString();
+            }
+
+            return "Unknown Group";
+
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+
+
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting group name
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetGroupName(string spName, SqlConnection con, int groupId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@GroupId", groupId);
+        return cmd;
+    }
+
 
 }

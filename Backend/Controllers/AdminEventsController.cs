@@ -368,16 +368,19 @@ namespace Backend.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to change event admin" });
                 }
 
+                var eventName = dbServices.GetEventName(eventId);
+
                 // Notify the old admin
                 await NotificationHelper.SendUserNotificationAsync(
                     _pushNotificationService,
                     currentAdmin.UserId,
                     "Admin Role Transferred",
-                    "You are no longer the admin of this event. Admin role has been transferred.",
+                    $"You are no longer the admin of the event '{eventName}'. Admin role has been transferred.",
                     "event_admin_removed",
                     new Dictionary<string, object>
                     {
-                        { "eventId", eventId }
+                        { "eventId", eventId },
+                        { "eventName", eventName }
                     }
                 );
 
@@ -386,11 +389,12 @@ namespace Backend.Controllers
                     _pushNotificationService,
                     changeAdminDto.UserId,
                     "You're the New Event Admin! 🏆",
-                    "You have been assigned as the new admin of this event.",
+                    $"You have been assigned as the new admin of the event '{eventName}'.",
                     "event_admin_assigned",
                     new Dictionary<string, object>
                     {
-                        { "eventId", eventId }
+                        { "eventId", eventId },
+                        { "eventName", eventName }
                     }
                 );
 
@@ -443,7 +447,10 @@ namespace Backend.Controllers
                     return NotFound(new { success = false, message = "Event not found" });
                 }
 
+                var eventName = dbServices.GetEventName(eventId);
                 var currentAdmin = dbServices.GetEventAdmin(eventId);
+
+                var eventRecipients = await _pushNotificationService.GetEventRecipientsAsync(eventId, "all");
 
                 // Delete the event
                 bool success = dbServices.DeleteEvent(eventId);
@@ -454,23 +461,33 @@ namespace Backend.Controllers
                 }
 
                 // Notify all event participants (includes groups and individual participants)
-                await NotificationHelper.SendEventNotificationAsync(
-                    _pushNotificationService,
-                    eventId,
-                    "Event Cancelled ❌",
-                    "An event you were participating in has been cancelled.",
-                    "event_deleted"
-                );
+                if (eventRecipients.Any())
+                {
+                    await _pushNotificationService.SendNotificationAsync(new PushNotificationRequest
+                    {
+                        Title = "Event Cancelled ❌",
+                        Body = $"The event '{eventName}' has been cancelled.",
+                        UserIds = eventRecipients,
+                        NotificationType = "event_deleted",
+                        Data = new Dictionary<string, object>
+                        {
+                            { "type", "event_deleted" },
+                            { "eventId", eventId },
+                            { "eventName", eventName }
+                        }
+                    });
+                }
 
                 await NotificationHelper.SendUserNotificationAsync(
                     _pushNotificationService,
                     currentAdmin.UserId,
                     "Event Deleted",
-                    "The event you were administering has been deleted.",
+                    $"The event '{eventName}' you were administering has been deleted.",
                     "event_deleted",
                     new Dictionary<string, object>
                     {
-                        { "eventId", eventId }
+                        { "eventId", eventId },
+                        { "eventName", eventName }
                     }
                 );
 
