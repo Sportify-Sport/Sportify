@@ -263,7 +263,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT UserId, FirstName, LastName, Email, PasswordHash, BirthDate, Gender, 
-           FavSportId, CityId, IsGroupAdmin, IsCityOrganizer, IsEventAdmin, IsEmailVerified
+           FavSportId, CityId, IsGroupAdmin, IsCityOrganizer, IsEventAdmin, IsEmailVerified, IsSuperAdmin
     FROM Users
     WHERE UserId = @UserId
 END

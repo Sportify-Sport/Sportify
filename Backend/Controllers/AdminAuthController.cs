@@ -41,12 +41,10 @@ namespace Backend.Controllers
                     return Unauthorized("Invalid email or password");
                 }
 
-                // Verify user is a city organizer
-                if (!user.IsCityOrganizer)
+                // Verify user has admin access (CityOrganizer or SuperAdmin)
+                if (!user.IsCityOrganizer && !user.IsSuperAdmin)
                 {
-                    //return Forbid("User is not authorized for admin access");
                     return StatusCode(403, new { success = false, message = "User is not authorized for admin access" });
-
                 }
 
                 // Admin-specific JWT with shorter lifetime (15 minutes)
@@ -91,13 +89,6 @@ namespace Backend.Controllers
                     return Unauthorized("Refresh token has been revoked or expired");
                 }
 
-                // Check for usage limit (4 uses)
-                if (refreshToken.HasReachedUseLimit)
-                {
-                    dbServices.RevokeAdminRefreshToken(refreshToken.Token, "Usage limit exceeded");
-                    return Unauthorized("Maximum refresh limit reached. Please login again.");
-                }
-
                 // Get user information
                 var user = dbServices.GetUserById(refreshToken.UserId);
                 if (user == null)
@@ -105,12 +96,9 @@ namespace Backend.Controllers
                     return Unauthorized("User not found");
                 }
 
-                // Increment usage counter
-                dbServices.IncrementRefreshTokenUseCount(refreshToken.Id);
-
                 // Generate new tokens
                 var newAccessToken = GenerateAdminJwtToken(user);
-                var newRefreshToken = GenerateAdminRefreshToken(user.UserId, refreshToken.ExpiryDate, refreshToken.UseCount + 1);
+                var newRefreshToken = GenerateAdminRefreshToken(user.UserId, refreshToken.ExpiryDate);
 
                 // Revoke old refresh token
                 dbServices.RevokeAdminRefreshToken(refreshToken.Token, "Replaced by new token", newRefreshToken.Token);
@@ -130,7 +118,7 @@ namespace Backend.Controllers
         }
 
         //[Authorize(Roles = "CityOrganizer")]
-        [Authorize(AuthenticationSchemes = "AdminScheme", Roles = "CityOrganizer")]
+        [Authorize(AuthenticationSchemes = "AdminScheme", Roles = "CityOrganizer, SuperAdmin")]
         [HttpPost("admin/revoke-token")]
         public IActionResult RevokeAdminToken([FromHeader(Name = "X-Refresh-Token")] string token)
         {
@@ -186,16 +174,25 @@ namespace Backend.Controllers
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new Claim("email", user.Email),
-            new Claim("name", $"{user.FirstName} {user.LastName}"),
-            new Claim(ClaimTypes.Role, "CityOrganizer"),
-            new Claim("isAdmin", "true")
-        };
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim("email", user.Email),
+                new Claim("name", $"{user.FirstName} {user.LastName}"),
+                new Claim(ClaimTypes.Role, "CityOrganizer"),
+                new Claim("isAdmin", "true")
+            };
+
+            if (user.IsSuperAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "SuperAdmin"));
+                claims.Add(new Claim("isSuperAdmin", "true"));
+            } else
+            {
+                claims.Add(new Claim("isSuperAdmin", "false"));
+            }
 
             var now = DateTime.UtcNow;
-            var expires = now.AddMinutes(15); // Strict 15-minute limit
+            var expires = now.AddMinutes(15);
 
             var token = new JwtSecurityToken(
                 _config["Jwt:AdminIssuer"],
@@ -208,7 +205,7 @@ namespace Backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private RefreshToken GenerateAdminRefreshToken(int userId, DateTime? inheritExpiryDate = null, int useCount = 0)
+        private RefreshToken GenerateAdminRefreshToken(int userId, DateTime? inheritExpiryDate = null)
         {
             // Generate random token
             var randomBytes = new byte[64];
@@ -220,7 +217,7 @@ namespace Backend.Controllers
             var expiryDate = inheritExpiryDate ?? DateTime.UtcNow.AddHours(1);
 
             DBservices dbServices = new DBservices();
-            return dbServices.SaveAdminRefreshToken(userId, token, expiryDate, useCount);
+            return dbServices.SaveAdminRefreshToken(userId, token, expiryDate);
         }
     }
 }

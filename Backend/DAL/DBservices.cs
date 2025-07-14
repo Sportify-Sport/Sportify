@@ -230,7 +230,8 @@ public class DBservices
                     IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
                     IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
                     IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"]),
-                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"])
+                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"]),
+                    IsSuperAdmin = Convert.ToBoolean(dataReader["IsSuperAdmin"])
                 };
             }
             else
@@ -3923,7 +3924,8 @@ public class DBservices
                     IsGroupAdmin = Convert.ToBoolean(dataReader["IsGroupAdmin"]),
                     IsCityOrganizer = Convert.ToBoolean(dataReader["IsCityOrganizer"]),
                     IsEventAdmin = Convert.ToBoolean(dataReader["IsEventAdmin"]),
-                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"])
+                    IsEmailVerified = Convert.ToBoolean(dataReader["IsEmailVerified"]),
+                    IsSuperAdmin = Convert.ToBoolean(dataReader["IsSuperAdmin"])
                 };
             }
         }
@@ -3960,7 +3962,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // This method is used to save admin refresh tokens
     //---------------------------------------------------------------------------------
-    public RefreshToken SaveAdminRefreshToken(int userId, string token, DateTime expiryDate, int useCount = 0)
+    public RefreshToken SaveAdminRefreshToken(int userId, string token, DateTime expiryDate)
     {
         SqlConnection con;
         SqlCommand cmd;
@@ -3974,7 +3976,7 @@ public class DBservices
             throw (ex);
         }
 
-        cmd = CreateCommandWithStoredProcedureSaveAdminRefreshToken("SP_SaveAdminRefreshToken", con, userId, token, expiryDate, useCount);
+        cmd = CreateCommandWithStoredProcedureSaveAdminRefreshToken("SP_SaveAdminRefreshToken", con, userId, token, expiryDate);
 
         try
         {
@@ -3988,8 +3990,7 @@ public class DBservices
                     UserId = Convert.ToInt32(dataReader["UserId"]),
                     Token = dataReader["Token"].ToString(),
                     ExpiryDate = Convert.ToDateTime(dataReader["ExpiryDate"]),
-                    Created = Convert.ToDateTime(dataReader["Created"]),
-                    UseCount = Convert.ToInt32(dataReader["UseCount"])
+                    Created = Convert.ToDateTime(dataReader["Created"])
                 };
 
                 return refreshToken;
@@ -4016,7 +4017,7 @@ public class DBservices
     //---------------------------------------------------------------------------------
     // Create the SqlCommand for saving admin refresh tokens
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureSaveAdminRefreshToken(string spName, SqlConnection con, int userId, string token, DateTime expiryDate, int useCount = 0)
+    private SqlCommand CreateCommandWithStoredProcedureSaveAdminRefreshToken(string spName, SqlConnection con, int userId, string token, DateTime expiryDate)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
@@ -4027,7 +4028,6 @@ public class DBservices
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@Token", token);
         cmd.Parameters.AddWithValue("@ExpiryDate", expiryDate);
-        cmd.Parameters.AddWithValue("@UseCount", useCount);
 
         return cmd;
     }
@@ -4067,8 +4067,7 @@ public class DBservices
                     Created = Convert.ToDateTime(dataReader["Created"]),
                     Revoked = dataReader["Revoked"] != DBNull.Value ? Convert.ToDateTime(dataReader["Revoked"]) : (DateTime?)null,
                     ReplacedByToken = dataReader["ReplacedByToken"] != DBNull.Value ? dataReader["ReplacedByToken"].ToString() : null,
-                    ReasonRevoked = dataReader["ReasonRevoked"] != DBNull.Value ? dataReader["ReasonRevoked"].ToString() : null,
-                    UseCount = Convert.ToInt32(dataReader["UseCount"])
+                    ReasonRevoked = dataReader["ReasonRevoked"] != DBNull.Value ? dataReader["ReasonRevoked"].ToString() : null
                 };
 
                 return refreshToken;
@@ -4105,56 +4104,7 @@ public class DBservices
         cmd.Parameters.AddWithValue("@Token", token);
         return cmd;
     }
-
-
-    //---------------------------------------------------------------------------------
-    // This method is used to Increment the refresh token count for the admin refresh tokens
-    //---------------------------------------------------------------------------------
-    public bool IncrementRefreshTokenUseCount(int tokenId)
-    {
-        SqlConnection con;
-        SqlCommand cmd;
-
-        try
-        {
-            con = connect("myProjDB");
-        }
-        catch (Exception ex)
-        {
-            throw (ex);
-        }
-
-        cmd = new SqlCommand();
-        cmd.Connection = con;
-        cmd.CommandText = "SP_IncrementAdminRefreshTokenUseCount";
-        cmd.CommandTimeout = 10;
-        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-
-        cmd.Parameters.AddWithValue("@TokenId", tokenId);
-
-        SqlParameter successParam = new SqlParameter("@Success", SqlDbType.Bit);
-        successParam.Direction = ParameterDirection.Output;
-        cmd.Parameters.Add(successParam);
-
-        try
-        {
-            cmd.ExecuteNonQuery();
-            bool success = Convert.ToBoolean(cmd.Parameters["@Success"].Value);
-            return success;
-        }
-        catch (Exception ex)
-        {
-            throw (ex);
-        }
-        finally
-        {
-            if (con != null)
-            {
-                con.Close();
-            }
-        }
-    }
-
+    
     //---------------------------------------------------------------------------------
     // This method is used to revoke admin refresh token
     //---------------------------------------------------------------------------------

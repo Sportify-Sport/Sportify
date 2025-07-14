@@ -21,8 +21,14 @@ CREATE TABLE Users (
 	IsGroupAdmin BIT NOT NULL DEFAULT 0,
 	IsEventAdmin BIT NOT NULL DEFAULT 0,
 	IsEmailVerified BIT NOT NULL DEFAULT 0,
-	CreatedAt DATETIME NOT NULL DEFAULT GETUTCDATE()
+	CreatedAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+	IsSuperAdmin BIT NOT NULL DEFAULT 0
 );
+
+ALTER TABLE Users
+ADD CONSTRAINT CK_SuperAdmin_IsCityOrganizer 
+CHECK (IsSuperAdmin = 0 OR (IsSuperAdmin = 1 AND IsCityOrganizer = 1));
+
 
 CREATE TABLE Groups (
     GroupId INT PRIMARY KEY IDENTITY(1,1),
@@ -157,8 +163,7 @@ CREATE TABLE AdminRefreshTokens (
     Created DATETIME NOT NULL DEFAULT GETDATE(),
     Revoked DATETIME NULL,
     ReplacedByToken VARCHAR(255) NULL,
-    ReasonRevoked NVARCHAR(100) NULL,
-    UseCount INT NOT NULL DEFAULT 0
+    ReasonRevoked NVARCHAR(100) NULL
 );
 
 CREATE TABLE EmailVerificationCodes (

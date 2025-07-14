@@ -22,14 +22,14 @@ namespace Backend.BL
         private bool isEmailVerified;
         private List<int> adminForGroups;
         private List<int> organizerForCities;
-
+        private bool isSuperAdmin;
 
         public User()
         {
             AdminForGroups = new List<int>();
             OrganizerForCities = new List<int>();
         }
-        public User(int userId, string firstName, string lastName, DateTime birthDate, string email, string passwordHash, int favSportId, int cityId, string profileImage, string bio, string gender, bool isGroupAdmin, bool isCityOrganizer, bool isEventAdmin, bool isEmailVerified, List<int> adminForGroups, List<int> organizerForCities)
+        public User(int userId, string firstName, string lastName, DateTime birthDate, string email, string passwordHash, int favSportId, int cityId, string profileImage, string bio, string gender, bool isGroupAdmin, bool isCityOrganizer, bool isEventAdmin, bool isEmailVerified, List<int> adminForGroups, List<int> organizerForCities, bool isSuperAdmin)
         {
             this.UserId = userId;
             this.FirstName = firstName;
@@ -48,6 +48,7 @@ namespace Backend.BL
             this.IsEmailVerified = isEmailVerified;
             this.AdminForGroups = adminForGroups ?? new List<int>();
             this.OrganizerForCities = organizerForCities ?? new List<int>();
+            this.IsSuperAdmin = isSuperAdmin;
         }
 
         public int UserId { get => userId; set => userId = value; }
@@ -69,6 +70,7 @@ namespace Backend.BL
         public List<int> AdminForGroups { get => adminForGroups; set => adminForGroups = value; }
         public List<int> OrganizerForCities { get => organizerForCities; set => organizerForCities = value; }
 
+        public bool IsSuperAdmin { get => isSuperAdmin; set => isSuperAdmin = value; }
 
         public List<object> GetTop4Groups()
         {
