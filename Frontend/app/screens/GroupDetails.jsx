@@ -1,5 +1,5 @@
 // screens/GroupDetails.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -99,33 +99,35 @@ export default function GroupDetails() {
   };
 
   // Fetch group details
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const r = await fetch(`${apiUrl}/api/Groups/${groupId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) throw new Error('Failed to fetch group details');
-        const { success, data, message } = await r.json();
-        if (!success) throw new Error(message || 'Failed to load group data');
-        const cityName = await getCityNameById(data.cityId);
-        setGroup({
-          ...data,
-          cityName,
-        });
-        // reset pagination on new group
-        setMembers([]); setMembersPage(1); setMembersDisplayCount(PAGE_SIZE);
-        setRequests([]); setRequestsPage(1); setRequestsDisplayCount(PAGE_SIZE);
-      } catch (e) {
-        console.error(e);
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
+const fetchGroupDetails = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const r = await fetch(`${apiUrl}/api/Groups/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) throw new Error('Failed to fetch group details');
+      const { success, data, message } = await r.json();
+      if (!success) throw new Error(message || 'Failed to load group data');
+      const cityName = await getCityNameById(data.cityId);
+      setGroup({
+        ...data,
+        cityName,
+      });
+      // Reset pagination on new group
+      setMembers([]); setMembersPage(1); setMembersDisplayCount(PAGE_SIZE);
+      setRequests([]); setRequestsPage(1); setRequestsDisplayCount(PAGE_SIZE);
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, [groupId]);
+
+  useEffect(() => {
+    fetchGroupDetails();
+  }, [fetchGroupDetails]);
 
   // Fetch members
   useEffect(() => {
@@ -376,8 +378,14 @@ export default function GroupDetails() {
     setNotificationMessage('');
   };
 
+  	
+  const handleGroupUpdated = (updatedGroup) => {
+    setGroup(updatedGroup);
+  };
+
   const handleSaveGroup = () => {
     Alert.alert('Saved', 'Group details saved');
+    fetchGroupDetails(); 
     setEditModalVisible(false);
   };
 
@@ -407,7 +415,6 @@ export default function GroupDetails() {
             groupName={group.groupName}
             groupImage={group.groupImage}
           />
-
           <DetailsCard
             group={group}
             sportsMap={sportsMap}
@@ -427,7 +434,7 @@ export default function GroupDetails() {
               events={events}
             />
           )}
-
+          <View className="h-px bg-green-400 mb-4" />
           <JoinRequestButton
             isLoggedIn={isLoggedIn}
             isMember={group.isMember}
@@ -449,7 +456,7 @@ export default function GroupDetails() {
               onReject={handleRejectRequest}
             />
           )}
-
+        <View className="h-px bg-green-400 mb-4" />
           {isLoggedIn && group.isAdmin && (
             <NotificationEditor
               message={notificationMessage}
@@ -471,6 +478,7 @@ export default function GroupDetails() {
           setGroup={setGroup}
           onClose={() => setEditModalVisible(false)}
           onSave={handleSaveGroup}
+          onGroupUpdated={handleGroupUpdated}
         />
 
         <UserDetailsModal
@@ -482,3 +490,8 @@ export default function GroupDetails() {
     </SafeAreaView>
   );
 }
+
+
+
+
+

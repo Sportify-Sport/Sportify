@@ -19,7 +19,7 @@ export default function Header({ groupName, groupImage }) {
       </Text>
       <View className="flex-row items-center space-x-3">
         <Image
-          source={{ uri: `${apiUrl}/Images/${groupImage}` }}
+          source={{ uri: groupImage ? `${apiUrl}/Images/${groupImage}` : `${apiUrl}/Images/default_group.png` }}
           style={{ width: 48, height: 48, borderRadius: 24 }}
         />
       </View>

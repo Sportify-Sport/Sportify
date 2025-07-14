@@ -1,25 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import getApiBaseUrl from '../../config/apiConfig';
 import { BlurView } from 'expo-blur';
 
-export default function EditGroupModal({ visible, group, setGroup, onClose, onSave, onGroupUpdated }) {
+export default function EditEventModal({ visible, event, onClose, onSave, token, onEventUpdated }) {
   const [imageFile, setImageFile] = useState(null);
   const [isFormChanged, setIsFormChanged] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [token, setToken] = useState(null);
+  const [localEvent, setLocalEvent] = useState({ ...event });
 
-  // Get token from AsyncStorage
   useEffect(() => {
-    const getToken = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
-      setToken(storedToken);
-    };
-    getToken();
-  }, []);
+    setLocalEvent({ ...event });
+  }, [event]);
 
   const handleImageChange = useCallback(async () => {
     try {
@@ -45,7 +39,7 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
           return;
         }
         
-        setImageFile(file); 
+        setImageFile(file);
         setIsFormChanged(true);
         setError(null);
       }
@@ -70,38 +64,39 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
 
     try {
       const apiUrl = getApiBaseUrl();
-      let updatedGroup = { ...group };
+      let updatedEvent = { ...localEvent };
 
-      // Update group details if changed
+      // Update event details if changed
       if (isFormChanged) {
-        const detailsResponse = await fetch(`${apiUrl}/api/Groups/${group.groupId}`, {
+        const detailsResponse = await fetch(`${apiUrl}/api/Events/${event.eventId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({ 
-            groupName: group.groupName, 
-            description: group.description 
+            eventName: localEvent.eventName, 
+            description: localEvent.description,
+            locationName: localEvent.locationName
           }),
         });
 
         if (!detailsResponse.ok) {
           const errorData = await detailsResponse.json();
-          throw new Error(errorData.message || 'Failed to update group details');
+          throw new Error(errorData.message || 'Failed to update event details');
         }
       }
 
       // Update image if changed
       if (imageFile) {
         const formDataImage = new FormData();
-        formDataImage.append('groupImage', {
+        formDataImage.append('eventImage', {
           uri: imageFile.uri,
           type: imageFile.mimeType,
-          name: imageFile.uri.split('/').pop() || 'groupImage.jpg',
+          name: imageFile.uri.split('/').pop() || 'eventImage.jpg',
         });
 
-        const imageResponse = await fetch(`${apiUrl}/api/Groups/${group.groupId}/image`, {
+        const imageResponse = await fetch(`${apiUrl}/api/Events/${event.eventId}/image`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -111,19 +106,17 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
 
         if (!imageResponse.ok) {
           const errorData = await imageResponse.json();
-          throw new Error(errorData.message || 'Failed to update group image');
+          throw new Error(errorData.message || 'Failed to update event image');
         }
 
-        // Attempt to get the server-returned image URL
+        // Attempt to get server-returned image URL
         const imageData = await imageResponse.json();
-        const newImageUrl = imageData.data?.imageUrl || `${apiUrl}/Images/${imageFile.uri.split('/').pop()}?t=${Date.now()}`;
-        updatedGroup.groupImage = newImageUrl;
+        updatedEvent.eventImage = imageData.data?.imageUrl || `${apiUrl}/Images/${imageFile.uri.split('/').pop()}?t=${Date.now()}`;
       }
 
-      if (typeof onGroupUpdated === 'function') {
-        onGroupUpdated(updatedGroup);
+      if (typeof onEventUpdated === 'function') {
+        onEventUpdated(updatedEvent);
       }
-      setGroup(updatedGroup);
       onSave();
       onClose();
     } catch (err) {
@@ -132,7 +125,7 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
     } finally {
       setIsLoading(false);
     }
-  }, [group, imageFile, isFormChanged, token, onSave, onClose, setGroup, onGroupUpdated]);
+  }, [localEvent, imageFile, isFormChanged, token, onSave, onClose, onEventUpdated, event.eventId]);
 
   return (
     <Modal
@@ -149,29 +142,29 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
         <View className="w-11/12 bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header */}
           <View className="bg-green-500 py-4 px-6">
-            <Text className="text-xl font-bold text-white">Edit Group Details</Text>
+            <Text className="text-xl font-bold text-white">Edit Event Details</Text>
           </View>
           
           {/* Content */}
           <View className="p-6">
-            <Text className="text-base font-semibold mb-2 text-gray-800">Group Name</Text>
+            <Text className="text-base font-semibold mb-2 text-gray-800">Event Name</Text>
             <TextInput
               className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
-              value={group.groupName}
+              value={localEvent.eventName}
               onChangeText={t => {
-                setGroup(g => ({ ...g, groupName: t }));
+                setLocalEvent(e => ({ ...e, eventName: t }));
                 setIsFormChanged(true);
               }}
-              placeholder="Group Name"
+              placeholder="Event Name"
               placeholderTextColor="#9CA3AF"
             />
             
             <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
             <TextInput
               className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
-              value={group.description}
+              value={localEvent.description}
               onChangeText={t => {
-                setGroup(g => ({ ...g, description: t }));
+                setLocalEvent(e => ({ ...e, description: t }));
                 setIsFormChanged(true);
               }}
               placeholder="Description"
@@ -179,7 +172,19 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
               multiline
             />
             
-            <Text className="text-base font-semibold mb-2 text-gray-800">Group Image</Text>
+            <Text className="text-base font-semibold mb-2 text-gray-800">Location</Text>
+            <TextInput
+              className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
+              value={localEvent.locationName}
+              onChangeText={t => {
+                setLocalEvent(e => ({ ...e, locationName: t }));
+                setIsFormChanged(true);
+              }}
+              placeholder="Location Name"
+              placeholderTextColor="#9CA3AF"
+            />
+            
+            <Text className="text-base font-semibold mb-2 text-gray-800">Event Image</Text>
             <TouchableOpacity 
               className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
               onPress={handleImageChange}

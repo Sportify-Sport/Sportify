@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import getApiBaseUrl from '../config/apiConfig';
@@ -9,6 +9,7 @@ const apiUrl = getApiBaseUrl();
 
 export default function MyEventsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [token, setToken] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,15 @@ export default function MyEventsScreen() {
 
     checkAuth();
   }, []);
+ 	
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (token) {
+        fetchEvents(token);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, token]);
 
   const fetchEvents = async (userToken, loadMore = false) => {
     try {
@@ -103,7 +113,7 @@ export default function MyEventsScreen() {
     >
       <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
         <Image
-          source={{ uri: `${apiUrl}/Images/${item.eventImage}` }}
+          source={{ uri: item.eventImage ? `${apiUrl}/Images/${item.eventImage}`: `${apiUrl}/Images/default_event.png` }}
           className="w-10 h-10 rounded-full"
         />
       </View>

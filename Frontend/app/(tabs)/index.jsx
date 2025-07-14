@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
+import { useNavigation } from 'expo-router';
 import getApiBaseUrl from '../config/apiConfig';
 
 // Import components
@@ -18,7 +19,7 @@ import useHomeData from '../hooks/useHomeData';
 const apiUrl = getApiBaseUrl();
 
 export default function Index() {
-  // Add refreshing state
+  const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   
   // Use custom hooks to fetch data
@@ -49,7 +50,16 @@ export default function Index() {
       setRefreshing(false);
     }
   }, [refreshData, refreshSports]);
-  
+  	
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (token) {
+        onRefresh();
+      }
+    });
+    return unsubscribe; // Clean up listener on unmount
+  }, [navigation, token, onRefresh]);
+
   // Show loading state if any data is still loading
   if (authLoading || dataLoading) {
     return <LoadingIndicator />;

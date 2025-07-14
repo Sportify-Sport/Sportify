@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -43,21 +43,7 @@ export default function MyGroupsScreen() {
     return `City ${cityId}`;
   };
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
-      if (!storedToken) {
-        router.replace('/screens/Login');
-        return;
-      }
-      setToken(storedToken);
-      fetchGroups(storedToken);
-    };
-
-    checkAuth();
-  }, []);
-
-  const fetchGroups = async (userToken) => {
+  const fetchGroups = useCallback(async (userToken) => {
     try {
       setLoading(true);
       const response = await fetch(`${apiUrl}/api/Users/groups/all`, {
@@ -94,7 +80,32 @@ export default function MyGroupsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [citiesMap]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const storedToken = await AsyncStorage.getItem('token');
+      if (!storedToken) {
+        router.replace('/screens/Login');
+        return;
+      }
+      setToken(storedToken);
+      fetchGroups(storedToken);
+    };
+
+    checkAuth();
+  }, [fetchGroups]);
+
+  // Add focus listener to refetch groups when screen is revisited
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (token) {
+        fetchGroups(token);
+      }
+    });
+
+    return unsubscribe; // Clean up listener on unmount
+  }, [navigation, token, fetchGroups]);
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -111,7 +122,7 @@ export default function MyGroupsScreen() {
     >
       <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
         <Image
-          source={{ uri: `${apiUrl}/Images/${item.groupImage}` }}
+          source={{ uri: item.groupImage ? `${apiUrl}/Images/${item.groupImage}` : `${apiUrl}/Images/default_group.png`}}
           className="w-10 h-10 rounded-full"
         />
       </View>

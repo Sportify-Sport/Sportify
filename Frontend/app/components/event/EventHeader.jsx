@@ -15,7 +15,7 @@ export default function EventHeader({ event }) {
     <View className="mb-4">
       <View className="flex-row justify-between items-center">
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+          <Ionicons name="arrow-back" size={28} color="#65DA84" />
         </TouchableOpacity>
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900">{event.eventName}</Text>

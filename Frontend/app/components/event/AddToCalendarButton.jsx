@@ -61,7 +61,7 @@ export default function AddToCalendarButton({ event }) {
   return (
     <TouchableOpacity
       onPress={handleAddToCalendar}
-      className="bg-gray-200 py-3 rounded-lg mb-4"
+      className="bg-green-400 py-3 rounded-lg mb-4"
     >
       <Text className="text-gray-800 text-center font-bold">Add to Calendar</Text>
     </TouchableOpacity>

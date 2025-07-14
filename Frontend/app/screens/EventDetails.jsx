@@ -1,6 +1,6 @@
 // screens/EventDetails.jsx
 import React, { useState } from "react";
-import { View, ScrollView, RefreshControl, Alert } from "react-native";
+import { View, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Text } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from "expo-router";
 
@@ -22,9 +22,35 @@ import EventMembers from "../components/event/EventMembers";
 import PendingRequests from "../components/event/PendingRequests";
 import EventGroups from "../components/event/EventGroups";
 import GroupSearch from "../components/event/GroupSearch";
+import EditEventModal from "../components/event/EditEventModal";
 import UserDetailsModal from "../components/modals/UserDetailsModal";
 import AlertNotification from "../components/common/AlertNotification";
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
+
+	
+const EditEventCard = ({ onEdit }) => (
+  <View className="bg-white p-4 rounded-xl shadow mb-6">
+    <TextInput
+      className="border border-gray-300 rounded-lg p-3 mb-3"
+      placeholder="Type event note (optional)..."
+      placeholderTextColor="#9CA3AF"
+      value=""
+      editable={false} // Disabled input as a placeholder to match style
+      multiline
+    />
+    <View className="flex-row space-x-3">
+      <TouchableOpacity
+        className="flex-1 py-3 rounded-full bg-gray-300"
+        disabled={true} // Disable placeholder button
+      >
+        <Text className="text-white text-center font-bold">Send Note</Text>
+      </TouchableOpacity>
+      <TouchableOpacity className="flex-1 py-3 rounded-full bg-blue-500" onPress={onEdit}>
+        <Text className="text-white text-center font-bold">Edit Event</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
 
 export default function EventDetails() {
   const { eventId } = useLocalSearchParams();
@@ -32,7 +58,7 @@ export default function EventDetails() {
   // State for modals
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-
+  const [editModalVisible, setEditModalVisible] = useState(false);
   // Use our existing hooks
   const { token } = useAuth();
   const isLoggedIn = !!token;
@@ -198,6 +224,7 @@ export default function EventDetails() {
           }
         >
           <EventHeader event={event} />
+        <View className="h-px bg-green-400 mb-4" />
 
           <EventDetailsCard
             event={event}
@@ -235,6 +262,7 @@ export default function EventDetails() {
                 onViewDetails={handleViewMemberDetails}
                 onRemoveMember={handleRemoveMember}
               />
+              <View className="h-px bg-green-400 mb-4" />
 
               <PendingRequests
                 requests={requests}
@@ -264,6 +292,7 @@ export default function EventDetails() {
             />
 
           )}
+        <View className="h-px bg-green-400 mb-4" />
 
           {/* Group search for admins of team events */}
           {isAdmin && isTeamEvent && (
@@ -274,7 +303,29 @@ export default function EventDetails() {
               onAddGroup={refreshGroups}
             />
           )}
+   
+          {/* Edit Event button for admins */}
+          {isLoggedIn && isAdmin && (
+           <EditEventCard onEdit={() => setEditModalVisible(true)} />
+          )}
         </ScrollView>
+	
+        {/* Edit Event Modal */}
+        <EditEventModal
+          visible={editModalVisible}
+          event={event}
+          onClose={() => setEditModalVisible(false)}
+          onSave={() => {
+            onRefresh(); // Refresh event data after save
+            setEditModalVisible(false);
+          }}
+          token={token} // Pass token for API calls
+        />
+        <UserDetailsModal
+          visible={userModalVisible}
+          user={selectedUser}
+          onClose={() => setUserModalVisible(false)}
+        />
       </View>
     </SafeAreaView>
   );
