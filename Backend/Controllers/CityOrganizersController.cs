@@ -18,86 +18,7 @@ namespace Backend.Controllers
         public CityOrganizersController(CityService cityService)
         {
             _cityService = cityService;
-        }
-
-        // Get all city organizers for a specific city
-        [HttpGet("city/{cityId}")]
-        public async Task<IActionResult> GetCityOrganizers(int cityId)
-        {
-            try
-            {
-                // Validate city exists
-                bool cityValid = await _cityService.IsCityValidAsync(cityId);
-                if (!cityValid)
-                {
-                    return BadRequest(new { success = false, message = "Invalid city ID" });
-                }
-
-                DBservices dbServices = new DBservices();
-                var organizers = dbServices.GetCityOrganizers(cityId);
-
-                // Get city name
-                string cityName = await _cityService.GetCityHebrewNameAsync(cityId);
-
-                return Ok(new
-                {
-                    success = true,
-                    cityId = cityId,
-                    cityName = cityName,
-                    organizers = organizers
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving city organizers" });
-            }
-        }
-
-        // Get all cities for a specific organizer
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetOrganizerCities(int userId)
-        {
-            try
-            {
-                DBservices dbServices = new DBservices();
-
-                // Check if user exists
-                var user = dbServices.GetUserById(userId);
-                if (user == null)
-                {
-                    return NotFound(new { success = false, message = "User not found" });
-                }
-
-                var cityIds = dbServices.GetOrganizerCities(userId);
-                var cities = new List<object>();
-
-                foreach (var cityId in cityIds)
-                {
-                    var cityInfo = await _cityService.GetCityAsync(cityId);
-                    if (cityInfo != null)
-                    {
-                        cities.Add(new
-                        {
-                            cityId = cityInfo.Id,
-                            hebrewName = cityInfo.HebrewName,
-                            englishName = cityInfo.EnglishName
-                        });
-                    }
-                }
-
-                return Ok(new
-                {
-                    success = true,
-                    userId = userId,
-                    userName = $"{user.FirstName} {user.LastName}",
-                    cities = cities
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving organizer cities" });
-            }
-        }
+        }        
 
         // Add city organizer
         [HttpPost("add")]
@@ -164,23 +85,11 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid city ID" });
                 }
 
-                // Get current user ID
-                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-                string userName = User.FindFirst("name")?.Value ?? "Unknown";
-
-                // Prevent self-removal if SuperAdmin
-                if (currentUserId == dto.UserId)
-                {
-                    return BadRequest(new { success = false, message = "You cannot remove yourself as city organizer" });
-                }
-
                 DBservices dbServices = new DBservices();
                 var result = dbServices.RemoveCityOrganizer(dto.UserId, dto.CityId);
 
                 if (result.Success)
                 {
-                    var cityName = await _cityService.GetCityHebrewNameAsync(dto.CityId);
-
                     return Ok(new { success = true, message = result.Message });
                 }
                 else
@@ -194,26 +103,112 @@ namespace Backend.Controllers
             }
         }
 
-        // Check if user is city organizer for specific city
-        [HttpGet("check/{userId}/{cityId}")]
-        public async Task<IActionResult> CheckCityOrganizer(int userId, int cityId)
+        // Get city organizers with optional filters and pagination
+        [HttpGet]
+        public async Task<IActionResult> GetCityOrganizers(
+            [FromQuery] string? query = null,
+            [FromQuery] int? cityId = null,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
         {
             try
             {
+                // Validate pagination parameters
+                if (pageNumber < 1)
+                {
+                    return BadRequest(new { success = false, message = "Page number must be greater than 0" });
+                }
+
+                if (pageSize < 1 || pageSize > 100)
+                {
+                    return BadRequest(new { success = false, message = "Page size must be between 1 and 100" });
+                }
+
+                // Validate city if provided
+                if (cityId.HasValue)
+                {
+                    if (cityId.Value <= 0)
+                    {
+                        return BadRequest(new { success = false, message = "Invalid city ID" });
+                    }
+
+                    bool cityValid = await _cityService.IsCityValidAsync(cityId.Value);
+                    if (!cityValid)
+                    {
+                        return BadRequest(new { success = false, message = "City ID does not exist" });
+                    }
+                }
+
+                // Sanitize query input
+                if (!string.IsNullOrWhiteSpace(query))
+                {
+                    query = query.Trim();
+
+                    // Prevent SQL injection by limiting characters and length
+                    if (query.Length > 100)
+                    {
+                        return BadRequest(new { success = false, message = "Query is too long" });
+                    }
+                }
+
                 DBservices dbServices = new DBservices();
-                bool isOrganizer = dbServices.IsUserCityOrganizer(userId, cityId);
+                var result = dbServices.SearchCityOrganizers(query, cityId, pageNumber, pageSize);
+
+                // Get city information for each unique city
+                var uniqueCityIds = result.Organizers
+                    .Select(o => o.CityId)
+                    .Distinct()
+                    .ToList();
+
+                var cityInfoDict = new Dictionary<int, object>();
+                foreach (var id in uniqueCityIds)
+                {
+                    var cityInfo = await _cityService.GetCityAsync(id);
+                    if (cityInfo != null)
+                    {
+                        cityInfoDict[id] = new
+                        {
+                            cityId = id,
+                            hebrewName = cityInfo.HebrewName,
+                            englishName = cityInfo.EnglishName
+                        };
+                    }
+                }
+
+                // Map organizers with city information
+                var organizersWithCities = result.Organizers.Select(o => new
+                {
+                    userId = o.UserId,
+                    firstName = o.FirstName,
+                    lastName = o.LastName,
+                    email = o.Email,
+                    profileImage = o.ProfileImage,
+                    isSuperAdmin = o.IsSuperAdmin,
+                    city = cityInfoDict.ContainsKey(o.CityId) ? cityInfoDict[o.CityId] : null
+                }).ToList();
 
                 return Ok(new
                 {
                     success = true,
-                    userId = userId,
-                    cityId = cityId,
-                    isOrganizer = isOrganizer
+                    organizers = organizersWithCities,
+                    pagination = new
+                    {
+                        currentPage = pageNumber,
+                        pageSize = pageSize,
+                        totalCount = result.TotalCount,
+                        totalPages = (int)Math.Ceiling(result.TotalCount / (double)pageSize),
+                        hasMore = result.HasMore
+                    },
+                    filters = new
+                    {
+                        query = query,
+                        cityId = cityId
+                    }
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "An error occurred while checking city organizer status" });
+                return StatusCode(500, new { success = false, message = "An error occurred while searching city organizers" });
             }
         }
     }

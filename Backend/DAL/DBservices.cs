@@ -7414,4 +7414,214 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // Add city organizer
+    //--------------------------------------------------------------------------------------------------
+    public (bool Success, string Message) AddCityOrganizer(int userId, int cityId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureAddCityOrganizer("SP_AddCityOrganizer", con, userId, cityId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Failed to add city organizer");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for adding city organizer
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureAddCityOrganizer(string spName, SqlConnection con, int userId, int cityId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Remove city organizer
+    //--------------------------------------------------------------------------------------------------
+    public (bool Success, string Message) RemoveCityOrganizer(int userId, int cityId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureRemoveCityOrganizer("SP_RemoveCityOrganizer", con, userId, cityId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Failed to remove city organizer");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for removing city organizer
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureRemoveCityOrganizer(string spName, SqlConnection con, int userId, int cityId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@CityId", cityId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Search city organizers with filters and pagination
+    //--------------------------------------------------------------------------------------------------
+    public CityOrganizerSearchResult SearchCityOrganizers(string query, int? cityId, int pageNumber, int pageSize)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        var result = new CityOrganizerSearchResult
+        {
+            Organizers = new List<CityOrganizerDetails>(),
+            TotalCount = 0,
+            HasMore = false
+        };
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureSearchCityOrganizers("SP_SearchCityOrganizers", con, query, cityId, pageNumber, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader();
+
+            // Read first result set (organizers)
+            while (dataReader.Read())
+            {
+                result.Organizers.Add(new CityOrganizerDetails
+                {
+                    UserId = Convert.ToInt32(dataReader["UserId"]),
+                    FirstName = dataReader["FirstName"].ToString(),
+                    LastName = dataReader["LastName"].ToString(),
+                    Email = dataReader["Email"].ToString(),
+                    ProfileImage = dataReader["ProfileImage"].ToString(),
+                    CityId = Convert.ToInt32(dataReader["CityId"]),
+                    IsSuperAdmin = Convert.ToBoolean(dataReader["IsSuperAdmin"])
+                });
+            }
+
+            // Check if we have more records than pageSize (for hasMore flag)
+            if (result.Organizers.Count > pageSize)
+            {
+                result.HasMore = true;
+                result.Organizers.RemoveAt(result.Organizers.Count - 1); // Remove the extra record
+            }
+
+            // Move to second result set (total count)
+            if (dataReader.NextResult() && dataReader.Read())
+            {
+                result.TotalCount = Convert.ToInt32(dataReader["TotalCount"]);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for searching city organizers
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureSearchCityOrganizers(string spName, SqlConnection con, string query, int? cityId, int pageNumber, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@Query", (object)query ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CityId", (object)cityId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
+        return cmd;
+    }
 }
