@@ -215,6 +215,7 @@ namespace Backend.Controllers
 
             // Use inherited expiry date or create a new one
             var expiryDate = inheritExpiryDate ?? DateTime.UtcNow.AddHours(1);
+            //var expiryDate = inheritExpiryDate ?? DateTime.UtcNow.AddMinutes(1);
 
             DBservices dbServices = new DBservices();
             return dbServices.SaveAdminRefreshToken(userId, token, expiryDate);

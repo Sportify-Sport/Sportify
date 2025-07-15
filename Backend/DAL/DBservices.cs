@@ -335,67 +335,6 @@ public class DBservices
     }
 
     //--------------------------------------------------------------------------------------------------
-    // This method retrieves all cities where the user is an organizer
-    //--------------------------------------------------------------------------------------------------
-    private void GetUserOrganizerCities(User user)
-    {
-        SqlConnection con;
-        SqlCommand cmd;
-
-        try
-        {
-            con = connect("myProjDB");
-        }
-        catch (Exception ex)
-        {
-            // Write to log
-            throw (ex);
-        }
-
-        cmd = CreateCommandWithStoredProcedureGetOrganizerCities("SP_GetOrganizerCities", con, user.UserId);
-
-        try
-        {
-            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-
-            while (dataReader.Read())
-            {
-                user.OrganizerForCities.Add(Convert.ToInt32(dataReader["CityId"]));
-            }
-
-            // Set IsCityOrganizer flag based on whether user has any organizer cities
-            user.IsCityOrganizer = user.OrganizerForCities.Count > 0;
-        }
-        catch (Exception ex)
-        {
-            // Write to log
-            throw (ex);
-        }
-        finally
-        {
-            if (con != null)
-            {
-                con.Close();
-            }
-        }
-    }
-
-    //---------------------------------------------------------------------------------
-    // Create the SqlCommand to retrieve all cities where user is designated organizer
-    //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureGetOrganizerCities(string spName, SqlConnection con, int userId)
-    {
-        SqlCommand cmd = new SqlCommand();
-        cmd.Connection = con;
-        cmd.CommandText = spName;
-        cmd.CommandTimeout = 10;
-        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        return cmd;
-    }
-
-
-    //--------------------------------------------------------------------------------------------------
     // This method retrieves all sports from the database
     //--------------------------------------------------------------------------------------------------
     public List<Sport> GetAllSports()
@@ -7237,5 +7176,242 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // Add new sport
+    //--------------------------------------------------------------------------------------------------
+    public (bool Success, string Message, int SportId) AddSport(string sportName, string sportImage)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureAddSport("SP_AddSport", con, sportName, sportImage);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                int sportId = Convert.ToInt32(dataReader["SportId"]);
+                return (success, message, sportId);
+            }
+
+            return (false, "Failed to add sport", 0);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for adding sport
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureAddSport(string spName, SqlConnection con, string sportName, string sportImage)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@SportName", sportName);
+        cmd.Parameters.AddWithValue("@SportImage", sportImage);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Update sport image
+    //--------------------------------------------------------------------------------------------------
+    public (bool Success, string Message) UpdateSportImage(int sportId, string sportImage)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureUpdateSportImage("SP_UpdateSportImage", con, sportId, sportImage);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                return (success, message);
+            }
+
+            return (false, "Failed to update sport image");
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for updating sport image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdateSportImage(string spName, SqlConnection con, int sportId, string sportImage)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@SportId", sportId);
+        cmd.Parameters.AddWithValue("@SportImage", sportImage);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Delete sport
+    //--------------------------------------------------------------------------------------------------
+    public (bool Success, string Message, string SportImage) DeleteSport(int sportId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureDeleteSport("SP_DeleteSport", con, sportId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                bool success = Convert.ToBoolean(dataReader["Success"]);
+                string message = dataReader["Message"].ToString();
+                string sportImage = dataReader["SportImage"]?.ToString();
+                return (success, message, sportImage);
+            }
+
+            return (false, "Failed to delete sport", null);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for deleting sport
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureDeleteSport(string spName, SqlConnection con, int sportId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@SportId", sportId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Get sport image
+    //--------------------------------------------------------------------------------------------------
+    public string GetSportImage(int sportId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureGetSportImage("SP_GetSportImage", con, sportId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return dataReader["SportImage"]?.ToString();
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting sport image
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetSportImage(string spName, SqlConnection con, int sportId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@SportId", sportId);
+        return cmd;
+    }
 
 }

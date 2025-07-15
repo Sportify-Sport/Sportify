@@ -61,5 +61,61 @@ namespace Backend.BL
                 return false;
             }
         }
+
+        // Add new sport
+        public static (bool Success, string Message, int SportId) AddSport(string sportName, string sportImage)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.AddSport(sportName, sportImage);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        // Update sport image
+        public static (bool Success, string Message) UpdateSportImage(int sportId, string sportImage)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.UpdateSportImage(sportId, sportImage);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        // Delete sport
+        public static (bool Success, string Message, string SportImage) DeleteSport(int sportId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.DeleteSport(sportId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        // Get current sport image
+        public static string GetCurrentSportImage(int sportId)
+        {
+            try
+            {
+                DBservices dBservices = new DBservices();
+                return dBservices.GetSportImage(sportId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
