@@ -21,23 +21,23 @@ const apiUrl = getApiBaseUrl();
 export default function Index() {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Use custom hooks to fetch data
   const { token, loading: authLoading } = useAuth();
   const { sportsList, sportsMap, refreshSports } = useSports(token);
-  const { 
-    recommendedEvents, 
-    myEventsList, 
-    myGroupsList, 
-    profileName, 
+  const {
+    recommendedEvents,
+    myEventsList,
+    myGroupsList,
+    profileName,
     loading: dataLoading,
-    refreshData 
+    refreshData
   } = useHomeData(token);
-  
+
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    
+
     try {
       // Refresh all data in parallel
       await Promise.all([
@@ -50,7 +50,7 @@ export default function Index() {
       setRefreshing(false);
     }
   }, [refreshData, refreshSports]);
-  	
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       if (token) {
@@ -66,7 +66,7 @@ export default function Index() {
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       className="flex-1 bg-white p-4"
       refreshControl={
         <RefreshControl
@@ -79,23 +79,23 @@ export default function Index() {
       }
     >
       <Header token={token} profileName={profileName} />
-      
+
       <EventCarousel events={recommendedEvents} apiUrl={apiUrl} />
-      
-      <SportsList sports={sportsList} />
-      
-      <MyEventsList 
-        events={myEventsList} 
-        token={token} 
-        sportsMap={sportsMap} 
-        apiUrl={apiUrl} 
+
+      <SportsList sports={sportsList} apiUrl={apiUrl} />
+
+      <MyEventsList
+        events={myEventsList}
+        token={token}
+        sportsMap={sportsMap}
+        apiUrl={apiUrl}
       />
-      
-      <MyGroupsList 
-        groups={myGroupsList} 
-        token={token} 
-        sportsMap={sportsMap} 
-        apiUrl={apiUrl} 
+
+      <MyGroupsList
+        groups={myGroupsList}
+        token={token}
+        sportsMap={sportsMap}
+        apiUrl={apiUrl}
       />
     </ScrollView>
   );

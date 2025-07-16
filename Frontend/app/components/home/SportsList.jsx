@@ -1,10 +1,13 @@
 import React from 'react';
 import { View, Text, Image, FlatList } from 'react-native';
 
-export default function SportsList({ sports }) {
+export default function SportsList({ sports, apiUrl }) {
   const renderSport = ({ item }) => (
     <View className="items-center mx-2">
-      <Image source={{ uri: item.sportImage }} className="w-16 h-16 rounded-full" />
+      <Image
+        source={{ uri: `${apiUrl}/Images/${item.sportImage}` }}
+        className="w-16 h-16 rounded-full"
+      />
       <Text className="mt-1 text-sm text-gray-700">{item.sportName}</Text>
     </View>
   );
