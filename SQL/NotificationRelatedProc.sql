@@ -376,3 +376,25 @@ BEGIN
     WHERE GroupId = @GroupId;
 END
 GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <13/7/2025>
+-- Description:	<Delete the specified Notification>
+-- =============================================
+CREATE PROCEDURE SP_DeleteNotification
+    @NotificationId INT,
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Delete only if the notification belongs to the user
+    DELETE FROM NotificationHistory
+    WHERE NotificationId = @NotificationId 
+        AND UserId = @UserId;
+    
+    -- Return number of rows affected
+    SELECT @@ROWCOUNT AS Deleted;
+END
+GO
