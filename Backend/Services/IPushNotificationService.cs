@@ -12,5 +12,7 @@ namespace Backend.Services
         Task<List<int>> GetGroupRecipientsAsync(int groupId);
         Task<List<NotificationHistoryItem>> GetUserNotificationHistoryAsync(int userId);
         Task<bool> MarkNotificationAsReadAsync(int notificationId, int userId);
+        Task<NotificationHistoryResult> GetUserNotificationHistoryPaginatedAsync(int userId, int pageNumber, int pageSize);
+        Task<bool> DeleteNotificationAsync(int notificationId, int userId);
     }
 }

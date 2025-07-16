@@ -69,7 +69,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "EventAdmin, GroupAdmin")]
         [HttpPost("send-admin-notification")]
         public async Task<IActionResult> SendAdminNotification([FromBody] AdminNotificationRequest request)
         {
@@ -111,7 +111,7 @@ namespace Backend.Controllers
                     bool isEventAdmin = Event.IsUserEventAdmin(request.EventId.Value, currentUserId);
                     if (!isEventAdmin)
                     {
-                        return Forbid("You are not authorized to send notifications for this event");
+                        return StatusCode(403, new { success = false, message = "You are not authorized to send notifications for this event" });
                     }
                 }
 
@@ -120,7 +120,7 @@ namespace Backend.Controllers
                     bool isGroupAdmin = GroupMember.IsUserGroupAdmin(request.GroupId.Value, currentUserId);
                     if (!isGroupAdmin)
                     {
-                        return Forbid("You are not authorized to send notifications for this group");
+                        return StatusCode(403, new { success = false, message = "You are not authorized to send notifications for this group" });
                     }
                 }
 
@@ -177,12 +177,49 @@ namespace Backend.Controllers
             }
         }
 
+        //[Authorize(Roles = "User")]
+        //[HttpGet("history")]
+        //public async Task<IActionResult> GetNotificationHistory()
+        //{
+        //    try
+        //    {
+        //        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        //        if (userIdClaim == null)
+        //        {
+        //            return Unauthorized();
+        //        }
+
+        //        int userId = int.Parse(userIdClaim.Value);
+
+        //        var notifications = await _pushNotificationService.GetUserNotificationHistoryAsync(userId);
+
+        //        return Ok(new { success = true, notifications });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { success = false, message = "An error occurred" });
+        //    }
+        //}
+
         [Authorize(Roles = "User")]
         [HttpGet("history")]
-        public async Task<IActionResult> GetNotificationHistory()
+        public async Task<IActionResult> GetNotificationHistory(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 20)
         {
             try
             {
+                // Validate pagination parameters
+                if (pageNumber < 1)
+                {
+                    return BadRequest(new { success = false, message = "Page number must be greater than 0" });
+                }
+
+                if (pageSize < 1 || pageSize > 100)
+                {
+                    return BadRequest(new { success = false, message = "Page size must be between 1 and 100" });
+                }
+
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)
                 {
@@ -191,15 +228,30 @@ namespace Backend.Controllers
 
                 int userId = int.Parse(userIdClaim.Value);
 
-                var notifications = await _pushNotificationService.GetUserNotificationHistoryAsync(userId);
+                var result = await _pushNotificationService.GetUserNotificationHistoryPaginatedAsync(
+                    userId, pageNumber, pageSize);
 
-                return Ok(new { success = true, notifications });
+                return Ok(new
+                {
+                    success = true,
+                    notifications = result.Notifications,
+                    unreadCount = result.UnreadCount,
+                    pagination = new
+                    {
+                        currentPage = pageNumber,
+                        pageSize = pageSize,
+                        totalCount = result.TotalCount,
+                        totalPages = (int)Math.Ceiling(result.TotalCount / (double)pageSize),
+                        hasMore = result.HasMore
+                    }
+                });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
+
 
         [Authorize(Roles = "User")]
         [HttpPost("mark-read/{notificationId}")]
@@ -224,5 +276,43 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
+
+        [Authorize(Roles = "User")]
+        [HttpDelete("{notificationId}")]
+        public async Task<IActionResult> DeleteNotification(int notificationId)
+        {
+            try
+            {
+                // Validate input
+                if (notificationId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid notification ID" });
+                }
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized();
+                }
+
+                int userId = int.Parse(userIdClaim.Value);
+
+                var success = await _pushNotificationService.DeleteNotificationAsync(notificationId, userId);
+
+                if (success)
+                {
+                    return Ok(new { success = true, message = "Notification deleted successfully" });
+                }
+                else
+                {
+                    return NotFound(new { success = false, message = "Notification not found or you don't have permission to delete it" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred" });
+            }
+        }
+
     }
 }

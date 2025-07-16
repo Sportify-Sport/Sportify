@@ -81,19 +81,26 @@ BEGIN
         INNER JOIN EventTeams et ON gm.GroupId = et.GroupId
         WHERE et.EventId = @EventId;
     END
+    
     -- Case 2: Public event without teams (RequiresTeams = 0, IsPublic = 1)
     ELSE IF @RequiresTeams = 0 AND @IsPublic = 1
     BEGIN
         IF @RecipientType = 'groups'
         BEGIN
-            SELECT DISTINCT gm.UserId
-            FROM GroupMembers gm
-            INNER JOIN EventTeams et ON gm.GroupId = et.GroupId
-            WHERE et.EventId = @EventId;
+            SELECT CAST(NULL AS INT) AS UserId WHERE 1 = 0;
         END
-        ELSE -- 'all'
+        ELSE IF @RecipientType = 'players'
         BEGIN
+            -- Only players (PlayWatch = 1) from EventParticipants
+            SELECT UserId
+            FROM EventParticipants
+            WHERE EventId = @EventId AND PlayWatch = 1;
+        END
+        ELSE -- 'all' or any other value defaults to all
+        BEGIN
+            -- Everyone: groups + individual participants
             SELECT DISTINCT UserId FROM (
+                -- Group members
                 SELECT gm.UserId
                 FROM GroupMembers gm
                 INNER JOIN EventTeams et ON gm.GroupId = et.GroupId
@@ -101,26 +108,46 @@ BEGIN
                 
                 UNION
                 
+                -- Individual participants
                 SELECT ep.UserId
                 FROM EventParticipants ep
                 WHERE ep.EventId = @EventId
             ) AS AllUsers;
         END
     END
-    -- Case 3: Event with teams (RequiresTeams = 1)
+    
+    -- Case 3: Team event (RequiresTeams = 1)
     ELSE IF @RequiresTeams = 1
     BEGIN
         IF @RecipientType = 'players'
         BEGIN
-            SELECT UserId
-            FROM EventParticipants
-            WHERE EventId = @EventId AND PlayWatch = 1;
+            SELECT CAST(NULL AS INT) AS UserId WHERE 1 = 0;
         END
-        ELSE -- 'all'
+        ELSE IF @RecipientType = 'groups'
         BEGIN
-            SELECT UserId
-            FROM EventParticipants
-            WHERE EventId = @EventId;
+            -- All group members from teams in the event
+            SELECT DISTINCT gm.UserId
+            FROM GroupMembers gm
+            INNER JOIN EventTeams et ON gm.GroupId = et.GroupId
+            WHERE et.EventId = @EventId;
+        END
+        ELSE -- 'all' or any other value defaults to all
+        BEGIN
+            -- Everyone: all group members + viewers
+            SELECT DISTINCT UserId FROM (
+                -- All group members from teams
+                SELECT gm.UserId
+                FROM GroupMembers gm
+                INNER JOIN EventTeams et ON gm.GroupId = et.GroupId
+                WHERE et.EventId = @EventId
+                
+                UNION
+                
+                -- Viewers (PlayWatch = 0)
+                SELECT ep.UserId
+                FROM EventParticipants ep
+                WHERE ep.EventId = @EventId AND ep.PlayWatch = 0
+            ) AS AllUsers;
         END
     END
 END
@@ -265,6 +292,54 @@ BEGIN
     FROM NotificationHistory
     WHERE UserId = @UserId
     ORDER BY SentAt DESC;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <16/7/2025>
+-- Description:	<SP to get user notification history with pagination>
+-- =============================================
+CREATE PROCEDURE SP_GetUserNotificationHistoryPaginated
+    @UserId INT,
+    @PageNumber INT = 1,
+    @PageSize INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Calculate skip value
+    DECLARE @Skip INT = (@PageNumber - 1) * @PageSize;
+    
+    -- Get total count
+    DECLARE @TotalCount INT;
+	DECLARE @UnreadCount INT;
+
+    SELECT @TotalCount = COUNT(*),
+           @UnreadCount = SUM(CASE WHEN IsRead = 0 THEN 1 ELSE 0 END)
+    FROM NotificationHistory
+    WHERE UserId = @UserId;
+    
+    -- Get paginated results + 1 to check if there are more
+    SELECT 
+        NotificationId,
+        Title,
+        Body,
+        NotificationData,
+        SentAt,
+        IsRead,
+        ReadAt,
+        NotificationType,
+        RelatedEntityId,
+        RelatedEntityType
+    FROM NotificationHistory
+    WHERE UserId = @UserId
+    ORDER BY SentAt DESC
+    OFFSET @Skip ROWS
+    FETCH NEXT @PageSize + 1 ROWS ONLY;
+    
+    -- Return total count
+    SELECT @TotalCount AS TotalCount, @UnreadCount AS UnreadCount;
 END
 GO
 

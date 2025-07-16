@@ -73,4 +73,13 @@
         public int? RelatedEntityId { get; set; }
         public string RelatedEntityType { get; set; }
     }
+
+    public class NotificationHistoryResult
+    {
+        public List<NotificationHistoryItem> Notifications { get; set; }
+        public int TotalCount { get; set; }
+        public int UnreadCount { get; set; }
+        public bool HasMore { get; set; }
+    }
+
 }

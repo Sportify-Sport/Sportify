@@ -99,7 +99,8 @@ BEGIN
     DECLARE @isAdmin BIT = 0;
     DECLARE @hasAccess BIT = 1;
 	DECLARE @hasPendingRequest BIT = 0;
-    
+    DECLARE @viewerCount INT = 0;
+
     -- First get the event details including RequiresTeams and IsPublic flags
     SELECT 
         @requiresTeams = RequiresTeams,
@@ -107,6 +108,19 @@ BEGIN
     FROM [Events]
     WHERE EventId = @eventId;
     
+	-- Calculate viewer count
+    -- If event is public, count actual viewers; if private, set to 0
+    IF @isPublic = 1
+    BEGIN
+        SELECT @viewerCount = COUNT(*)
+        FROM EventParticipants
+        WHERE EventId = @eventId AND PlayWatch = 0;  -- 0 means viewer
+    END
+    ELSE
+    BEGIN
+        SET @viewerCount = 0;  -- Private events show 0 viewers
+    END
+
     -- If user is authenticated, check participation status
     IF @userId IS NOT NULL
     BEGIN
@@ -178,7 +192,8 @@ BEGIN
             @isParticipant AS IsParticipant,
             @playWatch AS PlayWatch,
             @isAdmin AS IsAdmin,
-			@hasPendingRequest AS HasPendingRequest
+			@hasPendingRequest AS HasPendingRequest,
+			@viewerCount AS ViewerCount
         FROM [Events] e
         LEFT JOIN EventLocations el ON e.LocationId = el.LocationId
         WHERE e.EventId = @eventId;

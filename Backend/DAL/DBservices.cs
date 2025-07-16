@@ -1470,7 +1470,8 @@ public class DBservices
                     Gender = dataReader["Gender"].ToString(),
                     ParticipantsNum = Convert.ToInt32(dataReader["ParticipantsNum"]),
                     TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]),
-                    EventImage = dataReader["ProfileImage"].ToString(), // Fixed variable name to match DB column
+                    EventImage = dataReader["ProfileImage"].ToString(),
+                    ViewerCount = Convert.ToInt32(dataReader["ViewerCount"]),
 
                     // Location information
                     LocationName = dataReader["LocationName"] == DBNull.Value ? null : dataReader["LocationName"].ToString(),
@@ -7006,6 +7007,102 @@ public class DBservices
         return cmd;
     }
 
+
+    //--------------------------------------------------------------------------------------------------
+    // Get user notification history with pagination
+    //--------------------------------------------------------------------------------------------------
+    public NotificationHistoryResult GetUserNotificationHistoryPaginated(int userId, int pageNumber, int pageSize)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+        var result = new NotificationHistoryResult
+        {
+            Notifications = new List<NotificationHistoryItem>(),
+            TotalCount = 0,
+            HasMore = false
+        };
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureGetUserNotificationHistoryPaginated("SP_GetUserNotificationHistoryPaginated", con, userId, pageNumber, pageSize);
+
+            SqlDataReader dataReader = cmd.ExecuteReader();
+
+            // Read first result set (notifications)
+            while (dataReader.Read())
+            {
+                var notification = new NotificationHistoryItem
+                {
+                    NotificationId = Convert.ToInt32(dataReader["NotificationId"]),
+                    UserId = userId,
+                    Title = dataReader["Title"].ToString(),
+                    Body = dataReader["Body"].ToString(),
+                    NotificationData = dataReader["NotificationData"]?.ToString() ?? "",
+                    SentAt = Convert.ToDateTime(dataReader["SentAt"]),
+                    IsRead = Convert.ToBoolean(dataReader["IsRead"]),
+                    ReadAt = dataReader["ReadAt"] != DBNull.Value ? Convert.ToDateTime(dataReader["ReadAt"]) : (DateTime?)null,
+                    NotificationType = dataReader["NotificationType"]?.ToString() ?? "",
+                    RelatedEntityId = dataReader["RelatedEntityId"] != DBNull.Value ? Convert.ToInt32(dataReader["RelatedEntityId"]) : (int?)null,
+                    RelatedEntityType = dataReader["RelatedEntityType"]?.ToString() ?? ""
+                };
+                result.Notifications.Add(notification);
+            }
+
+            // Check if we have more records than pageSize
+            if (result.Notifications.Count > pageSize)
+            {
+                result.HasMore = true;
+                result.Notifications.RemoveAt(result.Notifications.Count - 1); // Remove extra record
+            }
+
+            // Move to second result set (total count)
+            if (dataReader.NextResult() && dataReader.Read())
+            {
+                result.TotalCount = Convert.ToInt32(dataReader["TotalCount"]);
+                result.UnreadCount = Convert.ToInt32(dataReader["UnreadCount"]);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting paginated notification history
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUserNotificationHistoryPaginated(
+        string spName, SqlConnection con, int userId, int pageNumber, int pageSize)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+        return cmd;
+    }
+
     //--------------------------------------------------------------------------------------------------
     // Mark notification as read
     //--------------------------------------------------------------------------------------------------
@@ -7173,6 +7270,65 @@ public class DBservices
         cmd.CommandTimeout = 10;
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
         cmd.Parameters.AddWithValue("@GroupId", groupId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Delete notification
+    //--------------------------------------------------------------------------------------------------
+    public bool DeleteNotification(int notificationId, int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        try
+        {
+            cmd = CreateCommandWithStoredProcedureDeleteNotification("SP_DeleteNotification", con, notificationId, userId);
+
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                int deleted = Convert.ToInt32(dataReader["Deleted"]);
+                return deleted > 0;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for deleting notification
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureDeleteNotification(string spName, SqlConnection con, int notificationId, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@NotificationId", notificationId);
+        cmd.Parameters.AddWithValue("@UserId", userId);
         return cmd;
     }
 

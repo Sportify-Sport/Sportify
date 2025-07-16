@@ -254,5 +254,37 @@ namespace Backend.Services
                 return false;
             }
         }
+
+        public async Task<NotificationHistoryResult> GetUserNotificationHistoryPaginatedAsync(int userId, int pageNumber, int pageSize)
+        {
+            try
+            {
+                var dbServices = new DBservices();
+                return dbServices.GetUserNotificationHistoryPaginated(userId, pageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                return new NotificationHistoryResult
+                {
+                    Notifications = new List<NotificationHistoryItem>(),
+                    TotalCount = 0,
+                    HasMore = false
+                };
+            }
+        }
+
+        public async Task<bool> DeleteNotificationAsync(int notificationId, int userId)
+        {
+            try
+            {
+                var dbServices = new DBservices();
+                return dbServices.DeleteNotification(notificationId, userId);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
     }
 }
