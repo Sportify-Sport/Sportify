@@ -119,6 +119,25 @@ export default function ManageCityOrganizers() {
     }
   };
 
+  const fetchCityNameById = async (cityId) => {
+    if (!cityId || cityNames[cityId]) return;
+
+    try {
+      const url = `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${cityId}}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.success && data.result.records.length > 0) {
+        const name = data.result.records[0].city_name_en?.trim();
+        if (name) {
+          setCityNames(prev => ({ ...prev, [cityId]: name }));
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to fetch city name for ID ${cityId}`, err);
+    }
+  };
+
   // Remove organizer
   const handleRemove = async (o) => {
     if (!window.confirm(`Remove ${o.firstName} ${o.lastName} from this city?`)) return;
@@ -182,6 +201,11 @@ export default function ManageCityOrganizers() {
       );
       const data = await res.json();
       setUserResults(data || []);
+      (data || []).forEach(user => {
+        if (user.cityId && !cityNames[user.cityId]) {
+          fetchCityNameById(user.cityId);
+        }
+      });
     } catch (err) {
       if (err.name !== 'AbortError') console.error(err);
     } finally {

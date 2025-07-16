@@ -152,9 +152,6 @@ const CitySelectionPage = () => {
   const [error, setError] = useState(null);
   const { currentUser, selectCity, logout } = useAuth();
   const navigate = useNavigate();
-useEffect(() => {
-  console.log('🧑 Current User Details:', currentUser);
-}, [currentUser]);
 
   // Fetch cities that the admin can manage
   useEffect(() => {
