@@ -25,6 +25,7 @@ namespace Backend.Services
 
                 if (userProfileObj == null)
                 {
+                    // Case: User not found
                     return GetRandomEventsResult(count, "User not found. Showing random events.");
                 }
 
@@ -34,24 +35,26 @@ namespace Backend.Services
                 // Build user profile string
                 var userProfileString = await BuildUserProfileStringAsync(userProfile);
 
-                // Get active events (not ended)
-                var activeEvents = dbServices.GetActiveEvents();
+                // Get eligible events for the user (not just active events)
+                var eligibleEvents = dbServices.GetEligibleEventsForUser(userId);
 
-                if (activeEvents == null || activeEvents.Count == 0)
+                if (eligibleEvents == null || eligibleEvents.Count == 0)
                 {
-                    return GetRandomEventsResult(count, "No active events available. Showing random events.");
+                    // Case 3: User Logged In + Model Works + No Eligible Events
+                    return GetRandomEventsResult(count, "No events match your criteria. Here are some popular events!");
                 }
 
                 // Check if ML model is loaded
                 if (!_embeddingService.IsModelLoaded)
                 {
-                    return GetRandomEventsFromList(activeEvents, count, "Recommendation system unavailable. Showing active events.");
+                    // Case 4: User Logged In + Model Failed to Load
+                    return GetRandomEventsFromList(eligibleEvents, count, "Recommendation system unavailable. Showing active events.");
                 }
 
                 // Generate recommendations
                 var recommendations = await GenerateRecommendationsAsync(
                     userProfileString,
-                    activeEvents,
+                    eligibleEvents,
                     count
                 );
 
@@ -75,9 +78,22 @@ namespace Backend.Services
                     });
                 }
 
-                // If we don't have enough recommendations, fill with random
-                if (eventRecommendations.Count < count)
+                // Determine which case we're in based on results
+                if (eventRecommendations.Count >= count)
                 {
+                    // Case 1: User Logged In + Model Works + Events Available
+                    return new RecommendationResult
+                    {
+                        Success = true,
+                        Message = "Personalized recommendations based on your profile",
+                        Data = eventRecommendations.Take(count).ToList(),
+                        IsRecommended = true
+                    };
+                }
+                else if (eventRecommendations.Count > 0)
+                {
+                    // Case 2: User Logged In + Model Works + Few Events Found
+                    // Fill remaining slots with random events
                     var remainingCount = count - eventRecommendations.Count;
                     var randomEventsObj = dbServices.GetRandomEvents(remainingCount);
 
@@ -98,24 +114,27 @@ namespace Backend.Services
                             }
                         }
                     }
-                }
 
-                return new RecommendationResult
+                    return new RecommendationResult
+                    {
+                        Success = true,
+                        Message = "Personalized recommendations with some popular events",
+                        Data = eventRecommendations.Take(count).ToList(),
+                        IsRecommended = true
+                    };
+                }
+                else
                 {
-                    Success = true,
-                    Message = eventRecommendations.All(e => e.RecommendationScore.HasValue)
-                        ? "Personalized recommendations based on your profile"
-                        : "Personalized recommendations with some popular events",
-                    Data = eventRecommendations.Take(count).ToList(),
-                    IsRecommended = true
-                };
+                    // No recommendations generated
+                    return GetRandomEventsResult(count, "No events match your criteria. Here are some popular events!");
+                }
             }
             catch (Exception ex)
             {
+                // Case 6: Any System Error
                 return GetRandomEventsResult(count, "An error occurred. Showing random events.");
             }
         }
-
         private async Task<string> BuildUserProfileStringAsync(dynamic userProfile)
         {
             try

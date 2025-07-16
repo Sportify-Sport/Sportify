@@ -6409,9 +6409,9 @@ public class DBservices
     }
 
     //--------------------------------------------------------------------------------------------------
-    // Get all active events (not ended)
+    // Get all eligible events for a user
     //--------------------------------------------------------------------------------------------------
-    public List<EventForRecommendation> GetActiveEvents()
+    public List<EventForRecommendation> GetEligibleEventsForUser(int userId)
     {
         SqlConnection con;
         SqlCommand cmd;
@@ -6425,12 +6425,12 @@ public class DBservices
             throw (ex);
         }
 
-        cmd = CreateCommandWithStoredProcedureGetActiveEvents("SP_GetActiveEvents", con);
+        cmd = CreateCommandWithStoredProcedureGetEligibleEvents("SP_GetEligibleEventsForUser", con, userId);
 
         try
         {
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-            List<EventForRecommendation> activeEventsList = new List<EventForRecommendation>();
+            List<EventForRecommendation> eligibleEventsList = new List<EventForRecommendation>();
 
             while (dataReader.Read())
             {
@@ -6447,10 +6447,10 @@ public class DBservices
                     Gender = dataReader["Gender"].ToString(),
                     Description = dataReader["Description"].ToString()
                 };
-                activeEventsList.Add(eventData);
+                eligibleEventsList.Add(eventData);
             }
 
-            return activeEventsList;
+            return eligibleEventsList;
         }
         catch (Exception ex)
         {
@@ -6466,17 +6466,19 @@ public class DBservices
     }
 
     //---------------------------------------------------------------------------------
-    // Create the SqlCommand for getting active events
+    // Create the SqlCommand for getting eligible events
     //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureGetActiveEvents(string spName, SqlConnection con)
+    private SqlCommand CreateCommandWithStoredProcedureGetEligibleEvents(string spName, SqlConnection con, int userId)
     {
         SqlCommand cmd = new SqlCommand();
         cmd.Connection = con;
         cmd.CommandText = spName;
         cmd.CommandTimeout = 10;
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
         return cmd;
     }
+
 
     //--------------------------------------------------------------------------------------------------
     // Register or update user push notification token
@@ -6934,79 +6936,6 @@ public class DBservices
         cmd.Parameters.AddWithValue("@RequestId", requestId);
         return cmd;
     }
-
-    //--------------------------------------------------------------------------------------------------
-    // Get user notification history
-    //--------------------------------------------------------------------------------------------------
-    public List<NotificationHistoryItem> GetUserNotificationHistory(int userId)
-    {
-        SqlConnection con;
-        SqlCommand cmd;
-
-        try
-        {
-            con = connect("myProjDB");
-        }
-        catch (Exception ex)
-        {
-            throw (ex);
-        }
-
-        cmd = CreateCommandWithStoredProcedureGetUserNotificationHistory("SP_GetUserNotificationHistory", con, userId);
-
-        try
-        {
-            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-            List<NotificationHistoryItem> notifications = new List<NotificationHistoryItem>();
-
-            while (dataReader.Read())
-            {
-                var notification = new NotificationHistoryItem
-                {
-                    NotificationId = Convert.ToInt32(dataReader["NotificationId"]),
-                    UserId = userId,
-                    Title = dataReader["Title"].ToString(),
-                    Body = dataReader["Body"].ToString(),
-                    NotificationData = dataReader["NotificationData"].ToString(),
-                    SentAt = Convert.ToDateTime(dataReader["SentAt"]),
-                    IsRead = Convert.ToBoolean(dataReader["IsRead"]),
-                    ReadAt = dataReader["ReadAt"] != DBNull.Value ? Convert.ToDateTime(dataReader["ReadAt"]) : (DateTime?)null,
-                    NotificationType = dataReader["NotificationType"].ToString(),
-                    RelatedEntityId = dataReader["RelatedEntityId"] != DBNull.Value ? Convert.ToInt32(dataReader["RelatedEntityId"]) : (int?)null,
-                    RelatedEntityType = dataReader["RelatedEntityType"].ToString()
-                };
-                notifications.Add(notification);
-            }
-
-            return notifications;
-        }
-        catch (Exception ex)
-        {
-            throw ex;
-        }
-        finally
-        {
-            if (con != null)
-            {
-                con.Close();
-            }
-        }
-    }
-
-    //---------------------------------------------------------------------------------
-    // Create the SqlCommand for getting user notification history
-    //---------------------------------------------------------------------------------
-    private SqlCommand CreateCommandWithStoredProcedureGetUserNotificationHistory(string spName, SqlConnection con, int userId)
-    {
-        SqlCommand cmd = new SqlCommand();
-        cmd.Connection = con;
-        cmd.CommandText = spName;
-        cmd.CommandTimeout = 10;
-        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        return cmd;
-    }
-
 
     //--------------------------------------------------------------------------------------------------
     // Get user notification history with pagination

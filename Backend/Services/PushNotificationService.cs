@@ -229,19 +229,6 @@ namespace Backend.Services
             }
         }
 
-        public async Task<List<NotificationHistoryItem>> GetUserNotificationHistoryAsync(int userId)
-        {
-            try
-            {
-                var dbServices = new DBservices();
-                return dbServices.GetUserNotificationHistory(userId);
-            }
-            catch (Exception ex)
-            {
-                return new List<NotificationHistoryItem>();
-            }
-        }
-
         public async Task<bool> MarkNotificationAsReadAsync(int notificationId, int userId)
         {
             try

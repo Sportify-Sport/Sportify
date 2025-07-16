@@ -39,7 +39,7 @@ namespace Backend.Controllers
 
                 if (userIdClaim == null)
                 {
-                    // User not authenticated - return random events
+                    // Case 5: User Not Logged In
                     var randomEvents = Event.GetRandomEvents(count);
                     return Ok(new
                     {
@@ -60,7 +60,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                // Fallback to random events
+                // Case 6: Any System Error - fallback to random events
                 var randomEvents = Event.GetRandomEvents(count);
                 return Ok(new
                 {
@@ -69,27 +69,6 @@ namespace Backend.Controllers
                     message = "An error occurred. Showing random events.",
                     isRecommended = false
                 });
-            }
-        }
-
-        [AllowAnonymous]
-        [HttpGet("events/random")]
-        public IActionResult GetRandomEvents([FromQuery] int count = 5)
-        {
-            try
-            {
-                if (count <= 0 || count > 20)
-                {
-                    return BadRequest(new { success = false, message = "Count must be between 1 and 20" });
-                }
-
-                var randomEvents = Event.GetRandomEvents(count);
-
-                return Ok(new { success = true, data = randomEvents });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
 
