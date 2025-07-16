@@ -9,4 +9,6 @@ export const AUTH_ROUTES = {
   EVENT_SELECTION: '/event/:cityId',
   EVENT_DETAILS: '/event-details/:cityId/:eventId',
   LOGS: '/logs/:type/:id',
+  MANAGE_CITY_ORGANIZERS: '/manage-city-organizers',
+  MANAGE_SPORTS: '/manage-sports',
 };

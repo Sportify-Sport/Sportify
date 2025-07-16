@@ -14,6 +14,8 @@ import GroupDetailsPage from './pages/groupPages/GroupDetailsPage';
 import EventSelectionPage from './pages/eventPages/EventSelectionPage';
 import CreateEventPage from './pages/eventPages/CreateEventPage';
 import EventDetailsPage from './pages/eventPages/EventDetailsPage';
+import ManageCityOrganizers from './pages/ManageCityOrganizers';
+import ManageSports from './pages/ManageSports';
 import LogsPage from './pages/LogsPage';
 import './styles/global.css';
 
@@ -21,74 +23,86 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-      <div className="app-container">
+        <div className="app-container">
           <Routes>
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          
-          {/* Protected routes */}
-          <Route path="/select-city" element={
-            <PrivateRoute requiresCity={false}>
-              <CitySelectionPage />
-            </PrivateRoute>
-          } />
-          
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <DashboardPage />
-            </PrivateRoute>
-          } />
-          
-          <Route path="/group/:cityId" element={
-            <PrivateRoute>
-              <GroupSelectionPage />
-            </PrivateRoute>
-          } />
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
-          <Route path="/create-group" element={
-            <PrivateRoute>
-              < CreateGroupPage />
-            </PrivateRoute>
-          } />
-          
-          <Route path="/group-details/:cityId/:groupId" element={
-            <PrivateRoute>
-              < GroupDetailsPage />
-            </PrivateRoute>
-          } />
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
 
-          <Route path="/event/:cityId" element={
-            <PrivateRoute>
-              <EventSelectionPage />
-            </PrivateRoute>
-          } />
+            {/* Protected routes */}
+            <Route path="/select-city" element={
+              <PrivateRoute requiresCity={false}>
+                <CitySelectionPage />
+              </PrivateRoute>
+            } />
 
-          <Route path="/create-event" element={
-            <PrivateRoute>
-              < CreateEventPage />
-            </PrivateRoute>
-          } />
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <DashboardPage />
+              </PrivateRoute>
+            } />
 
-          <Route path="/event-details/:cityId/:eventId" element={
-            <PrivateRoute>
-              < EventDetailsPage />
-            </PrivateRoute>
-          } />
+            <Route path="/manage-city-organizers" element={
+              <PrivateRoute requiresCity={false}>
+                <ManageCityOrganizers />
+              </PrivateRoute>
+            } />
 
-          <Route path="/logs/:type/:id"  element={
-            <PrivateRoute>
-              < LogsPage />
-            </PrivateRoute>
-          } />
+            <Route path="/manage-sports" element={
+              <PrivateRoute requiresCity={false}>
+                <ManageSports />
+              </PrivateRoute>
+            } />
+
+            <Route path="/group/:cityId" element={
+              <PrivateRoute>
+                <GroupSelectionPage />
+              </PrivateRoute>
+            } />
+
+            <Route path="/create-group" element={
+              <PrivateRoute>
+                < CreateGroupPage />
+              </PrivateRoute>
+            } />
+
+            <Route path="/group-details/:cityId/:groupId" element={
+              <PrivateRoute>
+                < GroupDetailsPage />
+              </PrivateRoute>
+            } />
+
+            <Route path="/event/:cityId" element={
+              <PrivateRoute>
+                <EventSelectionPage />
+              </PrivateRoute>
+            } />
+
+            <Route path="/create-event" element={
+              <PrivateRoute>
+                < CreateEventPage />
+              </PrivateRoute>
+            } />
+
+            <Route path="/event-details/:cityId/:eventId" element={
+              <PrivateRoute>
+                < EventDetailsPage />
+              </PrivateRoute>
+            } />
+
+            <Route path="/logs/:type/:id" element={
+              <PrivateRoute>
+                < LogsPage />
+              </PrivateRoute>
+            } />
 
 
-          {/* 404 route */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </div>
+            {/* 404 route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </div>
       </AuthProvider>
     </ThemeProvider>
   );

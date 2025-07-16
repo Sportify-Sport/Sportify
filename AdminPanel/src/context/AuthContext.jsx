@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     const checkTokenValidity = async () => {
       const accessToken = localStorage.getItem('adminAccessToken');
       const refreshToken = localStorage.getItem('adminRefreshToken');
-      
+
       if (!accessToken || !refreshToken) {
         setLoading(false);
         return;
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         // Check if token is expired
         const tokenData = parseJwt(accessToken);
         const currentTime = Date.now() / 1000;
-        
+
         if (tokenData.exp < currentTime) {
           // Token expired, try to refresh
           const success = await refreshAccessToken(refreshToken);
@@ -38,20 +38,21 @@ export const AuthProvider = ({ children }) => {
             return;
           }
         }
-        
+
         // Token is valid, set user data
         setCurrentUser({
-          id: tokenData.nameid,
+          id: tokenData["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"],
           email: tokenData.email,
-          name: tokenData.name
+          name: tokenData.name,
+          isSuperAdmin: tokenData.isSuperAdmin === "true"
         });
-        
+
         // Restore selected city if exists
         const savedCity = localStorage.getItem('selectedCity');
         if (savedCity) {
           setSelectedCity(JSON.parse(savedCity));
         }
-        
+
         setLoading(false);
       } catch (err) {
         console.error("Auth check failed:", err);
@@ -66,16 +67,16 @@ export const AuthProvider = ({ children }) => {
   // Set up token refresh timer
   useEffect(() => {
     if (!currentUser) return;
-    
+
     const refreshInterval = setInterval(async () => {
       const accessToken = localStorage.getItem('adminAccessToken');
       if (!accessToken) return;
-      
+
       try {
         const tokenData = parseJwt(accessToken);
         const currentTime = Date.now() / 1000;
         const timeUntilExpiry = tokenData.exp - currentTime;
-        
+
         // Refresh token when less than 2 minutes remain
         if (timeUntilExpiry < 120) {
           const refreshToken = localStorage.getItem('adminRefreshToken');
@@ -87,17 +88,17 @@ export const AuthProvider = ({ children }) => {
         console.error("Token refresh check failed:", err);
       }
     }, 60000); // Check every minute
-    
+
     return () => clearInterval(refreshInterval);
   }, [currentUser]);
 
   // Set up inactivity timer
   useEffect(() => {
     if (!currentUser) return;
-    
+
     let inactivityTimer;
     const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
-    
+
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
@@ -108,14 +109,14 @@ export const AuthProvider = ({ children }) => {
 
     // Monitor user activity
     const events = ['mousedown', 'keypress', 'mousemove', 'touchstart', 'scroll'];
-    
+
     events.forEach(event => {
       document.addEventListener(event, resetTimer);
     });
-    
+
     // Initial timer setup
     resetTimer();
-    
+
     return () => {
       clearTimeout(inactivityTimer);
       events.forEach(event => {
@@ -134,23 +135,24 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({ refreshToken })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to refresh token');
       }
-      
+
       const data = await response.json();
       localStorage.setItem('adminAccessToken', data.accessToken);
       localStorage.setItem('adminRefreshToken', data.refreshToken);
-      
+
       // Update user data from new token
       const userData = parseJwt(data.accessToken);
       setCurrentUser({
         id: userData.nameid,
         email: userData.email,
-        name: userData.name
+        name: userData.name,
+        isSuperAdmin: userData.isSuperAdmin === "true"
       });
-      
+
       return true;
     } catch (err) {
       console.error("Token refresh failed:", err);
@@ -162,7 +164,7 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (email, password) => {
     setError(null);
-    
+
     try {
       const response = await fetch(`${getApiBaseUrl()}/api/AdminAuth/admin/login`, {
         method: 'POST',
@@ -171,26 +173,27 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({ email, password })
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         const errorMessage = data.message || 'Login failed';
         setError(errorMessage);
         return false;
       }
-      
+
       localStorage.setItem('adminAccessToken', data.accessToken);
       localStorage.setItem('adminRefreshToken', data.refreshToken);
-      
+
       // Extract user data from token
       const userData = parseJwt(data.accessToken);
       setCurrentUser({
         id: userData.nameid,
         email: userData.email,
-        name: userData.name
+        name: userData.name,
+        isSuperAdmin: userData.isSuperAdmin === "true"
       });
-      
+
       return true;
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -204,7 +207,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const refreshToken = localStorage.getItem('adminRefreshToken');
       const accessToken = localStorage.getItem('adminAccessToken');
-      
+
       if (refreshToken && accessToken) {
         await fetch(`${getApiBaseUrl()}/api/AdminAuth/admin/revoke-token`, {
           method: 'POST',
@@ -234,7 +237,7 @@ export const AuthProvider = ({ children }) => {
       const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       }).join(''));
-      
+
       return JSON.parse(jsonPayload);
     } catch (err) {
       console.error("JWT parse error:", err);
