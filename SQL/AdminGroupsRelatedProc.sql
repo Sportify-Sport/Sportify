@@ -169,41 +169,17 @@ BEGIN
         
         SELECT @UserGender = Gender FROM Users WHERE UserId = @NewAdminUserId;
         SELECT @GroupGender = Gender FROM Groups WHERE GroupId = @GroupId;
-        
-        -- Check if genders match
-        IF @GroupGender <> 'Mixed' AND 
-           (@GroupGender = 'Male' AND @UserGender <> 'M' OR
-            @GroupGender = 'Female' AND @UserGender <> 'F')
-        BEGIN
-            RAISERROR('Gender mismatch between user and group', 16, 1);
-            RETURN;
-        END
-        
+                
         -- Remove current admin from GroupAdmins
         DELETE FROM GroupAdmins WHERE GroupId = @GroupId;
         
-        -- Check if current admin is a city organizer
-        DECLARE @IsCurrentAdminCityOrganizer BIT = 0;
-        
-        IF EXISTS (
-            SELECT 1 
-            FROM CityOrganizers 
-            WHERE UserId = @CurrentAdminId AND CityId = @CityId
-        )
-        BEGIN
-            SET @IsCurrentAdminCityOrganizer = 1;
-        END
-        
-        -- Remove current admin from GroupMembers only if a city organizer
-        IF @IsCurrentAdminCityOrganizer = 1
-        BEGIN
-            DELETE FROM GroupMembers WHERE GroupId = @GroupId AND UserId = @CurrentAdminId;
-            
-            -- Update TotalMembers count
-            UPDATE Groups
-            SET TotalMembers = TotalMembers - 1
-            WHERE GroupId = @GroupId;
-        END
+        -- Remove current admin from GroupMembers
+		DELETE FROM GroupMembers WHERE GroupId = @GroupId AND UserId = @CurrentAdminId;
+
+		-- Update TotalMembers count
+		UPDATE Groups
+		SET TotalMembers = TotalMembers - 1
+		WHERE GroupId = @GroupId;
         
         -- Add new admin to GroupAdmins
         INSERT INTO GroupAdmins (GroupId, UserId)

@@ -227,22 +227,7 @@ namespace Backend.Controllers
                 bool adminExists = dbServices.UserExists(groupDto.AdminId);
                 if (!adminExists)
                 {
-                    return NotFound(new { success = false, message = "Admin user not found" });
-                }
-
-                // Check if admin's gender matches group's gender requirements
-                string adminGender = dbServices.GetUserGender(groupDto.AdminId);
-                if (adminGender == null)
-                {
-                    return NotFound(new { success = false, message = "Admin user not found" });
-                }
-
-                // Validate gender match
-                if (groupDto.Gender != "Mixed" &&
-                    ((groupDto.Gender == "Male" && adminGender != "M") ||
-                     (groupDto.Gender == "Female" && adminGender != "F")))
-                {
-                    return BadRequest(new { success = false, message = "Admin's gender does not match group requirements" });
+                    return NotFound(new { success = false, message = "User not found" });
                 }
 
                 // Create the group
@@ -348,15 +333,6 @@ namespace Backend.Controllers
                 if (!newAdminExists)
                 {
                     return NotFound(new { success = false, message = "New admin user not found" });
-                }
-
-                // Check if the new admin's gender matches the group's gender
-                var newAdminGender = dbServices.GetUserGender(changeAdminDto.UserId);
-                if (groupDetails.Gender != "Mixed" &&
-                    ((groupDetails.Gender == "Male" && newAdminGender != "M") ||
-                     (groupDetails.Gender == "Female" && newAdminGender != "F")))
-                {
-                    return BadRequest(new { success = false, message = "New admin's gender does not match group requirements" });
                 }
 
                 // Change the admin
