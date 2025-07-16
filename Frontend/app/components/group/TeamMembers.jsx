@@ -26,8 +26,8 @@ export default function TeamMembers({
       ) : (
         members.slice(0, displayCount).map(m => (
           <View key={m.userId} className="flex-row justify-between items-center py-3 border-b border-gray-200">
-            <View className="flex-row items-center space-x-3">
-              <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
+            <View className="flex-row items-center">
+              <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center mr-3">
                 <Image
                   source={{ uri: `${apiUrl}/Images/${m.groupMemberImage}` }}
                   className="w-10 h-10 rounded-full"
@@ -39,14 +39,16 @@ export default function TeamMembers({
               </View>
             </View>
             {isAdmin && m.userId !== currentUserId && (
-              <View className="flex-row space-x-3 items-center">
+              <View className="flex-row items-center" style={{ gap: 10 }}>
                 <TouchableOpacity onPress={() => onShowDetails(m)}>
                   <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
                 </TouchableOpacity>
-                {!m.isAdmin && (
+                {!m.isAdmin ? (
                   <TouchableOpacity onPress={() => onRemove(m)}>
                     <Ionicons name="trash" size={20} color="#E53E3E" />
                   </TouchableOpacity>
+                ) : (
+                  <View className="w-5 h-5 bg-green-400 rounded-full" />
                 )}
               </View>
             )}
