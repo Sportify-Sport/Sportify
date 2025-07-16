@@ -8,7 +8,7 @@ export default function useHomeData(token) {
   const [myGroupsList, setMyGroupsList] = useState([]);
   const [profileName, setProfileName] = useState('');
   const [loading, setLoading] = useState(true);
-  
+  const [recommendationMessage, setRecommendationMessage] = useState('');
   const apiUrl = getApiBaseUrl();
   
   // Create a reusable function to refresh all data
@@ -50,10 +50,11 @@ export default function useHomeData(token) {
       // Fetch recommendations
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const recommendationsResponse = await fetch(`${apiUrl}/api/Events/events/random?count=5`, { headers });
+      const recommendationsResponse = await fetch(`${apiUrl}/api/Events/events/recommendations?count=5`, { headers });
       const recommendationsJson = await recommendationsResponse.json();
       if (recommendationsJson.success && Array.isArray(recommendationsJson.data)) {
         setRecommendedEvents(recommendationsJson.data);
+        setRecommendationMessage(recommendationsJson.message || '');
       }
       
       // Fetch user-specific data if logged in
@@ -95,6 +96,7 @@ export default function useHomeData(token) {
     myGroupsList,
     profileName,
     loading,
+    recommendationMessage,
     refreshData // Export the refresh function
   };
 }

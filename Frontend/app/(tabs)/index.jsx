@@ -30,6 +30,7 @@ export default function Index() {
     myEventsList,
     myGroupsList,
     profileName,
+    recommendationMessage,
     loading: dataLoading,
     refreshData
   } = useHomeData(token);
@@ -80,7 +81,7 @@ export default function Index() {
     >
       <Header token={token} profileName={profileName} />
 
-      <EventCarousel events={recommendedEvents} apiUrl={apiUrl} />
+      <EventCarousel events={recommendedEvents} apiUrl={apiUrl} message={recommendationMessage} />
 
       <SportsList sports={sportsList} apiUrl={apiUrl} />
 

@@ -5,11 +5,11 @@ import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 const SLIDE_INTERVAL = 3000;
 
-export default function EventCarousel({ events, apiUrl }) {
+export default function EventCarousel({ events, apiUrl, message }) {
   const router = useRouter();
   const slideRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   // carousel controls
   const goPrev = () => {
     if (events.length === 0) return;
@@ -17,14 +17,18 @@ export default function EventCarousel({ events, apiUrl }) {
     setCurrentIndex(prevIndex);
     slideRef.current?.scrollToIndex({ index: prevIndex, animated: true });
   };
-  
+
   const goNext = () => {
     if (events.length === 0) return;
     const nextIndex = (currentIndex + 1) % events.length;
     setCurrentIndex(nextIndex);
     slideRef.current?.scrollToIndex({ index: nextIndex, animated: true });
   };
-  
+
+  useEffect(() => {
+    console.log('EventCarousel message prop:', message);
+  }, [message]);
+
   useEffect(() => {
     const interval = setInterval(goNext, SLIDE_INTERVAL);
     return () => clearInterval(interval);
@@ -54,6 +58,11 @@ export default function EventCarousel({ events, apiUrl }) {
   return (
     <View className="mb-6">
       <Text className="text-xl font-semibold mb-2">Event Recommendations</Text>
+      {message ? (
+        <Text className="text-base text-gray-700 mb-2">{message}</Text>
+      ) : (
+        <Text className="text-base text-gray-500 mb-2">No recommendation message available</Text>
+      )}
       <View className="relative">
         <FlatList
           data={events}
