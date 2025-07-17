@@ -1,12 +1,12 @@
 import { useEffect } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Text } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "../context/AuthContext";
 
 export default function TabLayout() {
-  const { isLoading, isAuthenticated, isGuest } = useAuth();
+  const { isLoading, isAuthenticated, isGuest, unreadCount } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function TabLayout() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color="#3CCF4E" />
       </View>
     );
@@ -30,24 +30,45 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen name="index"
+      <Tabs.Screen
+        name="index"
         options={{
-          tabBarIcon: ({size, color}) => <Ionicons name="home" size={size} color={color}/>
+          tabBarIcon: ({ size, color }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
         }}
       />
-      <Tabs.Screen name="explore" 
+      <Tabs.Screen
+        name="explore"
         options={{
-          tabBarIcon: ({size, color}) => <Ionicons name="search" size={size} color={color}/>
+          tabBarIcon: ({ size, color }) => (
+            <Ionicons name="search" size={size} color={color} />
+          ),
         }}
       />
-      <Tabs.Screen name="notifications"
+      <Tabs.Screen
+        name="notifications"
         options={{
-          tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color}/>
+          tabBarIcon: ({ color, size }) => (
+            <View className="relative">
+              <Ionicons name="notifications" size={size} color={color} />
+              {unreadCount > 0 && (
+                <View className="absolute -top-1 -right-2 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center">
+                  <Text className="text-white text-xs font-semibold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ),
         }}
       />
-      <Tabs.Screen name="profile" 
+      <Tabs.Screen
+        name="profile"
         options={{
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color}/>
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
@@ -55,70 +76,70 @@ export default function TabLayout() {
 }
 
 
-// 🔍 Search & Navigation:
-// search 🔎 / search-outline 🔍 / filter 🎛️
+// // 🔍 Search & Navigation:
+// // search 🔎 / search-outline 🔍 / filter 🎛️
 
-// 🏠 Home Page / Feed:
-// home 🏠 / home-outline 🏡 / newspaper 📰
+// // 🏠 Home Page / Feed:
+// // home 🏠 / home-outline 🏡 / newspaper 📰
 
-// 👤 Profile & User:
-// person 👤 / person-outline 👥 / person-circle 🧑‍🦱 / person-circle-outline 👨‍🦰
+// // 👤 Profile & User:
+// // person 👤 / person-outline 👥 / person-circle 🧑‍🦱 / person-circle-outline 👨‍🦰
 
-// 💬 Chat & Messaging:
-// chatbubble 💬 / chatbubble-outline 💭 / chatbubbles 🗨️
+// // 💬 Chat & Messaging:
+// // chatbubble 💬 / chatbubble-outline 💭 / chatbubbles 🗨️
 
-// ❤️ Favorites / Likes:
-// heart ❤️ / heart-outline 🤍 / star ⭐ / star-outline ☆
+// // ❤️ Favorites / Likes:
+// // heart ❤️ / heart-outline 🤍 / star ⭐ / star-outline ☆
 
-// ⚙️ Settings & Options:
-// settings ⚙️ / cog ⚙️ / options 🔧
+// // ⚙️ Settings & Options:
+// // settings ⚙️ / cog ⚙️ / options 🔧
 
-// 📩 Notifications & Alerts:
-// notifications 🔔 / notifications-outline 🔕 / alert-circle ❗ / information-circle ℹ️
+// // 📩 Notifications & Alerts:
+// // notifications 🔔 / notifications-outline 🔕 / alert-circle ❗ / information-circle ℹ️
 
-// 📂 File Management & Documents:
-// document 📄 / document-text 📜 / folder 📂
+// // 📂 File Management & Documents:
+// // document 📄 / document-text 📜 / folder 📂
 
-// 🎮 Entertainment & Media:
-// play-circle ▶️ / musical-notes 🎵 / film 🎬
+// // 🎮 Entertainment & Media:
+// // play-circle ▶️ / musical-notes 🎵 / film 🎬
 
-// 💳 Payments & Shopping:
-// card 💳 / cart 🛒 / pricetag 🏷️
+// // 💳 Payments & Shopping:
+// // card 💳 / cart 🛒 / pricetag 🏷️
 
-// notifications 🔔 / notifications-outline 🔕 / notifications-off 🚫🔔 / notifications-off-outline 🔕 / alert ⚠️ / alert-circle ❗
-// chatbubble 💬 / chatbubble-outline 💬 / mail 📩 / alert-outline ⚠️ / information-circle ℹ️ / heart ❤️ / heart-outline 🤍
+// // notifications 🔔 / notifications-outline 🔕 / notifications-off 🚫🔔 / notifications-off-outline 🔕 / alert ⚠️ / alert-circle ❗
+// // chatbubble 💬 / chatbubble-outline 💬 / mail 📩 / alert-outline ⚠️ / information-circle ℹ️ / heart ❤️ / heart-outline 🤍
 
-// Search:
-// search 🔍 / search-outline 🔎 / ios-search 🔍 / md-search 🔍 / search-circle 🔍⭕ / search-sharp 🔍
+// // Search:
+// // search 🔍 / search-outline 🔎 / ios-search 🔍 / md-search 🔍 / search-circle 🔍⭕ / search-sharp 🔍
 
-// Home Page/Feed:
-// home 🏠 / home-outline 🏡 / ios-home 🏠 / md-home 🏠 / home-sharp 🏡 / home-outline-sharp 🏠
+// // Home Page/Feed:
+// // home 🏠 / home-outline 🏡 / ios-home 🏠 / md-home 🏠 / home-sharp 🏡 / home-outline-sharp 🏠
 
-// Profile:
-// person 👤 / person-outline 👥 / ios-person 👤 / md-person 👤 / person-sharp 👤 / person-circle 👤🔵
+// // Profile:
+// // person 👤 / person-outline 👥 / ios-person 👤 / md-person 👤 / person-sharp 👤 / person-circle 👤🔵
 
-// Chat:
-// chatbubbles 💬💬 / chatbubbles-outline 💬🔳 / chatbox 🗨️ / chatbox-outline 🗨️🔳 / message 📩 / ios-chatbubbles 💬
-
-
+// // Chat:
+// // chatbubbles 💬💬 / chatbubbles-outline 💬🔳 / chatbox 🗨️ / chatbox-outline 🗨️🔳 / message 📩 / ios-chatbubbles 💬
 
 
-// Todo? show user image as profile page icon
-{/* <Tabs.Screen 
-        name="profile"
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Image
-              source={{ uri: 'https://url.com/profile.jpg' }} 
-              style={{
-                width: size, 
-                height: size, 
-                borderRadius: size / 2,
-                borderWidth: 1,
-                borderColor: color
-              }}
-            />
-          )
-        }}
-      />
-    </Tabs> */}
+
+
+// // Todo? show user image as profile page icon
+// {/* <Tabs.Screen 
+//         name="profile"
+//         options={{
+//           tabBarIcon: ({ color, size }) => (
+//             <Image
+//               source={{ uri: 'https://url.com/profile.jpg' }} 
+//               style={{
+//                 width: size, 
+//                 height: size, 
+//                 borderRadius: size / 2,
+//                 borderWidth: 1,
+//                 borderColor: color
+//               }}
+//             />
+//           )
+//         }}
+//       />
+//     </Tabs> */}
