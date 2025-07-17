@@ -26,6 +26,11 @@ namespace Backend.Controllers
         //{
         //    try
         //    {
+        //        if (groupId <= 0)
+        //        {
+        //            return BadRequest(new { success = false, message = "Invalid group ID" });
+        //        }
+
         //        var groupDetails = Group.GetGroupDetails(groupId);
 
         //        if (groupDetails == null)
@@ -48,6 +53,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (lastGroupId.HasValue && lastGroupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 // Validate pagination parameters
                 if (pageSize < 1 || pageSize > 50) pageSize = 10;
 
@@ -74,6 +84,12 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+
                 int? userId = null;
                 if (User.Identity.IsAuthenticated)
                 {
@@ -103,6 +119,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 if (page < 1 || pageSize < 1 || pageSize > 50)
                 {
                     return BadRequest(new
@@ -138,6 +159,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 // Get user ID from claims
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string userName = User.FindFirst("name")?.Value ?? "Unknown";
@@ -207,6 +233,12 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+
                 // Get user ID from claims
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string userName = User.FindFirst("name")?.Value ?? "Unknown";

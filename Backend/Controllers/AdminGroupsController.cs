@@ -1,7 +1,9 @@
-﻿using Backend.Models;
+﻿using Backend.BL;
+using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -15,11 +17,13 @@ namespace Backend.Controllers
     {
         private readonly ILogger<AdminGroupsController> _logger;
         private readonly IPushNotificationService _pushNotificationService;
+        private readonly SportService _sportService;
 
-        public AdminGroupsController(ILogger<AdminGroupsController> logger, IPushNotificationService pushNotificationService)
+        public AdminGroupsController(ILogger<AdminGroupsController> logger, IPushNotificationService pushNotificationService, SportService sportService)
         {
             _logger = logger;
             _pushNotificationService = pushNotificationService;
+            _sportService = sportService;
         }
 
         [HttpGet("{cityId}")]
@@ -117,6 +121,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 // Get user ID from claims
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)
@@ -215,10 +224,8 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Gender must be 'Female', 'Male', or 'Mixed'" });
                 }
 
-                // Validate SportId exists
-                var sports = dbServices.GetAllSports();
-                bool sportExists = sports.Any(s => s.SportId == groupDto.SportId);
-                if (!sportExists)
+                bool isValidSport = await _sportService.ValidateSportIdAsync(groupDto.SportId);
+                if (!isValidSport)
                 {
                     return BadRequest(new { success = false, message = "Invalid sport ID" });
                 }
@@ -394,6 +401,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 // Get user ID from claims
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)

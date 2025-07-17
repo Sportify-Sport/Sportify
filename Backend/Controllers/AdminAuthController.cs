@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -32,6 +33,39 @@ namespace Backend.Controllers
         {
             try
             {
+                if (loginDto == null)
+                {
+                    return BadRequest("Invalid request body");
+                }
+
+                if (string.IsNullOrWhiteSpace(loginDto.Email))
+                {
+                    return BadRequest("Email is required");
+                }
+
+                if (string.IsNullOrWhiteSpace(loginDto.Password))
+                {
+                    return BadRequest("Password is required");
+                }
+
+                // Email format validation
+                if (!IsValidEmail(loginDto.Email))
+                {
+                    return BadRequest("Invalid email format");
+                }
+
+                // Email length validation
+                if (loginDto.Email.Length > 100)
+                {
+                    return BadRequest("Email cannot exceed 100 characters");
+                }
+
+                // Password length validation
+                if (loginDto.Password.Length > 100)
+                {
+                    return BadRequest("Invalid credentials");
+                }
+
                 // Validate credentials
                 DBservices dbServices = new DBservices();
                 User user = dbServices.LoginUser(loginDto.Email.ToLower(), loginDto.Password);
@@ -71,6 +105,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (request == null)
+                {
+                    return BadRequest("Invalid request body");
+                }
+
                 if (string.IsNullOrEmpty(request.RefreshToken))
                 {
                     return BadRequest("Refresh token is required");
@@ -219,6 +258,20 @@ namespace Backend.Controllers
 
             DBservices dbServices = new DBservices();
             return dbServices.SaveAdminRefreshToken(userId, token, expiryDate);
+        }
+
+        // Helper method to validate email format
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+                return emailRegex.IsMatch(email);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

@@ -42,6 +42,15 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Search query is required" });
                 }
 
+                // Trim the input
+                emailOrId = emailOrId.Trim();
+
+                // Length validation to prevent DoS
+                if (emailOrId.Length > 100)
+                {
+                    return BadRequest(new { success = false, message = "Search query is too long (max 100 characters)" });
+                }
+
                 // Perform the search (limited to 5 results)
                 DBservices dbServices = new DBservices();
                 var users = dbServices.SearchUsersForAdmin(emailOrId, 5);

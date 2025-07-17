@@ -125,6 +125,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (sportId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid sport ID" });
+                }
+
                 if (sportImage == null || sportImage.Length == 0)
                 {
                     return BadRequest(new { success = false, message = "Sport image is required" });
@@ -179,6 +184,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (sportId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid sport ID" });
+                }
+
                 // Delete sport
                 var result = Sport.DeleteSport(sportId);
 

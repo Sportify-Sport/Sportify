@@ -25,6 +25,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (cityId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid city ID" });
+                }
+
                 if (page < 1 || pageSize < 1 || pageSize > 100)
                 {
                     return BadRequest(new
@@ -82,6 +87,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 if (page < 1 || pageSize < 1 || pageSize > 100)
                 {
                     return BadRequest(new
@@ -146,6 +156,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 if (page < 1 || pageSize < 1 || pageSize > 100)
                 {
                     return BadRequest(new
