@@ -1,12 +1,12 @@
 import { useEffect } from "react";
-import { View, ActivityIndicator, Text } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "../context/AuthContext";
 
 export default function TabLayout() {
-  const { isLoading, isAuthenticated, isGuest, unreadCount } = useAuth();
+  const { isLoading, isAuthenticated, isGuest } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -50,16 +50,7 @@ export default function TabLayout() {
         name="notifications"
         options={{
           tabBarIcon: ({ color, size }) => (
-            <View className="relative">
-              <Ionicons name="notifications" size={size} color={color} />
-              {unreadCount > 0 && (
-                <View className="absolute -top-1 -right-2 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center">
-                  <Text className="text-white text-xs font-semibold">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </View>
+            <Ionicons name="notifications" size={size} color={color} />
           ),
         }}
       />
@@ -74,7 +65,6 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-
 
 // // 🔍 Search & Navigation:
 // // search 🔎 / search-outline 🔍 / filter 🎛️

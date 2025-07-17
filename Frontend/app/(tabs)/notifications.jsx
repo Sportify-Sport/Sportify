@@ -297,12 +297,21 @@ export default function NotificationsScreen() {
           )}
         </View>
         {notifications.some(n => !n.isRead) && (
-          <TouchableOpacity
-            className="px-3 py-1.5 bg-green-500 rounded-lg"
-            onPress={markAllAsRead}
-          >
-            <Text className="text-white text-xs font-semibold">Mark all read</Text>
-          </TouchableOpacity>
+          <View className="flex-row items-center">
+            {unreadCount > 0 && (
+              <View className="mr-2 bg-red-500 rounded-full w-6 h-6 flex items-center justify-center">
+                <Text className="text-white text-sm font-semibold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity
+              className="px-3 py-1.5 bg-green-500 rounded-lg"
+              onPress={markAllAsRead}
+            >
+              <Text className="text-white text-xs font-semibold">Mark all read</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
