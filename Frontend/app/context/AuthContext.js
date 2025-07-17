@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [token, setToken] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
   const apiUrl = getApiBaseUrl();
 
@@ -29,13 +30,10 @@ export const AuthProvider = ({ children }) => {
     checkAuthState();
 
     // Handle app state changes for notification token refresh
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
 
     return () => {
-      subscription?.remove();
+      subscription.remove(); // Updated to use subscription.remove()
       NotificationService.cleanup();
     };
   }, []);
@@ -330,6 +328,7 @@ export const AuthProvider = ({ children }) => {
       setIsEmailVerified(false);
       setIsGuest(false);
       setToken(null);
+      setUnreadCount(0); // Reset unread count on logout
 
       // Cleanup notifications
       NotificationService.cleanup();
@@ -353,6 +352,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsEmailVerified(false);
       setToken(null);
+      setUnreadCount(0); // Reset unread count for guest mode
     } catch (error) {
       console.error("Error setting guest mode:", error);
     }
@@ -371,11 +371,12 @@ export const AuthProvider = ({ children }) => {
     verifyEmail,
     resendVerification,
     continueAsGuest,
-    NotificationService
+    NotificationService,
+    unreadCount,
+    setUnreadCount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default {};
-
