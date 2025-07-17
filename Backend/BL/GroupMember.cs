@@ -90,9 +90,6 @@
                     case "AlreadyMember":
                         return "You are already a member of this group.";
 
-                    case "AlreadyInSportGroup":
-                        return "You are already a member of another group with the same sport type. You can only join one group per sport.";
-
                     case "PendingRequestExists":
                         return "You already have a pending request to join this group.";
 

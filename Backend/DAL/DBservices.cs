@@ -2232,8 +2232,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB"); // create the connection
-            SqlCommand cmd = CreateCommandWithStoredProcedureApproveJoinRequest(
-                "SP_ApproveJoinRequest", con, requestId, groupId);
+            SqlCommand cmd = CreateCommandWithStoredProcedureApproveJoinRequest("SP_ApproveJoinRequest", con, requestId, groupId);
 
             SqlParameter outputSuccess = new SqlParameter("@Success", SqlDbType.Bit);
             outputSuccess.Direction = ParameterDirection.Output;

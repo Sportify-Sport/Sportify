@@ -137,7 +137,7 @@ GO
 -- Author:		<Mohamed Abo Full>
 -- Create date: <7/4/2025>
 -- Description:	Submits a group join request if allowed.
---              Checks membership, existing sport group, pending requests,
+--              Checks membership, pending requests,
 --              and one-month cooldown after rejection/removal.
 -- =============================================
 CREATE PROCEDURE SP_SubmitGroupJoinRequest
@@ -220,17 +220,6 @@ BEGIN
     IF EXISTS (SELECT 1 FROM GroupMembers WHERE GroupId = @groupId AND UserId = @userId)
     BEGIN
         SET @result = 'AlreadyMember';
-        GOTO ReturnResult;
-    END
-    
-    -- Check if user is a member of another group with same sport type
-    IF EXISTS (
-        SELECT 1 FROM GroupMembers gm 
-        INNER JOIN Groups g ON gm.GroupId = g.GroupId 
-        WHERE gm.UserId = @userId AND g.SportId = @sportId AND g.GroupId <> @groupId
-    )
-    BEGIN
-        SET @result = 'AlreadyInSportGroup';
         GOTO ReturnResult;
     END
     
