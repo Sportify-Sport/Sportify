@@ -18,8 +18,6 @@ export default function DetailsCard({ group, sportsMap }) {
             ['Members', `${group.totalMembers}/${group.maxMemNum}`],
             ['Min Age', group.minAge],
             ['Gender', group.gender],
-            ['Matches', group.matches],
-            ['W / L', `${group.wins}/${group.loses}`],
           ].map(([label, value]) => (
             <View key={label} className="flex-row justify-between">
               <Text className="text-gray-700 text-lg">{label}</Text>
