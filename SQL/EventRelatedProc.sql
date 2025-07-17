@@ -122,8 +122,9 @@ BEGIN
     DECLARE @playWatch BIT = NULL;
     DECLARE @isAdmin BIT = 0;
     DECLARE @hasAccess BIT = 1;
-	DECLARE @hasPendingRequest BIT = 0;
+    DECLARE @hasPendingRequest BIT = 0;
     DECLARE @viewerCount INT = 0;
+    DECLARE @isGroupMember BIT = 0;
 
     -- First get the event details including RequiresTeams and IsPublic flags
     SELECT 
@@ -132,7 +133,7 @@ BEGIN
     FROM [Events]
     WHERE EventId = @eventId;
     
-	-- Calculate viewer count
+    -- Calculate viewer count
     -- If event is public, count actual viewers; if private, set to 0
     IF @isPublic = 1
     BEGIN
@@ -145,65 +146,74 @@ BEGIN
         SET @viewerCount = 0;  -- Private events show 0 viewers
     END
 
-    -- If user is authenticated, check participation status
+    -- If user is authenticated, check status
     IF @userId IS NOT NULL
     BEGIN
-        -- First check admin status - if admin, we don't need to check other participation
+        -- Check if user is event admin
         IF EXISTS (SELECT 1 FROM EventAdmins WHERE EventId = @eventId AND CityOrganizerId = @userId)
         BEGIN
             SET @isAdmin = 1;
         END
-        -- Only check participation if not admin
-        ELSE
+        
+        -- Check if user is member of a group participating in the event
+        IF EXISTS (
+            SELECT 1 FROM EventTeams et
+            INNER JOIN GroupMembers gm ON et.GroupId = gm.GroupId
+            WHERE et.EventId = @eventId AND gm.UserId = @userId
+        )
         BEGIN
-            -- Check direct participation
-            IF EXISTS (SELECT 1 FROM EventParticipants WHERE EventId = @eventId AND UserId = @userId)
+            SET @isGroupMember = 1;
+        END
+        
+        -- Only check participation if not admin
+        IF @isAdmin = 0
+        BEGIN
+            -- For team events (including all private events), check group membership
+            IF @requiresTeams = 1
             BEGIN
-                SET @isParticipant = 1;
-                
-                -- Get PlayWatch value for direct participation
-                SELECT @playWatch = PlayWatch
-                FROM EventParticipants
-                WHERE EventId = @eventId AND UserId = @userId;
-            END
-            -- Check group participation if event requires teams
-            ELSE IF @requiresTeams = 1 
-            BEGIN
-                IF EXISTS (
-                    SELECT 1 FROM EventTeams et
-                    JOIN GroupMembers gm ON et.GroupId = gm.GroupId
-                    WHERE et.EventId = @eventId AND gm.UserId = @userId
-                )
+                IF @isGroupMember = 1
                 BEGIN
                     SET @isParticipant = 1;
                     SET @playWatch = 1; -- Group participants are always players
                 END
             END
-            -- If not admin, not participant, AND not a team event, check for pending request
-			ELSE IF @requiresTeams = 0  -- Only check pending requests for non-team events
-			BEGIN
-				-- Check if user has a pending join request
-				IF EXISTS (
-					SELECT 1 
-					FROM EventJoinRequests 
-					WHERE EventId = @eventId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
-				)
-				BEGIN
-					SET @hasPendingRequest = 1;
-				END
-			END;
-        END;
-    END;
+            -- For non-team events, check direct participation
+            ELSE
+            BEGIN
+                IF EXISTS (SELECT 1 FROM EventParticipants WHERE EventId = @eventId AND UserId = @userId)
+                BEGIN
+                    SET @isParticipant = 1;
+                    
+                    -- Get PlayWatch value for direct participation
+                    SELECT @playWatch = PlayWatch
+                    FROM EventParticipants
+                    WHERE EventId = @eventId AND UserId = @userId;
+                END
+                -- Check for pending request (only for non-team public events)
+                ELSE IF @isPublic = 1
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 
+                        FROM EventJoinRequests 
+                        WHERE EventId = @eventId AND RequesterUserId = @userId AND RequestStatus = 'Pending'
+                    )
+                    BEGIN
+                        SET @hasPendingRequest = 1;
+                    END
+                END
+            END
+        END
+    END
     
-    -- Check access restriction for private team events
-    IF @requiresTeams = 1 AND @isPublic = 0
+    -- Check access restriction for private events
+    IF @isPublic = 0  -- Private event
     BEGIN
-        -- Only allow access if user is admin or participant
-        IF @userId IS NULL OR (@isAdmin = 0 AND @isParticipant = 0)
+        -- Only allow access if user is admin or member of a participating group
+        IF @userId IS NULL OR (@isAdmin = 0 AND @isGroupMember = 0)
         BEGIN
             SET @hasAccess = 0;
-        END;
-    END;
+        END
+    END
     
     -- Return complete event details with participation status if user has access
     IF @hasAccess = 1
@@ -211,13 +221,11 @@ BEGIN
         SELECT 
             e.*,
             el.LocationName,
-            el.Latitude,
-            el.Longitude,
             @isParticipant AS IsParticipant,
             @playWatch AS PlayWatch,
             @isAdmin AS IsAdmin,
-			@hasPendingRequest AS HasPendingRequest,
-			@viewerCount AS ViewerCount
+            @hasPendingRequest AS HasPendingRequest,
+            @viewerCount AS ViewerCount
         FROM [Events] e
         LEFT JOIN EventLocations el ON e.LocationId = el.LocationId
         WHERE e.EventId = @eventId;
@@ -226,9 +234,10 @@ BEGIN
     BEGIN
         -- Return NULL result set to indicate access denied
         SELECT NULL AS EventId WHERE 1 = 0;
-    END;
+    END
 END
 GO
+
 
 -- =============================================
 -- Author:		<Mohamed Abo Full>

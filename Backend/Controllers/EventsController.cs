@@ -72,26 +72,26 @@ namespace Backend.Controllers
             }
         }
 
-        [AllowAnonymous]
-        [HttpGet("eventDetialsWithoutStatus/{eventId}")]
-        public IActionResult GetEventDetailsWithoutStatus(int eventId)
-        {
-            try
-            {
-                var eventDetails = Event.GetEventDetailsWithoutStatus(eventId);
+        //[AllowAnonymous]
+        //[HttpGet("eventDetialsWithoutStatus/{eventId}")]
+        //public IActionResult GetEventDetailsWithoutStatus(int eventId)
+        //{
+        //    try
+        //    {
+        //        var eventDetails = Event.GetEventDetailsWithoutStatus(eventId);
 
-                if (eventDetails == null)
-                {
-                    return NotFound(new { success = false, message = $"Event with ID {eventId} not found" });
-                }
+        //        if (eventDetails == null)
+        //        {
+        //            return NotFound(new { success = false, message = $"Event with ID {eventId} not found" });
+        //        }
 
-                return Ok(new { success = true, data = eventDetails });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = $"An error occurred while retrieving event details: {ex.Message}" });
-            }
-        }
+        //        return Ok(new { success = true, data = eventDetails });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { success = false, message = $"An error occurred while retrieving event details: {ex.Message}" });
+        //    }
+        //}
 
         [AllowAnonymous]
         [HttpGet("GetEvents")]

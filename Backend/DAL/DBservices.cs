@@ -1475,8 +1475,6 @@ public class DBservices
 
                     // Location information
                     LocationName = dataReader["LocationName"] == DBNull.Value ? null : dataReader["LocationName"].ToString(),
-                    Latitude = dataReader["Latitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Latitude"]),
-                    Longitude = dataReader["Longitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Longitude"]),
 
                     // User participation information (only for authenticated users)
                     IsParticipant = userId.HasValue && Convert.ToBoolean(dataReader["IsParticipant"]),
@@ -2290,8 +2288,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB"); // create the connection
-            SqlCommand cmd = CreateCommandWithStoredProcedureRejectJoinRequest(
-                "SP_RejectJoinRequest", con, requestId, groupId);
+            SqlCommand cmd = CreateCommandWithStoredProcedureRejectJoinRequest("SP_RejectJoinRequest", con, requestId, groupId);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
