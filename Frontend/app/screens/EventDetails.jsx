@@ -234,21 +234,6 @@ export default function EventDetails() {
             handleLocationPress={handleLocationPress}
           />
 
-          {(isParticipant || isAdmin) && (
-            <TouchableOpacity
-              className="border border-green-600 rounded-lg p-4 mb-4 bg-transparent flex-row items-center justify-center"
-              onPress={() =>
-                router.push({
-                  pathname: "./Certificate",
-                  params: { event: JSON.stringify(event) },
-                })
-              }
-            >
-              <Ionicons name="document-text-outline" size={20} color="black" style={{ marginRight: 8 }} />
-              <Text className="text-black text-center font-bold">Show Certificate</Text>
-            </TouchableOpacity>
-          )}
-          
           {/* Event Actions - Join/Leave buttons */}
           {event && (
             <EventActions
@@ -265,6 +250,21 @@ export default function EventDetails() {
           {/* Add to Calendar button, rendered only after event details are loaded */}
           {(isParticipant || isAdmin) && (
             <AddToCalendarButton event={event} />
+          )}
+
+          {(isParticipant || isAdmin) && (
+            <TouchableOpacity
+              className="border border-green-600 rounded-lg p-4 mb-4 bg-transparent flex-row items-center justify-center"
+              onPress={() =>
+                router.push({
+                  pathname: "./Certificate",
+                  params: { event: JSON.stringify(event) },
+                })
+              }
+            >
+              <Ionicons name="document-text-outline" size={20} color="black" style={{ marginRight: 8 }} />
+              <Text className="text-black text-center font-bold">Show Certificate</Text>
+            </TouchableOpacity>
           )}
 
           {/* Admin features for participant events */}
