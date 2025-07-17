@@ -38,14 +38,14 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
-        
+
         if (!validTypes.includes(file.mimeType)) {
           setError({ message: 'Invalid file type. Please upload PNG, JPG, or WebP.' });
           setImageFile(null);
           return;
         }
-        
-        setImageFile(file); 
+
+        setImageFile(file);
         setIsFormChanged(true);
         setError(null);
       }
@@ -80,9 +80,9 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ 
-            groupName: group.groupName, 
-            description: group.description 
+          body: JSON.stringify({
+            groupName: group.groupName,
+            description: group.description
           }),
         });
 
@@ -138,79 +138,78 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
-      statusBarTranslucent={true}
+      transparent
+      statusBarTranslucent
     >
       <BlurView
-        intensity={20}
+        intensity={100}
         tint="light"
-        className="flex-1 justify-center items-center"
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
       >
-        <View className="w-11/12 bg-white rounded-xl shadow-lg overflow-hidden">
+        <View className="bg-white w-11/12 p-6 rounded-2xl shadow-lg">
           {/* Header */}
-          <View className="bg-green-500 py-4 px-6">
-            <Text className="text-xl font-bold text-white">Edit Group Details</Text>
+          <View className="bg-green-500 rounded-xl px-4 py-3 mb-4">
+            <Text className="text-xl font-bold text-white text-center">Edit Group Details</Text>
           </View>
-          
+
           {/* Content */}
-          <View className="p-6">
-            <Text className="text-base font-semibold mb-2 text-gray-800">Group Name</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
-              value={group.groupName}
-              onChangeText={t => {
-                setGroup(g => ({ ...g, groupName: t }));
-                setIsFormChanged(true);
-              }}
-              placeholder="Group Name"
-              placeholderTextColor="#9CA3AF"
-            />
-            
-            <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
-              value={group.description}
-              onChangeText={t => {
-                setGroup(g => ({ ...g, description: t }));
-                setIsFormChanged(true);
-              }}
-              placeholder="Description"
-              placeholderTextColor="#9CA3AF"
-              multiline
-            />
-            
-            <Text className="text-base font-semibold mb-2 text-gray-800">Group Image</Text>
-            <TouchableOpacity 
-              className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
-              onPress={handleImageChange}
+          <Text className="text-base font-semibold mb-2 text-gray-800">Group Name</Text>
+          <TextInput
+            className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
+            value={group.groupName}
+            onChangeText={(t) => {
+              setGroup((g) => ({ ...g, groupName: t }));
+              setIsFormChanged(true);
+            }}
+            placeholder="Group Name"
+            placeholderTextColor="#9CA3AF"
+          />
+
+          <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
+          <TextInput
+            className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
+            value={group.description}
+            onChangeText={(t) => {
+              setGroup((g) => ({ ...g, description: t }));
+              setIsFormChanged(true);
+            }}
+            placeholder="Description"
+            placeholderTextColor="#9CA3AF"
+            multiline
+          />
+
+          <Text className="text-base font-semibold mb-2 text-gray-800">Group Image</Text>
+          <TouchableOpacity
+            className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
+            onPress={handleImageChange}
+          >
+            <Text className="text-gray-600">
+              {imageFile ? 'Image Selected' : 'Select Image'}
+            </Text>
+          </TouchableOpacity>
+
+          {error && (
+            <Text className="text-red-500 mb-4 text-center">{error.message}</Text>
+          )}
+
+          {/* Footer Buttons */}
+          <View className="flex-row justify-between mt-2">
+            <TouchableOpacity
+              className="bg-gray-200 py-3 px-6 rounded-lg flex-1 mr-2 items-center"
+              onPress={onClose}
+              disabled={isLoading}
             >
-              <Text className="text-gray-600">
-                {imageFile ? 'Image Selected' : 'Select Image'}
+              <Text className="text-gray-800 font-medium">Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="bg-green-500 py-3 px-6 rounded-lg flex-1 ml-2 items-center"
+              onPress={handleSubmit}
+              disabled={isLoading}
+            >
+              <Text className="text-white font-medium">
+                {isLoading ? 'Saving...' : 'Save Changes'}
               </Text>
             </TouchableOpacity>
-
-            {error && (
-              <Text className="text-red-500 mb-4 text-center">{error.message}</Text>
-            )}
-
-            <View className="flex-row justify-between mt-4">
-              <TouchableOpacity 
-                className="bg-gray-200 py-3 px-6 rounded-lg flex-1 mr-2 items-center"
-                onPress={onClose}
-                disabled={isLoading}
-              >
-                <Text className="text-gray-800 font-medium">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                className="bg-green-500 py-3 px-6 rounded-lg flex-1 ml-2 items-center"
-                onPress={handleSubmit}
-                disabled={isLoading}
-              >
-                <Text className="text-white font-medium">
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </BlurView>

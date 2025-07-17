@@ -135,7 +135,7 @@ export default function EditEventModal({ visible, event, onClose, onSave, token,
       statusBarTranslucent={true}
     >
       <BlurView
-        intensity={20}
+        intensity={100}
         tint="light"
         className="flex-1 justify-center items-center"
       >
