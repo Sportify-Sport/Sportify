@@ -18,22 +18,41 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     if (token) {
-      loadNotifications();
+      loadNotifications(1, true);
     }
   }, [token]);
 
-  const loadNotifications = async () => {
+  const loadNotifications = async (page = 1, reset = false) => {
     try {
       if (!token) return;
 
-      const result = await NotificationService.getNotificationHistory(token);
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const result = await NotificationService.getNotificationHistory(token, page, 20);
 
       if (result.success) {
-        setNotifications(result.notifications || []);
+        if (reset) {
+          setNotifications(result.notifications || []);
+        } else {
+          setNotifications(prev => [...prev, ...(result.notifications || [])]);
+        }
+        setHasMore(result.pagination?.hasMore || false);
+        setTotalCount(result.pagination?.totalCount || 0);
+        setUnreadCount(result.unreadCount || 0);
+        setPageNumber(page);
       } else {
         Alert.alert('Error', 'Failed to load notifications');
       }
@@ -43,12 +62,19 @@ export default function NotificationsScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadNotifications();
+    loadNotifications(1, true);
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      loadNotifications(pageNumber + 1, false);
+    }
   };
 
   const markAsRead = async (notificationId) => {
@@ -63,10 +89,45 @@ export default function NotificationsScreen() {
               : notif
           )
         );
+        setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    Alert.alert(
+      'Delete Notification',
+      'Are you sure you want to delete this notification?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await NotificationService.deleteNotification(notificationId, token);
+              if (result.success) {
+                setNotifications(prev => prev.filter(n => n.notificationId !== notificationId));
+                setTotalCount(prev => Math.max(0, prev - 1));
+                
+                // Update unread count if deleted notification was unread
+                const notification = notifications.find(n => n.notificationId === notificationId);
+                if (notification && !notification.isRead) {
+                  setUnreadCount(prev => Math.max(0, prev - 1));
+                }
+              } else {
+                Alert.alert('Error', 'Failed to delete notification');
+              }
+            } catch (error) {
+              console.error('Error deleting notification:', error);
+              Alert.alert('Error', 'Failed to delete notification');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleNotificationPress = (notification) => {
@@ -157,6 +218,7 @@ export default function NotificationsScreen() {
         !item.isRead && styles.unreadNotification
       ]}
       onPress={() => handleNotificationPress(item)}
+      onLongPress={() => deleteNotification(item.notificationId)}
     >
       <View style={styles.notificationIcon}>
         <Ionicons
@@ -212,15 +274,29 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Notifications</Text>
-        {notifications.some(n => !n.isRead) && (
-          <TouchableOpacity
-            style={styles.markAllButton}
-            onPress={markAllAsRead}
-          >
-            <Text style={styles.markAllText}>Mark all read</Text>
-          </TouchableOpacity>
-        )}
+        <View>
+          <Text style={styles.title}>Notifications</Text>
+          {totalCount > 0 && (
+            <Text style={styles.subtitle}>
+              {totalCount} total • {unreadCount} unread
+            </Text>
+          )}
+        </View>
+        <View style={styles.headerRight}>
+          {unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+            </View>
+          )}
+          {notifications.some(n => !n.isRead) && (
+            <TouchableOpacity
+              style={styles.markAllButton}
+              onPress={markAllAsRead}
+            >
+              <Text style={styles.markAllText}>Mark all read</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <FlatList
@@ -229,6 +305,15 @@ export default function NotificationsScreen() {
         keyExtractor={(item) => item.notificationId.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadingMore}>
+              <ActivityIndicator size="small" color="#3CCF4E" />
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.centerContainer}>
@@ -264,6 +349,29 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  unreadBadge: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  unreadBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   markAllButton: {
     paddingHorizontal: 12,
@@ -364,5 +472,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
 });

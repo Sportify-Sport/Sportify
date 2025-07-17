@@ -15,7 +15,7 @@ BEGIN
     -- Check if token exists for this user/device
     IF EXISTS (SELECT 1 FROM UserPushNotificationTokens WHERE UserId = @UserId AND DeviceId = @DeviceId)
     BEGIN
-        -- Update existing token
+        -- Only update if token actually changed or was inactive
         UPDATE UserPushNotificationTokens
         SET PushToken = @PushToken,
             Platform = @Platform,
@@ -23,7 +23,8 @@ BEGIN
             UpdatedAt = GETUTCDATE(),
             LastUsedAt = GETUTCDATE(),
             FailureCount = 0
-        WHERE UserId = @UserId AND DeviceId = @DeviceId;
+        WHERE UserId = @UserId AND DeviceId = @DeviceId
+            AND (PushToken != @PushToken OR IsActive = 0);
     END
     ELSE
     BEGIN
@@ -351,7 +352,7 @@ GO
 
 -- =============================================
 -- Author:		<Mohamed Abo Full>
--- Create date: <13/7/2025>
+-- Create date: <17/7/2025>
 -- Description:	<Delete the specified Notification>
 -- =============================================
 CREATE PROCEDURE SP_DeleteNotification
@@ -368,5 +369,60 @@ BEGIN
     
     -- Return number of rows affected
     SELECT @@ROWCOUNT AS Deleted;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <17/7/2025>
+-- Description:	<check if token actually changed>
+-- =============================================
+CREATE PROCEDURE SP_GetUserPushToken
+    @UserId INT,
+    @DeviceId NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT PushToken, Platform, UpdatedAt
+    FROM UserPushNotificationTokens
+    WHERE UserId = @UserId AND DeviceId = @DeviceId AND IsActive = 1;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <17/7/2025>
+-- Description:	<cleanup procedure>
+-- =============================================
+CREATE PROCEDURE SP_CleanupStaleTokens
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Delete tokens not updated in 270 days
+    DELETE FROM UserPushNotificationTokens
+    WHERE DATEDIFF(DAY, UpdatedAt, GETUTCDATE()) > 270;
+    
+    -- Delete inactive tokens not updated in 30 days
+    DELETE FROM UserPushNotificationTokens
+    WHERE IsActive = 0 AND DATEDIFF(DAY, UpdatedAt, GETUTCDATE()) > 30;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <17/7/2025>
+-- Description:	<update token timestamp>
+-- =============================================
+CREATE PROCEDURE SP_UpdatePushTokenTimestamp
+    @PushToken NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE UserPushNotificationTokens
+    SET UpdatedAt = GETUTCDATE()
+    WHERE PushToken = @PushToken;
 END
 GO

@@ -7821,4 +7821,116 @@ public class DBservices
         return cmd;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // Get user's current push token
+    //--------------------------------------------------------------------------------------------------
+    public PushTokenInfo GetUserPushToken(int userId, string deviceId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureGetUserPushToken("SP_GetUserPushToken", con, userId, deviceId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return new PushTokenInfo
+                {
+                    Token = dataReader["PushToken"].ToString(),
+                    Platform = dataReader["Platform"].ToString(),
+                    UpdatedAt = Convert.ToDateTime(dataReader["UpdatedAt"])
+                };
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for getting user push token
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureGetUserPushToken(string spName, SqlConnection con, int userId, string deviceId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@DeviceId", deviceId);
+        return cmd;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    // Update push token timestamp
+    //--------------------------------------------------------------------------------------------------
+    public void UpdatePushTokenTimestamp(string pushToken)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureUpdatePushTokenTimestamp("SP_UpdatePushTokenTimestamp", con, pushToken);
+
+        try
+        {
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for updating token timestamp
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureUpdatePushTokenTimestamp(string spName, SqlConnection con, string pushToken)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@PushToken", pushToken);
+        return cmd;
+    }
 }

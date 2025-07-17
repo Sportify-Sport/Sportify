@@ -203,9 +203,7 @@ namespace Backend.Controllers
 
         [Authorize(Roles = "User")]
         [HttpGet("history")]
-        public async Task<IActionResult> GetNotificationHistory(
-    [FromQuery] int pageNumber = 1,
-    [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetNotificationHistory([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
@@ -306,6 +304,67 @@ namespace Backend.Controllers
                 else
                 {
                     return NotFound(new { success = false, message = "Notification not found or you don't have permission to delete it" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "An error occurred" });
+            }
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPost("update-push-token")]
+        public async Task<IActionResult> UpdatePushToken([FromBody] RegisterPushTokenRequest request)
+        {
+            try
+            {
+                // Input validation
+                if (string.IsNullOrWhiteSpace(request.PushToken))
+                {
+                    return BadRequest(new { success = false, message = "Push token is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.DeviceId))
+                {
+                    return BadRequest(new { success = false, message = "Device ID is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Platform) ||
+                    (request.Platform != "ios" && request.Platform != "android"))
+                {
+                    return BadRequest(new { success = false, message = "Valid platform is required (ios/android)" });
+                }
+
+                // Get user ID from token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized(new { success = false, message = "Invalid token" });
+                }
+
+                int userId = int.Parse(userIdClaim.Value);
+
+                // Check if token actually changed
+                var dbServices = new DBservices();
+                var currentToken = dbServices.GetUserPushToken(userId, request.DeviceId);
+
+                if (currentToken != null && currentToken.Token == request.PushToken)
+                {
+                    // Token hasn't changed, just update timestamp
+                    dbServices.UpdatePushTokenTimestamp(request.PushToken);
+                    return Ok(new { success = true, message = "Push token is already up to date" });
+                }
+
+                // Token changed or new, register/update it
+                var success = await _pushNotificationService.RegisterOrUpdateTokenAsync(userId, request);
+
+                if (success)
+                {
+                    return Ok(new { success = true, message = "Push token updated successfully" });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message = "Failed to update push token" });
                 }
             }
             catch (Exception ex)

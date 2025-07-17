@@ -82,4 +82,10 @@
         public bool HasMore { get; set; }
     }
 
+    public class PushTokenInfo
+    {
+        public string Token { get; set; }
+        public string Platform { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
 }
