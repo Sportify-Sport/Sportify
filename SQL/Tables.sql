@@ -152,7 +152,8 @@ CREATE TABLE RefreshTokens (
     Created DATETIME NOT NULL DEFAULT GETDATE(),
     Revoked DATETIME NULL,
     ReplacedByToken VARCHAR(255) NULL,
-    ReasonRevoked NVARCHAR(100) NULL
+    ReasonRevoked NVARCHAR(100) NULL,
+	UseCount INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE AdminRefreshTokens (

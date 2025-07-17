@@ -3720,7 +3720,8 @@ public class DBservices
                     Created = Convert.ToDateTime(dataReader["Created"]),
                     Revoked = dataReader["Revoked"] != DBNull.Value ? Convert.ToDateTime(dataReader["Revoked"]) : (DateTime?)null,
                     ReplacedByToken = dataReader["ReplacedByToken"] != DBNull.Value ? dataReader["ReplacedByToken"].ToString() : null,
-                    ReasonRevoked = dataReader["ReasonRevoked"] != DBNull.Value ? dataReader["ReasonRevoked"].ToString() : null
+                    ReasonRevoked = dataReader["ReasonRevoked"] != DBNull.Value ? dataReader["ReasonRevoked"].ToString() : null,
+                    UseCount = Convert.ToInt32(dataReader["UseCount"])
                 };
 
                 return refreshToken;
@@ -7709,4 +7710,120 @@ public class DBservices
 
         return cmd;
     }
+
+    //---------------------------------------------------------------------------------
+    // Increment refresh token use count
+    //---------------------------------------------------------------------------------
+    public bool IncrementRefreshTokenUseCount(string token)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureIncrementUseCount("SP_IncrementRefreshTokenUseCount", con, token);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                int updatedRows = Convert.ToInt32(dataReader["UpdatedRows"]);
+                return updatedRows > 0;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for incrementing use count
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureIncrementUseCount(string spName, SqlConnection con, string token)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@Token", token);
+        return cmd;
+    }
+
+    //---------------------------------------------------------------------------------
+    // Check if user is eligible for authentication operations
+    //---------------------------------------------------------------------------------
+    public bool IsUserEligibleForAuth(int userId)
+    {
+        SqlConnection con;
+        SqlCommand cmd;
+
+        try
+        {
+            con = connect("myProjDB");
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+
+        cmd = CreateCommandWithStoredProcedureCheckEligibility("SP_IsUserEligibleForAuth", con, userId);
+
+        try
+        {
+            SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (dataReader.Read())
+            {
+                return Convert.ToBoolean(dataReader["IsEligible"]);
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            throw (ex);
+        }
+        finally
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------
+    // Create the SqlCommand for checking eligibility
+    //---------------------------------------------------------------------------------
+    private SqlCommand CreateCommandWithStoredProcedureCheckEligibility(string spName, SqlConnection con, int userId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = con;
+        cmd.CommandText = spName;
+        cmd.CommandTimeout = 10;
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        return cmd;
+    }
+
 }

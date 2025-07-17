@@ -21,13 +21,12 @@ namespace Backend.Controllers
     {
         private readonly IConfiguration _config;
         private readonly IEmailService _emailService;
-        private readonly ILogger<AuthController> _logger;
+        private const int REFRESH_TOKEN_REUSE_LIMIT = 24;
 
-        public AuthController(IConfiguration config, IEmailService emailService, ILogger<AuthController> logger)
+        public AuthController(IConfiguration config, IEmailService emailService)
         {
             _config = config;
             _emailService = emailService;
-            _logger = logger;
         }
 
         [AllowAnonymous]
@@ -42,7 +41,6 @@ namespace Backend.Controllers
                 var (success, message) = dbServices.HandleUnverifiedAccountReregistration(registerDto.Email.ToLower());
                 if (success)
                 {
-                    _logger.LogInformation("Removed old unverified account for email: {Email}", registerDto.Email);
                 }
 
                 // Check if email is registered
@@ -81,7 +79,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during registration");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
@@ -136,6 +133,11 @@ namespace Backend.Controllers
                     return Unauthorized("Invalid email or password");
                 }
 
+                if (!dbServices.IsUserEligibleForAuth(user.UserId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
+                }
+
                 string accessToken = GenerateJwtToken(user);
                 var refreshToken = GenerateRefreshToken(user.UserId);
 
@@ -160,6 +162,22 @@ namespace Backend.Controllers
         {
             try
             {
+                // Get user ID from token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized();
+                }
+
+                int userId = int.Parse(userIdClaim.Value);
+                DBservices dbServices = new DBservices();
+
+                // Check if user is eligible
+                if (!dbServices.IsUserEligibleForAuth(userId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
+                }
+
                 if (string.IsNullOrWhiteSpace(verifyDto.Code))
                 {
                     return BadRequest("Verification code is required");
@@ -170,7 +188,6 @@ namespace Backend.Controllers
                     return BadRequest("Invalid verification code format");
                 }
 
-                DBservices dbServices = new DBservices();
                 var result = dbServices.VerifyEmailWithCode(verifyDto.Code);
 
                 if (!result.IsValid)
@@ -201,7 +218,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error verifying email");
                 return StatusCode(500, "An error occurred while verifying email");
             }
         }
@@ -219,6 +235,14 @@ namespace Backend.Controllers
                 }
 
                 int userId = int.Parse(userIdClaim.Value);
+                DBservices dbServices = new DBservices();
+
+                // Check if user is eligible
+                if (!dbServices.IsUserEligibleForAuth(userId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
+                }
+
                 var user = GetUserById(userId);
 
                 if (user == null)
@@ -235,7 +259,6 @@ namespace Backend.Controllers
                 string verificationCode = GenerateVerificationCode();
                 DateTime expiresAt = DateTime.UtcNow.AddMinutes(15);
 
-                DBservices dbServices = new DBservices();
                 dbServices.SaveEmailVerificationCode(userId, verificationCode, expiresAt);
 
                 // Send verification email
@@ -245,7 +268,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resending verification email");
                 return StatusCode(500, "An error occurred while resending verification");
             }
         }
@@ -270,6 +292,12 @@ namespace Backend.Controllers
                     return Ok(new { success = true, message = "If the email exists, a reset code has been sent" });
                 }
 
+                if (!dbServices.IsUserEligibleForAuth(user.UserId))
+                {
+                    // Still return success to prevent enumeration
+                    return Ok(new { success = true, message = "If the email exists, a reset code has been sent" });
+                }
+
                 // Generate 6-digit code
                 string resetCode = GenerateVerificationCode();
                 DateTime expiresAt = DateTime.UtcNow.AddMinutes(10);
@@ -284,7 +312,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing forgot password request");
                 return StatusCode(500, "An error occurred");
             }
         }
@@ -319,6 +346,12 @@ namespace Backend.Controllers
                 if (user == null)
                 {
                     return BadRequest("Invalid or expired reset code");
+                }
+
+                // Check if user is eligible
+                if (!dbServices.IsUserEligibleForAuth(user.UserId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
                 }
 
                 // Hash new password
@@ -358,7 +391,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resetting password");
                 return StatusCode(500, "An error occurred while resetting password");
             }
         }
@@ -377,6 +409,13 @@ namespace Backend.Controllers
                 }
 
                 int userId = int.Parse(userIdClaim.Value);
+                DBservices dbServices = new DBservices();
+
+                // Check if user is eligible
+                if (!dbServices.IsUserEligibleForAuth(userId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
+                }
 
                 // Input validation
                 if (string.IsNullOrWhiteSpace(changePasswordDto.CurrentPassword))
@@ -400,7 +439,6 @@ namespace Backend.Controllers
                 }
 
                 // Get user from database to verify current password
-                DBservices dbServices = new DBservices();
                 var user = dbServices.GetUserById(userId);
 
                 if (user == null)
@@ -426,7 +464,6 @@ namespace Backend.Controllers
 
                 // Revoke all existing refresh tokens for this user
                 int revokedCount = dbServices.RevokeAllUserRefreshTokens(userId, "Password changed by user");
-                // _logger.LogInformation("User {UserId} changed password, revoked {RevokedCount} refresh tokens", userId, revokedCount);
 
                 // Generate new tokens for current session
                 string newAccessToken = GenerateJwtToken(user);
@@ -451,7 +488,6 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error changing password for user");
                 return StatusCode(500, "An error occurred while changing password");
             }
         }
@@ -488,17 +524,38 @@ namespace Backend.Controllers
                     return Unauthorized("User not found");
                 }
 
-                // Generate new tokens
-                var newAccessToken = GenerateJwtToken(user);
-                var newRefreshToken = GenerateRefreshToken(user.UserId, refreshToken.ExpiryDate);
+                // Check if user is eligible
+                if (!dbServices.IsUserEligibleForAuth(user.UserId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
+                }
 
-                // Revoke old refresh token
-                dbServices.RevokeRefreshToken(refreshToken.Token, "Replaced by new token", newRefreshToken.Token);
+                // Generate new access token
+                var newAccessToken = GenerateJwtToken(user);
+                string returnedRefreshToken;
+
+                // Check if we need to generate a new refresh token
+                if (refreshToken.UseCount >= REFRESH_TOKEN_REUSE_LIMIT - 1)
+                {
+                    // Generate new refresh token after 10 uses
+                    var newRefreshToken = GenerateRefreshToken(user.UserId, refreshToken.ExpiryDate);
+
+                    // Revoke old refresh token
+                    dbServices.RevokeRefreshToken(refreshToken.Token, "Replaced after use limit", newRefreshToken.Token);
+
+                    returnedRefreshToken = newRefreshToken.Token;
+                }
+                else
+                {
+                    // Increment use count and return the same refresh token
+                    dbServices.IncrementRefreshTokenUseCount(refreshToken.Token);
+                    returnedRefreshToken = refreshToken.Token;
+                }
 
                 var response = new AuthResponse
                 {
                     AccessToken = newAccessToken,
-                    RefreshToken = newRefreshToken.Token,
+                    RefreshToken = returnedRefreshToken,
                     // IsEmailVerified = user.IsEmailVerified
                 };
 
@@ -525,27 +582,18 @@ namespace Backend.Controllers
 
                 int userId = int.Parse(userIdClaim.Value);
 
+                DBservices dbServices = new DBservices();
+                // Check if user is eligible
+                if (!dbServices.IsUserEligibleForAuth(userId))
+                {
+                    return Unauthorized("Your account verification has expired. Please register again.");
+                }
+
                 if (string.IsNullOrEmpty(token))
                 {
                     return BadRequest("Refresh token is required");
                 }
 
-                // Keep those if we remove it from the parameters passed to the RevokeToken Function
-                //var token = Request.Cookies["refreshToken"] ?? Request.Headers["X-Refresh-Token"].FirstOrDefault();
-                //var token = Request.Headers["X-Refresh-Token"].FirstOrDefault();
-
-
-                // To use this we have to add ? after the string word in the parameters passed to the RevokeToken Function ([FromHeader(Name = "X-Refresh-Token")] string? headerToken)
-                // Allow header first, then fall back to cookie
-                //var token = headerToken ?? Request.Cookies["refreshToken"];
-                //if (string.IsNullOrEmpty(token))
-                //    return BadRequest("Token is required");
-                //if (string.IsNullOrEmpty(token))
-                //{
-                //    return BadRequest("Token is required");
-                //}
-
-                var dbServices = new DBservices();
                 var refreshToken = dbServices.GetRefreshToken(token);
 
                 if (refreshToken == null)

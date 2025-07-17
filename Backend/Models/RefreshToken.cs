@@ -10,6 +10,8 @@
         public DateTime? Revoked { get; set; }
         public string ReplacedByToken { get; set; }
         public string ReasonRevoked { get; set; }
+        public int UseCount { get; set; }
+
 
         // Computed properties
         public bool IsExpired => DateTime.UtcNow >= ExpiryDate;

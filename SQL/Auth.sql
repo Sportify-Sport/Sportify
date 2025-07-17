@@ -138,11 +138,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    INSERT INTO RefreshTokens (UserId, Token, ExpiryDate, Created)
-    VALUES (@UserId, @Token, @ExpiryDate, GETDATE());
+    INSERT INTO RefreshTokens (UserId, Token, ExpiryDate, Created, UseCount)
+    VALUES (@UserId, @Token, @ExpiryDate, GETDATE(), 0);
     
     SELECT 
-        Id, UserId, Token, ExpiryDate, Created
+        Id, UserId, Token, ExpiryDate, Created, UseCount
     FROM RefreshTokens 
     WHERE Id = SCOPE_IDENTITY();
 END
@@ -160,9 +160,28 @@ BEGIN
     SET NOCOUNT ON;
     
     SELECT 
-        Id, UserId, Token, ExpiryDate, Created, Revoked, ReplacedByToken, ReasonRevoked
+        Id, UserId, Token, ExpiryDate, Created, Revoked, ReplacedByToken, ReasonRevoked, UseCount
     FROM RefreshTokens 
     WHERE Token = @Token;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <17/7/2025>
+-- Description:	<This procedure gets a increments the refresh token use count>
+-- =============================================
+CREATE PROCEDURE SP_IncrementRefreshTokenUseCount
+    @Token VARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE RefreshTokens
+    SET UseCount = UseCount + 1
+    WHERE Token = @Token;
+    
+    SELECT @@ROWCOUNT AS UpdatedRows;
 END
 GO
 
@@ -420,5 +439,27 @@ BEGIN
     WHERE IsEmailVerified = 0 AND CreatedAt < @CutoffDate;
     
     SELECT @@ROWCOUNT AS DeletedUsers;
+END
+GO
+
+-- =============================================
+-- Author:		<Mohamed Abo Full>
+-- Create date: <17/7/2025>
+-- Description:	<This procedure is used to check if user account is eligible for authentication>
+-- =============================================
+CREATE PROCEDURE SP_IsUserEligibleForAuth
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        CASE 
+            WHEN IsEmailVerified = 1 THEN 1
+            WHEN IsEmailVerified = 0 AND DATEDIFF(HOUR, CreatedAt, GETUTCDATE()) < 24 THEN 1
+            ELSE 0
+        END AS IsEligible
+    FROM Users
+    WHERE UserId = @UserId;
 END
 GO
