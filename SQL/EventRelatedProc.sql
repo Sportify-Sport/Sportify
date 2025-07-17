@@ -10,10 +10,8 @@ BEGIN
     SET NOCOUNT ON;
     
     SELECT 
-        e.*,
-        el.LocationName,
-        el.Latitude,
-        el.Longitude
+        e.EventId, e.EventName, e.RequiresTeams, e.StartDatetime, e.EndDatetime, e.CityId, e.LocationId, e.SportId,
+		e.MaxTeams, e.CreatedAt, e.IsPublic, e.MaxParticipants, e.MinAge, e.Gender, e.ParticipantsNum, e.TeamsNum, e.ProfileImage, el.LocationName
     FROM 
         Events e
     LEFT JOIN 
@@ -361,8 +359,8 @@ BEGIN
             -- If location doesn't exist, create a new one
             IF @NewLocationId IS NULL
             BEGIN
-                INSERT INTO EventLocations (LocationName, Latitude, Longitude)
-                VALUES (@LocationName, NULL, NULL);
+                INSERT INTO EventLocations (LocationName)
+                VALUES (@LocationName);
                 
                 SET @NewLocationId = SCOPE_IDENTITY();
             END

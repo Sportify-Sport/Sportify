@@ -13,12 +13,9 @@
         private int totalMembers;
         private int minAge;
         private string gender;
-        private int matches;
-        private int wins;
-        private int loses;
 
         public Group() { }
-        public Group(int groupId, string groupName, string description, int sportId, string groupImage, int cityId, DateTime foundedAt, int maxMemNum, int totalMembers, int minAge, string gender, int matches, int wins, int loses)
+        public Group(int groupId, string groupName, string description, int sportId, string groupImage, int cityId, DateTime foundedAt, int maxMemNum, int totalMembers, int minAge, string gender)
         {
             this.groupId = groupId;
             this.groupName = groupName;
@@ -31,9 +28,6 @@
             this.totalMembers = totalMembers;
             this.minAge = minAge;
             this.gender = gender;
-            this.matches = matches;
-            this.wins = wins;
-            this.loses = loses;
         }
 
         public int GroupId { get => groupId; set => groupId = value; }
@@ -47,10 +41,6 @@
         public int TotalMembers { get => totalMembers; set => totalMembers = value; }
         public int MinAge { get => minAge; set => minAge = value; }
         public string Gender { get => gender; set => gender = value; }
-        public int Matches { get => matches; set => matches = value; }
-        public int Wins { get => wins; set => wins = value; }
-        public int Loses { get => loses; set => loses = value; }
-
 
         //// This method gets all details for a specific group
         //public static Group GetGroupDetails(int groupId)

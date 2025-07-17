@@ -742,86 +742,6 @@ public class DBservices
         return cmd;
     }
 
-    ////--------------------------------------------------------------------------------------------------
-    //// This method retrieves complete information for a specific group
-    ////--------------------------------------------------------------------------------------------------
-    //public Group GetGroupDetails(int groupId)
-    //{
-    //    SqlConnection con;
-    //    SqlCommand cmd;
-
-    //    try
-    //    {
-    //        con = connect("myProjDB");
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        throw (ex);
-    //    }
-
-    //    cmd = CreateCommandWithStoredProcedureGetGroupDetails("SP_GetGroupDetails", con, groupId);
-
-    //    try
-    //    {
-    //        SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-
-    //        if (dataReader.Read())
-    //        {
-    //            string groupImage = dataReader["GroupImage"] == DBNull.Value || string.IsNullOrEmpty(dataReader["GroupImage"].ToString())
-    //            ? "default_group.png"
-    //            : dataReader["GroupImage"].ToString();
-
-    //            Group group = new Group(
-    //                Convert.ToInt32(dataReader["GroupId"]),
-    //                dataReader["GroupName"].ToString(),
-    //                dataReader["Description"].ToString(),
-    //                Convert.ToInt32(dataReader["SportId"]),
-    //                groupImage,
-    //                Convert.ToInt32(dataReader["CityId"]),
-    //                Convert.ToDateTime(dataReader["FoundedAt"]),
-    //                Convert.ToInt32(dataReader["MaxMemNum"]),
-    //                Convert.ToInt32(dataReader["TotalMembers"]),
-    //                Convert.ToInt32(dataReader["MinAge"]),
-    //                dataReader["Gender"].ToString(),
-    //                Convert.ToInt32(dataReader["Matches"]),
-    //                Convert.ToInt32(dataReader["Wins"]),
-    //                Convert.ToInt32(dataReader["Loses"])
-    //            );
-
-    //            return group;
-    //        }
-    //        else
-    //        {
-    //            return null;
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        throw (ex);
-    //    }
-    //    finally
-    //    {
-    //        if (con != null)
-    //        {
-    //            con.Close();
-    //        }
-    //    }
-    //}
-
-    ////---------------------------------------------------------------------------------
-    //// Create the SqlCommand for retrieving group details
-    ////---------------------------------------------------------------------------------
-    //private SqlCommand CreateCommandWithStoredProcedureGetGroupDetails(string spName, SqlConnection con, int groupId)
-    //{
-    //    SqlCommand cmd = new SqlCommand();
-    //    cmd.Connection = con;
-    //    cmd.CommandText = spName;
-    //    cmd.CommandTimeout = 10;
-    //    cmd.CommandType = System.Data.CommandType.StoredProcedure;
-    //    cmd.Parameters.AddWithValue("@groupId", groupId);
-    //    return cmd;
-    //}
-
     //--------------------------------------------------------------------------------------------------
     // This method retrieves all groups that the user has joined
     //--------------------------------------------------------------------------------------------------
@@ -917,7 +837,6 @@ public class DBservices
                 eventDetails.MaxTeams = dataReader["MaxTeams"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxTeams"]);
                 eventDetails.CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]);
                 eventDetails.IsPublic = Convert.ToBoolean(dataReader["IsPublic"]);
-                eventDetails.WinnerId = dataReader["WinnerId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["WinnerId"]);
                 eventDetails.MaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]);
                 eventDetails.MinAge = Convert.ToInt32(dataReader["MinAge"]);
                 eventDetails.Gender = dataReader["Gender"].ToString();
@@ -925,8 +844,6 @@ public class DBservices
                 eventDetails.TeamsNum = Convert.ToInt32(dataReader["TeamsNum"]);
                 eventDetails.ProfileImage = dataReader["ProfileImage"].ToString();
                 eventDetails.LocationName = dataReader["LocationName"].ToString();
-                eventDetails.Latitude = dataReader["Latitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Latitude"]);
-                eventDetails.Longitude = dataReader["Longitude"] == DBNull.Value ? null : (double?)Convert.ToDouble(dataReader["Longitude"]);
 
                 return eventDetails;
             }
@@ -1369,9 +1286,6 @@ public class DBservices
                     TotalMembers = Convert.ToInt32(dataReader["TotalMembers"]),
                     MinAge = Convert.ToInt32(dataReader["MinAge"]),
                     Gender = dataReader["Gender"].ToString(),
-                    Matches = Convert.ToInt32(dataReader["Matches"]),
-                    Wins = Convert.ToInt32(dataReader["Wins"]),
-                    Loses = Convert.ToInt32(dataReader["Loses"]),
                     IsMember = isMember,
                     IsAdmin = isAdmin,
                     HasPendingRequest = hasPendingRequest
@@ -1464,7 +1378,6 @@ public class DBservices
                     MaxTeams = dataReader["MaxTeams"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxTeams"]),
                     CreatedAt = Convert.ToDateTime(dataReader["CreatedAt"]),
                     IsPublic = Convert.ToBoolean(dataReader["IsPublic"]),
-                    WinnerId = dataReader["WinnerId"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["WinnerId"]),
                     MaxParticipants = dataReader["MaxParticipants"] == DBNull.Value ? null : (int?)Convert.ToInt32(dataReader["MaxParticipants"]),
                     MinAge = Convert.ToInt32(dataReader["MinAge"]),
                     Gender = dataReader["Gender"].ToString(),

@@ -13,7 +13,6 @@
         private int? maxTeams;
         private DateTime createdAt;
         private bool isPublic;
-        private int? winnerId;
         private int? maxParticipants;
         private int minAge;
         private string gender;
@@ -22,11 +21,9 @@
         private string profileImage;
 
         private string locationName;
-        private double? latitude;
-        private double? longitude;
 
         public Event() { }
-        public Event(int eventId, string eventName, bool requiresTeams, DateTime startDatetime, DateTime endDatetime, int cityId, int? locationId, int sportId, int? maxTeams, DateTime createdAt, bool isPublic, int? winnerId, int? maxParticipants, int minAge, string gender, int participantsNum, int teamsNum, string profileImage, string locationName, double? latitude, double? longitude)
+        public Event(int eventId, string eventName, bool requiresTeams, DateTime startDatetime, DateTime endDatetime, int cityId, int? locationId, int sportId, int? maxTeams, DateTime createdAt, bool isPublic, int? maxParticipants, int minAge, string gender, int participantsNum, int teamsNum, string profileImage, string locationName)
         {
             this.eventId = eventId;
             this.eventName = eventName;
@@ -39,7 +36,6 @@
             this.maxTeams = maxTeams;
             this.createdAt = createdAt;
             this.isPublic = isPublic;
-            this.winnerId = winnerId;
             this.maxParticipants = maxParticipants;
             this.minAge = minAge;
             this.gender = gender;
@@ -47,8 +43,6 @@
             this.teamsNum = teamsNum;
             this.profileImage = profileImage;
             this.locationName = locationName;
-            this.latitude = latitude;
-            this.longitude = longitude;
         }
 
         public int EventId { get => eventId; set => eventId = value; }
@@ -62,7 +56,6 @@
         public int? MaxTeams { get => maxTeams; set => maxTeams = value; }
         public DateTime CreatedAt { get => createdAt; set => createdAt = value; }
         public bool IsPublic { get => isPublic; set => isPublic = value; }
-        public int? WinnerId { get => winnerId; set => winnerId = value; }
         public int? MaxParticipants { get => maxParticipants; set => maxParticipants = value; }
         public int MinAge { get => minAge; set => minAge = value; }
         public string Gender { get => gender; set => gender = value; }
@@ -70,12 +63,6 @@
         public int TeamsNum { get => teamsNum; set => teamsNum = value; }
         public string ProfileImage { get => profileImage; set => profileImage = value; }
         public string LocationName { get => locationName; set => locationName = value; }
-        public double? Latitude { get => latitude; set => latitude = value; }
-        public double? Longitude { get => longitude; set => longitude = value; }
-
-
-
-
 
         //--------------------------------------------------------------------------------------------------
         // Get details for a specific event

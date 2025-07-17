@@ -41,10 +41,7 @@ CREATE TABLE Groups (
     MaxMemNum INT NOT NULL CHECK (MaxMemNum > 0),
     TotalMembers INT NOT NULL DEFAULT 0,
     MinAge INT NOT NULL,
-    Gender NVARCHAR(6) NOT NULL CHECK (Gender IN ('Female', 'Male', 'Mixed')),
-    Matches INT NOT NULL DEFAULT 0,
-    Wins INT NOT NULL DEFAULT 0,
-    Loses INT NOT NULL DEFAULT 0
+    Gender NVARCHAR(6) NOT NULL CHECK (Gender IN ('Female', 'Male', 'Mixed'))
 );
 
 
@@ -72,9 +69,7 @@ CREATE TABLE GroupAdmins (
 
 CREATE TABLE EventLocations (
     LocationId INT PRIMARY KEY IDENTITY(1,1),
-    LocationName NVARCHAR(100) NOT NULL,
-    Latitude DECIMAL(9,6) NULL,
-    Longitude DECIMAL(9,6) NULL
+    LocationName NVARCHAR(100) NOT NULL
 );
 
 
@@ -91,7 +86,6 @@ CREATE TABLE [Events] (
     MaxTeams INT,
     CreatedAt DATE DEFAULT CAST(GETDATE() AS DATE),
     IsPublic BIT NOT NULL DEFAULT 1,
-    WinnerId INT, -- Could reference GroupID or UserID based on winner type
     MaxParticipants INT,
     MinAge INT NOT NULL,
     Gender NVARCHAR(6) NOT NULL CHECK (Gender IN ('Female', 'Male', 'Mixed')),
@@ -139,8 +133,7 @@ CREATE TABLE GroupJoinRequests (
 
 CREATE TABLE EventTeams (
     EventId INT REFERENCES [Events](EventId) ON DELETE CASCADE,
-    GroupId INT REFERENCES Groups(GroupId) ON DELETE CASCADE,
-    ScoreNum INT DEFAULT 0,
+    GroupId INT REFERENCES Groups(GroupId) ON DELETE CASCADE
     PRIMARY KEY (EventId, GroupId)
 );
 
