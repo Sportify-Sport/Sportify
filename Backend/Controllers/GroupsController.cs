@@ -96,7 +96,7 @@ namespace Backend.Controllers
         }
 
 
-        [Authorize(Roles = "User")]
+        [AllowAnonymous]
 
         [HttpGet("{groupId}/upcoming-events")]
         public IActionResult GetUpcomingGroupEvents(int groupId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)

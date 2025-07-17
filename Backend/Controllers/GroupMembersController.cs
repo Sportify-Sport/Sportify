@@ -22,7 +22,7 @@ namespace Backend.Controllers
         }
 
 
-        [Authorize(Roles = "User")]
+        [AllowAnonymous]
         [HttpGet("members/{groupId}")]
         public IActionResult GetGroupMembers(int groupId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {

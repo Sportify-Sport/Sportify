@@ -1845,8 +1845,7 @@ public class DBservices
         try
         {
             con = connect("myProjDB"); // create the connection
-            SqlCommand cmd = CreateCommandWithStoredProcedureGetGroupMembers(
-                "SP_GetGroupMembers", con, groupId, page, pageSize);
+            SqlCommand cmd = CreateCommandWithStoredProcedureGetGroupMembers("SP_GetGroupMembers", con, groupId, page, pageSize);
 
             SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
 
