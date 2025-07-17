@@ -14,6 +14,15 @@ namespace Backend.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
+        private readonly CityService _cityService;
+        private readonly SportService _sportService;
+
+        public UsersController(CityService cityService, SportService sportService)
+        {
+            _cityService = cityService;
+            _sportService = sportService;
+        }
+
         [HttpGet("groups/top4")]
         [Authorize(Roles = "User")]
         public IActionResult GetTop4Groups()
@@ -92,11 +101,61 @@ namespace Backend.Controllers
 
         [HttpPut("profile/details")]
         [Authorize(Roles = "User")]
-        public IActionResult UpdateUserDetails([FromBody] UserUpdateModel model)
+        public async Task<IActionResult> UpdateUserDetails([FromBody] UserUpdateModel model)
         {
             try
             {
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                if (model.FirstName != null)
+                {
+                    if (string.IsNullOrWhiteSpace(model.FirstName))
+                    {
+                        return BadRequest(new { success = false, message = "First name cannot be empty" });
+                    }
+                    if (model.FirstName.Length > 50)
+                    {
+                        return BadRequest(new { success = false, message = "First name cannot exceed 50 characters" });
+                    }
+                }
+
+                if (model.LastName != null)
+                {
+                    if (string.IsNullOrWhiteSpace(model.LastName))
+                    {
+                        return BadRequest(new { success = false, message = "Last name cannot be empty" });
+                    }
+                    if (model.LastName.Length > 50)
+                    {
+                        return BadRequest(new { success = false, message = "Last name cannot exceed 50 characters" });
+                    }
+                }
+
+                if (model.Bio != null && model.Bio.Length > 500)
+                {
+                    return BadRequest(new { success = false, message = "Bio cannot exceed 500 characters" });
+                }
+
+                // Since FavSportId and CityId are not nullable, check if they're not default(0)
+                if (model.FavSportId != 0)
+                {
+                    bool isValidSport = await _sportService.ValidateSportIdAsync(model.FavSportId);
+                    if (!isValidSport)
+                    {
+                        return BadRequest(new { success = false, message = "Invalid sport selected" });
+                    }
+                }
+
+                if (model.CityId != 0)
+                {
+                    bool isValidCity = await _cityService.IsCityValidAsync(model.CityId);
+                    if (!isValidCity)
+                    {
+                        return BadRequest(new { success = false, message = "Invalid city selected" });
+                    }
+                }
+
+
                 bool success = BL.User.UpdateUserDetails(userId, model);
 
                 if (success)
@@ -204,6 +263,19 @@ namespace Backend.Controllers
             try
             {
                 if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+                if (lastEventId.HasValue && lastEventId.Value <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid last event ID" });
+                }
+
+                if (lastEventDate.HasValue)
+                {
+                    if (lastEventDate.Value.Year < 2000 || lastEventDate.Value > DateTime.Now.AddYears(5))
+                    {
+                        return BadRequest(new { success = false, message = "Invalid event date" });
+                    }
+                }
 
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 

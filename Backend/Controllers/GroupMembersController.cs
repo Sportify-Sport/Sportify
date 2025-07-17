@@ -28,6 +28,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 if (page < 1 || pageSize < 1 || pageSize > 50)
                 {
                     return BadRequest(new
@@ -63,6 +68,16 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+                if (userId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid user ID" });
+                }
+
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
@@ -105,14 +120,9 @@ namespace Backend.Controllers
         {
             try
             {
-                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
-
-                if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
+                if (groupId <= 0)
                 {
-                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to view pending join requests for group {GroupId} without being a group admin",
-                        adminName, currentUserId, groupId);
-                    return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
+                    return BadRequest(new { success = false, message = "Invalid group Id" });
                 }
 
                 if (page < 1 || pageSize < 1 || pageSize > 50)
@@ -124,6 +134,16 @@ namespace Backend.Controllers
                     });
                 }
 
+                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                string adminName = User.FindFirst("name")?.Value ?? "Unknown";
+
+                if (!GroupMember.IsUserGroupAdmin(groupId, currentUserId))
+                {
+                    _logger.LogWarning("Unauthorized access: Admin {AdminName} (ID: {AdminId}) attempted to view pending join requests for group {GroupId} without being a group admin",
+                        adminName, currentUserId, groupId);
+                    return StatusCode(403, new { success = false, message = "You are not an admin of this group or group doesn't exist" });
+                }
+  
                 var (requests, hasMore) = GroupMember.GetPendingJoinRequests(groupId, page, pageSize);
 
                 return Ok(new
@@ -181,6 +201,16 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+                if (requestId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid request ID" });
+                }
+
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
@@ -242,6 +272,16 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+                if (requestId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid request ID" });
+                }
+
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
@@ -304,6 +344,16 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+                if (userId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid user ID" });
+                }
+
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
@@ -366,6 +416,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (groupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
                 int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
                 bool success = GroupMember.LeaveGroup(groupId, userId);

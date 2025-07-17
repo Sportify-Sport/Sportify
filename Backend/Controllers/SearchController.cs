@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Backend.BL;
+using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Backend.BL;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Backend.Controllers
@@ -9,9 +10,18 @@ namespace Backend.Controllers
     [ApiController]
     public class SearchController : ControllerBase
     {
+        private readonly CityService _cityService;
+        private readonly SportService _sportService;
+
+        public SearchController(CityService cityService, SportService sportService)
+        {
+            _cityService = cityService;
+            _sportService = sportService;
+        }
+
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Search(
+        public async Task<IActionResult> Search(
             [FromQuery] string type,
             [FromQuery] string? name = null,
             [FromQuery] int? sportId = null,
@@ -26,6 +36,26 @@ namespace Backend.Controllers
         {
             try
             {
+                // Validate sportId if provided
+                if (sportId.HasValue)
+                {
+                    bool isValidSport = await _sportService.ValidateSportIdAsync(sportId.Value);
+                    if (!isValidSport)
+                    {
+                        return BadRequest(new { success = false, message = "Invalid sport ID" });
+                    }
+                }
+
+                // Validate cityId if provided
+                if (cityId.HasValue)
+                {
+                    bool isValidCity = await _cityService.IsCityValidAsync(cityId.Value);
+                    if (!isValidCity)
+                    {
+                        return BadRequest(new { success = false, message = "Invalid city ID" });
+                    }
+                }
+
                 // Validate the parameters
 
                 if (string.IsNullOrEmpty(type) || (type.ToLower() != "group" && type.ToLower() != "event"))

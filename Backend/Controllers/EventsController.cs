@@ -1,9 +1,10 @@
 ﻿using Backend.BL;
+using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Backend.Models;
-using Backend.Services;
+using System.Text.RegularExpressions;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -99,7 +100,38 @@ namespace Backend.Controllers
         {
             try
             {
-                if (pageSize < 1 || pageSize > 50) pageSize = 10;
+                if (pageSize < 1 || pageSize > 50)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Page size must be between 1 and 50"
+                    });
+                }
+
+                if (lastEventId.HasValue && lastEventId.Value <= 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid last event ID"
+                    });
+                }
+
+                if (lastEventDate.HasValue)
+                {
+                    DateTime minAllowedDate = new DateTime(2000, 1, 1);
+                    DateTime maxAllowedDate = DateTime.Now.AddYears(5);
+
+                    if (lastEventDate.Value < minAllowedDate || lastEventDate.Value > maxAllowedDate)
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Event date must be between 2000-01-01 and 5 years from today"
+                        });
+                    }
+                }
 
                 var result = BL.Event.GetEventsPaginated(lastEventDate, lastEventId, pageSize);
 
@@ -122,6 +154,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 int? userId = null;
                 if (User.Identity.IsAuthenticated)
                 {
@@ -157,6 +194,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 // Get user ID from claims
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string userName = User.FindFirst("name")?.Value ?? "Unknown";
@@ -237,6 +279,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 // Get user ID from claims
                 int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string userName = User.FindFirst("name")?.Value ?? "Unknown";

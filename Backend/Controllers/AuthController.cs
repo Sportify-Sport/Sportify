@@ -10,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 // This page handles JWT, Login, Register, Hashing Password
@@ -21,12 +22,16 @@ namespace Backend.Controllers
     {
         private readonly IConfiguration _config;
         private readonly IEmailService _emailService;
+        private readonly CityService _cityService;
+        private readonly SportService _sportService;
         private const int REFRESH_TOKEN_REUSE_LIMIT = 24;
 
-        public AuthController(IConfiguration config, IEmailService emailService)
+        public AuthController(IConfiguration config, IEmailService emailService, CityService cityService, SportService sportService)
         {
             _config = config;
             _emailService = emailService;
+            _cityService = cityService;
+            _sportService = sportService;
         }
 
         [AllowAnonymous]
@@ -35,6 +40,109 @@ namespace Backend.Controllers
         {
             try
             {
+                // Validate FirstName
+                if (string.IsNullOrWhiteSpace(registerDto.FirstName))
+                {
+                    return BadRequest("First name is required");
+                }
+                if (registerDto.FirstName.Length > 50)
+                {
+                    return BadRequest("First name cannot exceed 50 characters");
+                }
+                if (!Regex.IsMatch(registerDto.FirstName, @"^[a-zA-Z\s\-']+$"))
+                {
+                    return BadRequest("First name contains invalid characters");
+                }
+
+                // Validate LastName
+                if (string.IsNullOrWhiteSpace(registerDto.LastName))
+                {
+                    return BadRequest("Last name is required");
+                }
+                if (registerDto.LastName.Length > 50)
+                {
+                    return BadRequest("Last name cannot exceed 50 characters");
+                }
+                if (!Regex.IsMatch(registerDto.LastName, @"^[a-zA-Z\s\-']+$"))
+                {
+                    return BadRequest("Last name contains invalid characters");
+                }
+
+                // Validate BirthDate
+                var minBirthDate = DateTime.Now.AddYears(-120);
+                var maxBirthDate = DateTime.Now.AddYears(-13); // Minimum age 13
+                if (registerDto.BirthDate < minBirthDate || registerDto.BirthDate > maxBirthDate)
+                {
+                    return BadRequest("Birth date must be between 13 and 120 years ago");
+                }
+
+                // Validate Email
+                if (string.IsNullOrWhiteSpace(registerDto.Email))
+                {
+                    return BadRequest("Email is required");
+                }
+                if (registerDto.Email.Length > 100)
+                {
+                    return BadRequest("Email cannot exceed 100 characters");
+                }
+                if (!IsValidEmail(registerDto.Email))
+                {
+                    return BadRequest("Invalid email format");
+                }
+
+                // Validate Password
+                if (string.IsNullOrWhiteSpace(registerDto.Password))
+                {
+                    return BadRequest("Password is required");
+                }
+                if (registerDto.Password.Length < 8)
+                {
+                    return BadRequest("Password must be at least 8 characters long");
+                }
+                if (registerDto.Password.Length > 100)
+                {
+                    return BadRequest("Password cannot exceed 100 characters");
+                }
+
+                // password complexity requirements
+                if (!Regex.IsMatch(registerDto.Password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
+                {
+                    return BadRequest("Password must contain at least one uppercase letter, one lowercase letter, and one number");
+                }
+
+                // Validate Gender
+                if (string.IsNullOrWhiteSpace(registerDto.Gender))
+                {
+                    return BadRequest("Gender is required");
+                }
+                if (registerDto.Gender != "M" && registerDto.Gender != "F")
+                {
+                    return BadRequest("Gender must be 'M' or 'F'");
+                }
+
+                // Validate FavSportId using SportService
+                if (registerDto.FavSportId <= 0)
+                {
+                    return BadRequest("Invalid sport ID");
+                }
+                bool isValidSport = await _sportService.ValidateSportIdAsync(registerDto.FavSportId);
+                if (!isValidSport)
+                {
+                    return BadRequest("Selected sport does not exist");
+                }
+
+                // Validate CityId using CityService
+                if (registerDto.CityId <= 0)
+                {
+                    return BadRequest("Invalid city ID");
+                }
+
+                bool isValidCity = await _cityService.IsCityValidAsync(registerDto.CityId);
+                if (!isValidCity)
+                {
+                    return BadRequest("Selected city does not exist");
+                }
+
                 DBservices dbServices = new DBservices();
 
                 // First, check if there's an old unverified account
@@ -123,6 +231,23 @@ namespace Backend.Controllers
                 if (string.IsNullOrEmpty(loginDto.Email) || string.IsNullOrEmpty(loginDto.Password))
                 {
                     return BadRequest("Email and password are required");
+                }
+
+                if (!IsValidEmail(loginDto.Email))
+                {
+                    return BadRequest("Invalid email format");
+                }
+
+                // email length validation
+                if (loginDto.Email.Length > 100)
+                {
+                    return BadRequest("Email cannot exceed 100 characters");
+                }
+
+                // password length validation
+                if (loginDto.Password.Length > 100)
+                {
+                    return BadRequest("Invalid credentials");
                 }
 
                 DBservices dbServices = new DBservices();
@@ -283,6 +408,17 @@ namespace Backend.Controllers
                     return BadRequest("Email is required");
                 }
 
+                // email format validation
+                if (!IsValidEmail(forgotDto.Email))
+                {
+                    return BadRequest("Invalid email format");
+                }
+
+                // email length validation
+                if (forgotDto.Email.Length > 100)
+                {
+                    return BadRequest("Email cannot exceed 100 characters");
+                }
                 DBservices dbServices = new DBservices();
                 var user = dbServices.GetUserByEmail(forgotDto.Email.ToLower());
 
@@ -337,6 +473,17 @@ namespace Backend.Controllers
                 if (resetDto.NewPassword.Length < 8)
                 {
                     return BadRequest("Password must be at least 8 characters long");
+                }
+
+                if (resetDto.NewPassword.Length > 100)
+                {
+                    return BadRequest("Password cannot exceed 100 characters");
+                }
+
+                // password complexity validation
+                if (!Regex.IsMatch(resetDto.NewPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
+                {
+                    return BadRequest("Password must contain at least one uppercase letter, one lowercase letter, and one number");
                 }
 
                 DBservices dbServices = new DBservices();
@@ -431,6 +578,17 @@ namespace Backend.Controllers
                 if (changePasswordDto.NewPassword.Length < 8)
                 {
                     return BadRequest("New password must be at least 8 characters long");
+                }
+
+                if (changePasswordDto.CurrentPassword == changePasswordDto.NewPassword)
+                {
+                    return BadRequest("New password must be different from current password");
+                }
+
+                // password complexity validation
+                if (!Regex.IsMatch(changePasswordDto.NewPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
+                {
+                    return BadRequest("Password must contain at least one uppercase letter, one lowercase letter, and one number");
                 }
 
                 if (changePasswordDto.CurrentPassword == changePasswordDto.NewPassword)
@@ -704,5 +862,18 @@ namespace Backend.Controllers
             return dbServices.GetUserById(userId);
         }
 
+        // Helper method to validate email format
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+                return emailRegex.IsMatch(email);
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

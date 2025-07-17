@@ -85,6 +85,12 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Invalid city ID" });
                 }
 
+                bool cityValid = await _cityService.IsCityValidAsync(dto.CityId);
+                if (!cityValid)
+                {
+                    return BadRequest(new { success = false, message = "City ID does not exist" });
+                }
+
                 DBservices dbServices = new DBservices();
                 var result = dbServices.RemoveCityOrganizer(dto.UserId, dto.CityId);
 

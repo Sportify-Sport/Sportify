@@ -29,6 +29,11 @@ namespace Backend.Controllers
             int currentUserId = 0;
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 string adminName = User.FindFirst("name")?.Value ?? "Unknown";
 
@@ -135,6 +140,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
                 var result = EventParticipant.CancelEventJoinRequest(eventId, userId);

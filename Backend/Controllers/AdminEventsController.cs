@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -17,11 +18,12 @@ namespace Backend.Controllers
     {
         private readonly ILogger<AdminEventsController> _logger;
         private readonly IPushNotificationService _pushNotificationService;
-
-        public AdminEventsController(ILogger<AdminEventsController> logger, IPushNotificationService pushNotificationService)
+        private readonly SportService _sportService;
+        public AdminEventsController(ILogger<AdminEventsController> logger, IPushNotificationService pushNotificationService, SportService sportService)
         {
             _logger = logger;
             _pushNotificationService = pushNotificationService;
+            _sportService = sportService;
         }
 
         [HttpGet("{cityId}")]
@@ -93,6 +95,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 // Get user ID from claims
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)
@@ -236,9 +243,8 @@ namespace Backend.Controllers
                 }
 
                 // Validate SportId exists
-                var sports = dbServices.GetAllSports();
-                bool sportExists = sports.Any(s => s.SportId == eventDto.SportId);
-                if (!sportExists)
+                bool isValidSport = await _sportService.ValidateSportIdAsync(eventDto.SportId);
+                if (!isValidSport)
                 {
                     return BadRequest(new { success = false, message = "Invalid sport ID" });
                 }
@@ -312,6 +318,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 // Get user ID from claims
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)
@@ -419,6 +430,11 @@ namespace Backend.Controllers
         {
             try
             {
+                if (eventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
                 // Get user ID from claims
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)

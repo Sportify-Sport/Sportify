@@ -86,6 +86,17 @@ namespace Backend.Controllers
                     return BadRequest(new { success = false, message = "Message cannot exceed 1000 characters" });
                 }
 
+                if (request.EventId != null && request.EventId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid event ID" });
+                }
+
+                if (request.GroupId != null && request.GroupId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid group ID" });
+                }
+
+
                 if (request.EventId == null && request.GroupId == null)
                 {
                     return BadRequest(new { success = false, message = "Either EventId or GroupId is required" });
@@ -94,6 +105,15 @@ namespace Backend.Controllers
                 if (request.EventId != null && request.GroupId != null)
                 {
                     return BadRequest(new { success = false, message = "Cannot specify both EventId and GroupId" });
+                }
+
+                if (!string.IsNullOrEmpty(request.Recipients))
+                {
+                    var validRecipients = new[] { "all", "players", "groups" };
+                    if (!validRecipients.Contains(request.Recipients.ToLower()))
+                    {
+                        return BadRequest(new { success = false, message = "Recipients must be 'all', 'players', or 'groups'" });
+                    }
                 }
 
                 // Get current user ID
