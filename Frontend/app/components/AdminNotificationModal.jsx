@@ -17,12 +17,24 @@ export default function AdminNotificationModal({
   visible, 
   onClose, 
   eventId = null, 
-  groupId = null 
+  groupId = null,
+  requiresTeams = false,
+  isPublic = true
 }) {
   const { token, NotificationService } = useAuth();
   const [message, setMessage] = useState('');
-  const [recipients, setRecipients] = useState('all');
+  const [recipients, setRecipients] = useState(
+    requiresTeams && !isPublic ? 'groups' : 'all' // Default to groups if requiresTeams and not public
+  );
   const [sending, setSending] = useState(false);
+
+  // Log the values for debugging
+  console.log('Notification Modal - requiresTeams:', requiresTeams, 'isPublic:', isPublic);
+
+  // Determine which recipient options to show based on event type
+  const showAllOption = true; // Always show 'All' option except when requiresTeams && !isPublic
+  const showPlayersOption = !requiresTeams && isPublic;
+  const showGroupsOption = requiresTeams;
 
   const sendNotification = async () => {
     if (!message.trim()) {
@@ -67,19 +79,19 @@ export default function AdminNotificationModal({
     >
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        className="flex-1 justify-end bg-black bg-opacity-50"
       >
-        <View style={styles.modalContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Send Notification</Text>
+        <View className="bg-white rounded-t-2xl p-5 min-h-[400px]">
+          <View className="flex-row justify-between items-center mb-5">
+            <Text className="text-xl font-bold text-gray-800">Send Notification</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.label}>Message</Text>
+          <Text className="text-base font-semibold text-gray-800 mb-2">Message</Text>
           <TextInput
-            style={styles.input}
+            className="border border-gray-200 rounded-lg p-3 text-base min-h-[100px] text-align-top"
             value={message}
             onChangeText={setMessage}
             placeholder="Enter your message..."
@@ -87,60 +99,54 @@ export default function AdminNotificationModal({
             numberOfLines={4}
             maxLength={1000}
           />
-          <Text style={styles.charCount}>{message.length}/1000</Text>
+          <Text className="text-xs text-gray-600 text-right mt-1 mb-4">{message.length}/1000</Text>
 
           {eventId && (
             <>
-              <Text style={styles.label}>Recipients</Text>
-              <View style={styles.recipientOptions}>
-                <TouchableOpacity
-                  style={[
-                    styles.recipientOption,
-                    recipients === 'all' && styles.selectedOption
-                  ]}
-                  onPress={() => setRecipients('all')}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    recipients === 'all' && styles.selectedText
-                  ]}>All Participants</Text>
-                </TouchableOpacity>
+              <Text className="text-base font-semibold text-gray-800 mb-2">Recipients</Text>
+              <View className="flex-row gap-2 mb-5">
+                {showAllOption && !(requiresTeams && !isPublic) && (
+                  <TouchableOpacity
+                    className={`flex-1 p-3 border rounded-lg items-center ${recipients === 'all' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                    onPress={() => setRecipients('all')}
+                  >
+                    <Text className={`text-sm ${recipients === 'all' ? 'text-green-500 font-semibold' : 'text-gray-600'}`}>
+                      All Participants
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 
-                <TouchableOpacity
-                  style={[
-                    styles.recipientOption,
-                    recipients === 'players' && styles.selectedOption
-                  ]}
-                  onPress={() => setRecipients('players')}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    recipients === 'players' && styles.selectedText
-                  ]}>Players Only</Text>
-                </TouchableOpacity>
+                {showPlayersOption && (
+                  <TouchableOpacity
+                    className={`flex-1 p-3 border rounded-lg items-center ${recipients === 'players' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                    onPress={() => setRecipients('players')}
+                  >
+                    <Text className={`text-sm ${recipients === 'players' ? 'text-green-500 font-semibold' : 'text-gray-600'}`}>
+                      Players Only
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 
-                <TouchableOpacity
-                  style={[
-                    styles.recipientOption,
-                    recipients === 'groups' && styles.selectedOption
-                  ]}
-                  onPress={() => setRecipients('groups')}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    recipients === 'groups' && styles.selectedText
-                  ]}>Groups Only</Text>
-                </TouchableOpacity>
+                {showGroupsOption && (
+                  <TouchableOpacity
+                    className={`flex-1 p-3 border rounded-lg items-center ${recipients === 'groups' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                    onPress={() => setRecipients('groups')}
+                  >
+                    <Text className={`text-sm ${recipients === 'groups' ? 'text-green-500 font-semibold' : 'text-gray-600'}`}>
+                      Groups Only
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </>
           )}
 
           <TouchableOpacity
-            style={[styles.sendButton, sending && styles.disabledButton]}
+            className={`p-4 rounded-lg items-center ${sending ? 'bg-gray-400' : 'bg-green-500'}`}
             onPress={sendNotification}
             disabled={sending}
           >
-            <Text style={styles.sendButtonText}>
+            <Text className="text-white text-base font-semibold">
               {sending ? 'Sending...' : 'Send Notification'}
             </Text>
           </TouchableOpacity>
@@ -149,90 +155,3 @@ export default function AdminNotificationModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    minHeight: 400,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  charCount: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'right',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  recipientOptions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-  },
-  recipientOption: {
-    flex: 1,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  selectedOption: {
-    borderColor: '#3CCF4E',
-    backgroundColor: '#F0FFF4',
-  },
-  optionText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  selectedText: {
-    color: '#3CCF4E',
-    fontWeight: '600',
-  },
-  sendButton: {
-    backgroundColor: '#3CCF4E',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#C0C0C0',
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
