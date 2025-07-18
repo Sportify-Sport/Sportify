@@ -26,7 +26,6 @@ export default function EventCarousel({ events, apiUrl, message }) {
   };
 
   useEffect(() => {
-    console.log('EventCarousel message prop:', message);
   }, [message]);
 
   useEffect(() => {

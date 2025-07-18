@@ -147,27 +147,29 @@ export default function GroupDetails() {
   // Fetch members
   useEffect(() => {
     if (!group) return;
+
     (async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) return;
       try {
         const r = await fetch(
-          `${apiUrl}/api/GroupMembers/members/${group.groupId}?page=${membersPage}&pageSize=${PAGE_SIZE}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `${apiUrl}/api/GroupMembers/members/${group.groupId}?page=${membersPage}&pageSize=${PAGE_SIZE}`
         );
+
         if (r.status === 204) {
           setMembers([]);
           setMembersHasMore(false);
           return;
         }
+
         if (!r.ok) {
           console.error(`Members API error: ${r.status} ${r.statusText}`);
           throw new Error(`Failed to fetch members: ${r.status}`);
         }
+
         const contentType = r.headers.get('Content-Type');
         if (!contentType || !contentType.includes('application/json')) {
           throw new Error('Invalid response format from members API');
         }
+
         const json = await r.json();
         if (json.success) {
           setMembers(p => (membersPage === 1 ? json.data : [...p, ...json.data]));
@@ -529,21 +531,19 @@ export default function GroupDetails() {
             group={group}
             sportsMap={sportsMap}
           />
-
-          {isLoggedIn && (
-            <TeamMembers
-              members={members}
-              displayCount={membersDisplayCount}
-              pageSize={PAGE_SIZE}
-              hasMore={membersHasMore}
-              onToggle={handleToggleMembers}
-              isAdmin={group.isAdmin}
-              currentUserId={currentUserId}
-              onShowDetails={handleShowMemberDetails}
-              onRemove={handleRemoveMember}
-              events={events}
-            />
-          )}
+          <TeamMembers
+            members={members}
+            displayCount={membersDisplayCount}
+            pageSize={PAGE_SIZE}
+            hasMore={membersHasMore}
+            onToggle={handleToggleMembers}
+            isAdmin={group.isAdmin}
+            currentUserId={currentUserId}
+            onShowDetails={isLoggedIn ? handleShowMemberDetails : null}
+            onRemove={isLoggedIn ? handleRemoveMember : null}
+            events={events}
+            isGuest={!isLoggedIn}
+          />
           <View className="h-px bg-green-400 mb-4" />
           <JoinRequestButton
             isLoggedIn={isLoggedIn}
