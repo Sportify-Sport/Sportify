@@ -29,8 +29,6 @@ export default function AdminNotificationModal({
   );
   const [sending, setSending] = useState(false);
 
-  // Log the values for debugging
-  console.log('Notification Modal - requiresTeams:', requiresTeams, 'isPublic:', isPublic);
 
   // Determine which recipient options to show based on event type
   const showAllOption = true; // Always show 'All' option except when requiresTeams && !isPublic
@@ -97,10 +95,11 @@ export default function AdminNotificationModal({
 
             <Text className="text-base font-semibold text-gray-800 mb-2">Message</Text>
             <TextInput
-              className="border border-gray-200 rounded-lg p-3 text-base min-h-[100px] text-align-top"
+              className="border border-gray-400 rounded-lg p-3 text-base min-h-[100px] text-align-top"
               value={message}
               onChangeText={setMessage}
               placeholder="Enter your message..."
+              placeholderTextColor="#9ca2adff"
               multiline
               numberOfLines={4}
               maxLength={1000}

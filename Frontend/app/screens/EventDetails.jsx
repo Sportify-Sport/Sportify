@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import { View, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Alert, Text } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, KeyboardAvoidingView, Keyboard, Platform, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Alert, Text } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-
 
 // Import our hooks
 import useAuth from "../hooks/useAuth";
@@ -30,8 +29,6 @@ import AlertNotification from "../components/common/AlertNotification";
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
 import AdminNotificationModal from '../components/AdminNotificationModal';
 
-const router = useRouter();
-
 const EditEventCard = ({ onEdit, onNotification }) => (
   <View className="bg-white p-4 rounded-xl shadow mb-6">
     <TouchableOpacity
@@ -54,12 +51,19 @@ const EditEventCard = ({ onEdit, onNotification }) => (
 
 export default function EventDetails() {
   const { eventId } = useLocalSearchParams();
+  const router = useRouter();
 
   // State for modals
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Refs for scrolling
+  const scrollViewRef = useRef(null);
+  const groupSearchInputRef = useRef(null);
 
   // Use our existing hooks
   const { token } = useAuth();
@@ -186,6 +190,37 @@ export default function EventDetails() {
     );
   };
 
+  // Handle TextInput focus to scroll to its position
+  const handleInputFocus = () => {
+    if (groupSearchInputRef.current && scrollViewRef.current) {
+      groupSearchInputRef.current.measureInWindow((x, y, width, height) => {
+        scrollViewRef.current.scrollTo({ y: y - 20, animated: true }); // Minimal offset for tight scrolling
+      });
+    }
+  };
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   // Show loading indicator when initially loading
   if (loading && !refreshing) {
     return <LoadingIndicator />;
@@ -214,120 +249,138 @@ export default function EventDetails() {
           onClose={() => setUserModalVisible(false)}
         />
 
-        <ScrollView
-          className="flex-1 p-4"
-          refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={onRefresh}
-              colors={["#65DA84"]}
-              tintColor="#65DA84"
-            />
-          }
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.select({ ios: 0, android: 0 })}
         >
-          <EventHeader event={event} />
-          <View className="h-px bg-green-400 mb-4" />
-
-          <EventDetailsCard
-            event={event}
-            sportsMap={sportsMap}
-            handleLocationPress={handleLocationPress}
-          />
-
-          {/* Event Actions - Join/Leave buttons */}
-          {event && (
-            <EventActions
-              event={event}
-              isLoggedIn={isLoggedIn}
-              onJoinAsSpectator={joinAsSpectator}
-              onJoinAsPlayer={joinAsPlayer}
-              onCancelRequest={cancelRequest}
-              onLeaveEvent={leaveEvent}
-              onCancelSpectating={cancelSpectating}
-            />
-          )}
-
-          {/* Add to Calendar button, rendered only after event details are loaded */}
-          {(isParticipant || isAdmin) && (
-            <AddToCalendarButton event={event} />
-          )}
-
-          {(isParticipant || isAdmin) && (
-            <TouchableOpacity
-              className="border border-green-600 rounded-lg p-4 mb-4 bg-transparent flex-row items-center justify-center"
-              onPress={() =>
-                router.push({
-                  pathname: "./Certificate",
-                  params: { event: JSON.stringify(event) },
-                })
+          <ScrollView
+            className="p-4"
+            contentContainerStyle={{
+              paddingBottom: keyboardVisible ? 20 : 0 // Minimal padding to eliminate gap
+            }}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustContentInsets={false}
+            ref={scrollViewRef}
+            onContentSizeChange={() => {
+              if (keyboardVisible && !groupSearchInputRef.current) {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
               }
-            >
-              <Ionicons name="document-text-outline" size={20} color="black" style={{ marginRight: 8 }} />
-              <Text className="text-black text-center font-bold">Show Certificate</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Admin features for participant events */}
-          {isAdmin && isParticipantEvent && (
-            <>
-              <EventMembers
-                members={members}
-                loading={membersLoading}
-                hasMore={membersHasMore}
-                expanded={membersExpanded}
-                onToggleExpand={toggleMembers}
-                onViewDetails={handleViewMemberDetails}
-                onRemoveMember={handleRemoveMember}
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoading}
+                onRefresh={onRefresh}
+                colors={["#65DA84"]}
+                tintColor="#65DA84"
               />
-              <View className="h-px bg-green-400 mb-4" />
+            }
+          >
+            <EventHeader event={event} />
+            <View className="h-px bg-green-400 mb-4" />
 
-              <PendingRequests
-                requests={requests}
-                loading={requestsLoading}
-                hasMore={requestsHasMore}
-                expanded={requestsExpanded}
-                onToggleExpand={toggleRequests}
-                onViewDetails={handleViewRequestDetails}
-                onApprove={approveRequest}
-                onReject={rejectRequest}
-              />
-            </>
-          )}
-
-          {/* Group features for team events */}
-          {isTeamEvent && (
-            <EventGroups
-              groups={groups}
-              loading={groupsLoading}
-              hasMore={groupsHasMore}
-              expanded={groupsExpanded}
-              onToggleExpand={toggleGroups}
-              onRemoveGroup={handleRemoveGroup}
-              isAdmin={isAdmin}
-              token={token}
-            />
-          )}
-          <View className="h-px bg-green-400 mb-4" />
-
-          {/* Group search for admins of team events */}
-          {isAdmin && isTeamEvent && (
-            <GroupSearch
+            <EventDetailsCard
               event={event}
-              token={token}
               sportsMap={sportsMap}
-              onAddGroup={refreshGroups}
+              handleLocationPress={handleLocationPress}
             />
-          )}
 
-          {/* Edit Event button for admins */}
-          {isLoggedIn && isAdmin && (
-            <EditEventCard
-              onEdit={() => setEditModalVisible(true)}
-              onNotification={() => setNotificationModalVisible(true)}
-            />
-          )}
-        </ScrollView>
+            {/* Event Actions - Join/Leave buttons */}
+            {event && (
+              <EventActions
+                event={event}
+                isLoggedIn={isLoggedIn}
+                onJoinAsSpectator={joinAsSpectator}
+                onJoinAsPlayer={joinAsPlayer}
+                onCancelRequest={cancelRequest}
+                onLeaveEvent={leaveEvent}
+                onCancelSpectating={cancelSpectating}
+              />
+            )}
 
+            {/* Add to Calendar button, rendered only after event details are loaded */}
+            {(isParticipant || isAdmin) && (
+              <AddToCalendarButton event={event} />
+            )}
+
+            {(isParticipant || isAdmin) && (
+              <TouchableOpacity
+                className="border border-green-600 rounded-lg p-4 mb-4 bg-transparent flex-row items-center justify-center"
+                onPress={() =>
+                  router.push({
+                    pathname: "./Certificate",
+                    params: { event: JSON.stringify(event) },
+                  })
+                }
+              >
+                <Ionicons name="document-text-outline" size={20} color="black" style={{ marginRight: 8 }} />
+                <Text className="text-black text-center font-bold">Show Certificate</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Admin features for participant events */}
+            {isAdmin && isParticipantEvent && (
+              <>
+                <EventMembers
+                  members={members}
+                  loading={membersLoading}
+                  hasMore={membersHasMore}
+                  expanded={membersExpanded}
+                  onToggleExpand={toggleMembers}
+                  onViewDetails={handleViewMemberDetails}
+                  onRemoveMember={handleRemoveMember}
+                />
+                <View className="h-px bg-green-400 mb-4" />
+                <PendingRequests
+                  requests={requests}
+                  loading={requestsLoading}
+                  hasMore={requestsHasMore}
+                  expanded={requestsExpanded}
+                  onToggleExpand={toggleRequests}
+                  onViewDetails={handleViewRequestDetails}
+                  onApprove={approveRequest}
+                  onReject={rejectRequest}
+                />
+              </>
+            )}
+
+            {/* Group features for team events */}
+            {isTeamEvent && (
+              <EventGroups
+                groups={groups}
+                loading={groupsLoading}
+                hasMore={groupsHasMore}
+                expanded={groupsExpanded}
+                onToggleExpand={toggleGroups}
+                onRemoveGroup={handleRemoveGroup}
+                isAdmin={isAdmin}
+                token={token}
+              />
+            )}
+            <View className="h-px bg-green-400 mb-4" />
+
+            {/* Group search for admins of team events */}
+            {isAdmin && isTeamEvent && (
+              <GroupSearch
+                event={event}
+                token={token}
+                sportsMap={sportsMap}
+                onAddGroup={refreshGroups}
+                inputRef={groupSearchInputRef}
+                onInputFocus={handleInputFocus}
+              />
+            )}
+
+            {/* Edit Event button for admins */}
+            {isLoggedIn && isAdmin && (
+              <EditEventCard
+                onEdit={() => setEditModalVisible(true)}
+                onNotification={() => setNotificationModalVisible(true)}
+              />
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
         {/* Edit Event Modal */}
         <EditEventModal
           visible={editModalVisible}
