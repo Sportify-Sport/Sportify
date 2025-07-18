@@ -75,6 +75,7 @@ const Login = () => {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#9ca2adff"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -82,21 +83,24 @@ const Login = () => {
       />
 
       <Text style={styles.label}>Password</Text>
-      <View style={styles.passwordContainer}>
+      <View className="relative">
         <TextInput
-          style={[styles.input, { flex: 1 }]}
+          style={[styles.input, { paddingRight: 50 }]}
           placeholder="Password"
+          placeholderTextColor="#9ca2adff"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!isPasswordVisible}
           autoCapitalize="none"
         />
-        <TouchableOpacity onPress={togglePasswordVisibility}>
+        <TouchableOpacity
+          onPress={togglePasswordVisibility}
+          className="absolute right-4 top-0 bottom-0 justify-center items-center"
+        >
           <Ionicons
             name={isPasswordVisible ? "eye" : "eye-off"}
             size={24}
             color="gray"
-            style={styles.eyeIcon}
           />
         </TouchableOpacity>
       </View>
@@ -120,8 +124,8 @@ const Login = () => {
       <Text style={styles.orText}>_________________ Or _________________</Text>
 
       <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
-        <Image source={guestIcon} style={styles.guestIcon} />
         <Text style={styles.guestButtonText}>Continue as a guest</Text>
+        <Image source={guestIcon} style={styles.guestIcon} />
       </TouchableOpacity>
 
       <View style={styles.signupContainer}>
