@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Button, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
@@ -7,7 +7,6 @@ import { useLocalSearchParams } from 'expo-router';
 import useAuth from '../hooks/useAuth';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
 
 import { Buffer } from 'buffer';
 
@@ -22,15 +21,20 @@ function decodeJwt(token) {
     }
 }
 
-// Format date like "June 2, 2025, 3:00 PM"
-const formatDateTime = (dateStr) => {
+// Format date like "June 2, 2025" and time like "15:30"
+const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+};
+
+const formatTime = (dateStr) => {
+    const date = new Date(dateStr);
     const hour = date.getHours().toString().padStart(2, '0');
     const minute = date.getMinutes().toString().padStart(2, '0');
-    return `${day}.${month}.${year}, ${hour}:${minute}`;
+    return `${hour}:${minute}`;
 };
 
 export default function Certificate() {
@@ -115,165 +119,116 @@ export default function Certificate() {
 
     return (
         <>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={32} color="#000" style={{ fontWeight: 'bold' }} />
+            <TouchableOpacity
+                onPress={() => router.back()}
+                className="absolute top-5 left-4 z-10 p-2"
+            >
+                <Ionicons name="arrow-back" size={32} color="#65DA84" />
             </TouchableOpacity>
 
-            <ScrollView contentContainerStyle={styles.container}>
-                <View ref={viewRef} style={styles.card}>
-                    <Text style={styles.header}>Certificate of Participation</Text>
-                    <Text style={styles.subHeader}>This certifies that</Text>
+            <ScrollView className="flex-1 bg-slate-50 px-5 pt-16">
+                <View className="items-center pb-5">
+                    <View ref={viewRef} className="w-full bg-white rounded-2xl shadow-lg p-8 mb-5">
+                        {/* Header Section */}
+                        <View className="items-center mb-6 pb-4">
+                            <Text className="text-3xl font-bold text-green-600 text-center mb-2">
+                                Certificate of Participation
+                            </Text>
+                            <View className="w-full h-px bg-gray-200 mb-3" />
+                        </View>
 
-                    <Text style={styles.name}>{name}</Text>
-                    <Text style={styles.email}>{email}</Text>
-
-                    <Text style={styles.role}>has participated as a</Text>
-                    <Text style={styles.status}>{statusText}</Text>
-
-                    <View style={styles.eventDetails}>
-                        <Text style={styles.eventType}>in the {eventType}</Text>
-                        <Text style={styles.eventName}>{event?.eventName}</Text>
-                        <Text style={styles.location}>📍 {event?.locationName}</Text>
-                        <Text style={styles.location}>in {event?.cityName.trim()}</Text>
-                        <Text style={styles.date}>
-                            📅 Start Date: {formatDateTime(event?.startDatetime)}
+                        {/* Personal Information */}
+                        <Text className="text-xl text-gray-600 text-center">
+                            This certifies that
                         </Text>
-                        <Text style={styles.date}>
-                            📅 End Date: {formatDateTime(event?.endDatetime)}
-                        </Text>
+                        <View className="items-center mb-6">
+                            <Text className="text-2xl font-semibold text-green-600 text-center mb-1">
+                                {name}
+                            </Text>
+                            <Text className="text-base text-gray-600 text-center">
+                                {email}
+                            </Text>
+                        </View>
+
+                        {/* Status Section */}
+                        <View className="items-center mb-6">
+                            <Text className="text-xl text-gray-700 text-center mb-1">
+                                has participated as a
+                            </Text>
+                            <Text className="text-xl font-bold text-blue-600 text-center">
+                                {statusText}
+                            </Text>
+                        </View>
+
+                        {/* Event Details */}
+                        <View className="items-center mb-6 bg-gray-50 rounded-lg p-4">
+                            <Text className="text-lg font-semibold text-gray-700 text-center mb-2">
+                                in the {eventType}
+                            </Text>
+                            <Text className="text-xl font-bold text-gray-900 text-center mb-3">
+                                {event?.eventName}
+                            </Text>
+
+                            <View className="items-center space-y-2">
+                                <View className="flex-row items-center">
+                                    <Text className="text-base text-gray-700 text-center">
+                                        📍 {event?.locationName}
+                                    </Text>
+                                </View>
+                                <Text className="text-base text-gray-700 text-center">
+                                    in {event?.cityName.trim()}
+                                </Text>
+
+                                <View className="mt-3 space-y-1">
+                                    <View className="flex-row items-center justify-center">
+                                        <Text className="text-base text-gray-700 text-center mr-1"> 📅</Text>
+                                        <Text className="text-base text-gray-700 text-center">
+                                            Start: {formatDate(event?.startDatetime)} at {formatTime(event?.startDatetime)}
+                                        </Text>
+                                    </View>
+                                    <View className="flex-row items-center justify-center">
+                                        <Text className="text-base text-gray-700 text-center mr-1">📅</Text>
+                                        <Text className="text-base text-gray-700 text-center">
+                                            End: {formatDate(event?.endDatetime)} at {formatTime(event?.endDatetime)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Teams Section */}
+                        {teamsText ? (
+                            <View className="items-center mb-6 bg-blue-50 rounded-lg p-4">
+                                <Text className="text-base text-gray-800 text-center leading-6">
+                                    {teamsText}
+                                </Text>
+                            </View>
+                        ) : null}
+
+                        {/* Footer Section */}
+                        <View className="items-center border-t border-gray-200 pt-4">
+                            <Text className="text-sm text-gray-600 text-center mb-2">
+                                Issued on: {dateText}
+                            </Text>
+                            <Text className="text-sm font-medium text-gray-500 text-center italic">
+                                🏅 Certificate generated by Sportify
+                            </Text>
+                        </View>
                     </View>
 
-                    {teamsText ? (
-                        <Text style={styles.teams}>{teamsText}</Text>
-                    ) : null}
-
-                    <Text style={styles.issued}>Issued on: {dateText}</Text>
-
-                    <Text style={styles.footer}>🏅 Certificate generated by Sportify</Text>
+                    {/* Download/Share Button */}
+                    <TouchableOpacity
+                        onPress={shareCertificate}
+                        className="flex-row items-center justify-center bg-green-500 hover:bg-green-600 px-6 py-3 rounded-lg shadow-md active:scale-95"
+                    >
+                        <Ionicons name="download-outline" size={20} color="white" className="mr-2" />
+                        <Ionicons name="share-social-outline" size={20} color="white" className="mr-2" />
+                        <Text className="text-white font-bold text-base ml-2">
+                            Download or Share Certificate
+                        </Text>
+                    </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity
-                    onPress={shareCertificate}
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: '#4ade80', // optional green background
-                        padding: 12,
-                        borderRadius: 8,
-                        marginTop: 16,
-                        justifyContent: 'center',
-                    }}
-                >
-                    <Ionicons name="download-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                    <Ionicons name="share-social-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                    <Text style={{ color: 'white', fontWeight: 'bold' }}>Download or Share Certificate</Text>
-                </TouchableOpacity>           
-                 </ScrollView>
+            </ScrollView>
         </>
-
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        padding: 20,
-        backgroundColor: '#f0f4f8',
-        alignItems: 'center',
-    },
-    card: {
-        backgroundColor: '#fff',
-        padding: 30,
-        borderRadius: 20,
-        width: '100%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 6,
-        marginBottom: 20,
-        alignItems: 'center',
-    },
-    backButton: {
-        alignSelf: 'flex-start',
-        marginLeft: 15,
-        marginTop: 10,
-        position: 'absolute',
-        top: 20,
-        left: 10,
-        zIndex: 1,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    subHeader: {
-        fontSize: 18,
-        marginBottom: 8,
-        color: '#333',
-    },
-    name: {
-        fontSize: 22,
-        fontWeight: '600',
-        marginBottom: 4,
-        color: '#2c3e50',
-    },
-    email: {
-        fontSize: 16,
-        marginBottom: 16,
-        color: '#555',
-    },
-    role: {
-        fontSize: 18,
-        color: '#333',
-    },
-    status: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 16,
-        color: '#2980b9',
-    },
-    eventDetails: {
-        marginBottom: 16,
-        alignItems: 'center',
-    },
-    eventType: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 6,
-        color: '#666',
-        fontStyle: 'italic',
-    },
-    eventName: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#222',
-        marginBottom: 4,
-    },
-    location: {
-        fontSize: 16,
-        color: '#444',
-        marginBottom: 4,
-    },
-    date: {
-        fontSize: 16,
-        color: '#444',
-    },
-    teams: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 12,
-        color: '#333',
-    },
-    issued: {
-        fontSize: 14,
-        marginBottom: 8,
-        color: '#666',
-    },
-    footer: {
-        fontSize: 14,
-        fontStyle: 'italic',
-        color: '#888',
-    },
-});

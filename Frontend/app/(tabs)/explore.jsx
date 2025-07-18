@@ -126,8 +126,6 @@ export default function ExploreScreen() {
       }
 
       const result = await response.json();
-      console.log("loadGroups: API response:", result);
-
       if (result.success && Array.isArray(result.data)) {
         const enhancedGroups = await Promise.all(
           result.data.map(async (group) => {
