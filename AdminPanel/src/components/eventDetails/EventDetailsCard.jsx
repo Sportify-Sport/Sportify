@@ -62,13 +62,25 @@ const EventDetailsCard = ({ event, onDeleteClick, onToggleAdminSearch, showAdmin
               <strong>Requires Teams</strong>
               <span>{event.requiresTeams ? 'Yes' : 'No'}</span>
             </div>
-            <div className="group-info-item">
-              <strong>Max Participants</strong>
-              <span>{event.maxParticipants}</span>
-            </div>
+            {event.sportId === 3 && (
+              <div className="group-info-item">
+                <strong>Max Participants</strong>
+                <span>{event.maxParticipants || 0}</span>
+              </div>
+            )}
+            {(event.sportId === 1 || event.sportId === 2) && (
+              <div className="group-info-item">
+                <strong>Max Teams</strong>
+                <span>{event.maxTeams || 0}</span>
+              </div>
+            )}
             <div className="group-info-item">
               <strong>Participants</strong>
-              <span>{event.participantsNum}</span>
+              <span>{event.participantsNum || 0}</span>
+            </div>
+            <div className="group-info-item">
+              <strong>Created At</strong>
+              <span>{formatDate(event.createdAt)}</span>
             </div>
           </div>
           <div className="admin-info">

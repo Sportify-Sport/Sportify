@@ -46,24 +46,28 @@ const EventSettingsFields = ({ formData, errors, handleChange }) => {
         error={errors.isPublic}
         options={BOOLEAN_OPTIONS}
       />
-      <FormField
-        type="number"
-        id="maxTeams"
-        name="maxTeams"
-        label="Maximum Teams"
-        value={formData.maxTeams}
-        onChange={handleChange}
-        error={errors.maxTeams}
-      />
-      <FormField
-        type="number"
-        id="maxParticipants"
-        name="maxParticipants"
-        label="Maximum Participants"
-        value={formData.maxParticipants}
-        onChange={handleChange}
-        error={errors.maxParticipants}
-      />
+      {formData.sportId === '3' && (
+        <FormField
+          type="number"
+          id="maxParticipants"
+          name="maxParticipants"
+          label="Maximum Participants"
+          value={formData.maxParticipants}
+          onChange={handleChange}
+          error={errors.maxParticipants}
+        />
+      )}
+      {(formData.sportId === '1' || formData.sportId === '2') && (
+        <FormField
+          type="number"
+          id="maxTeams"
+          name="maxTeams"
+          label="Maximum Teams"
+          value={formData.maxTeams}
+          onChange={handleChange}
+          error={errors.maxTeams}
+        />
+      )}
       <FormField
         type="number"
         id="minAge"
