@@ -24,6 +24,20 @@ const Login = () => {
       return;
     }
 
+    // Email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address.");
+      return;
+    }
+
+    // Password validation
+    if (password.length < 5 || password.length > 12) {
+      Alert.alert("Error", "Password must be between 5 and 12 characters.");
+      return;
+    }
+    
+    // Attempt login
     setLoading(true);
     const result = await login(email, password);
     setLoading(false);
@@ -32,7 +46,7 @@ const Login = () => {
       if (!result.isEmailVerified) {
         setShowVerificationModal(true);
       } else {
-        router.replace('../(tabs)');
+        router.replace("../(tabs)");
       }
     } else {
       Alert.alert("Login Failed", result.error);
