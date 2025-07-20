@@ -56,6 +56,7 @@ const LoginPage = () => {
               placeholder="Enter your email"
               required
               disabled={isSubmitting}
+              autoComplete="username" // Added to indicate this is the username field
             />
           </div>
           
@@ -69,6 +70,7 @@ const LoginPage = () => {
               placeholder="Enter your password"
               required
               disabled={isSubmitting}
+              autoComplete="current-password" // Added to indicate this is the password field
             />
           </div>
           

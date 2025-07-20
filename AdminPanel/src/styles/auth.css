@@ -61,6 +61,28 @@ body, html {
   border-radius: 4px;
   background-color: var(--background);
   color: var(--text);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-group input:focus {
+  background-color: var(--background);
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+}
+
+/* Enhanced autofill styling for cross-browser compatibility */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  box-shadow: 0 0 0 1000px var(--background) inset !important;
+  color: var(--text) !important;
+  caret-color: var(--text) !important;
+  -webkit-transition: background-color 5000s ease-in-out 0s; /* Prevent transition flicker */
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .auth-button {
@@ -161,18 +183,6 @@ body, html {
   }
 }
 
-.form-group input:focus {
-  background-color: var(--background);
-  outline: none;
-}
-
-input:-webkit-autofill {
-  background-color: var(--background) !important;
-  -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
-  -webkit-text-fill-color: var(--text) !important;
-}
-
-
 /* Transparent centered spinner with overlay */
 .loading-overlay {
   position: fixed;
@@ -203,7 +213,6 @@ input:-webkit-autofill {
   animation: spin 1s linear infinite;
 }
 
-	
 .loading-text {
   color: white;
   font-size: 1rem;
