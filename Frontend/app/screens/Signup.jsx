@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import EmailVerificationModal from "../components/modals/EmailVerificationModal";
 import styles from "../../styles/SignupStyles";
+import guestIcon from "../../assets/images/guest-icon-design-vector.jpg";
 
 const Signup = () => {
   const [firstName, setFirstName] = useState("");
@@ -32,7 +33,7 @@ const Signup = () => {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, continueAsGuest } = useAuth();
 
   const handleContinue = async () => {
     // Validation
@@ -129,8 +130,9 @@ const Signup = () => {
     }
   };
 
-  const handleGoogleSignup = () => {
-    console.log("Sign up with Google pressed");
+  const handleGuestLogin = async () => {
+    await continueAsGuest();
+    router.replace('../(tabs)');
   };
 
   const handleSigninNavigation = () => {
@@ -272,15 +274,9 @@ const Signup = () => {
 
         <Text style={styles.orText}>________________ Or ________________</Text>
 
-        <TouchableOpacity
-          style={styles.googleButton}
-          onPress={handleGoogleSignup}
-        >
-          <Image
-            source={require("../../assets/images/google.png")}
-            style={styles.googleIcon}
-          />
-          <Text style={styles.googleButtonText}>Login with Google</Text>
+        <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
+          <Text style={styles.guestButtonText}>Continue as a guest</Text>
+          <Image source={guestIcon} style={styles.guestIcon} />
         </TouchableOpacity>
 
         <View style={styles.signinContainer}>
