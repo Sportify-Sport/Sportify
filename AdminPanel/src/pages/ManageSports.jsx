@@ -1,18 +1,20 @@
-// src/pages/ManageSports.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
 import getApiBaseUrl from '../config/apiConfig';
-import { Trash2, Edit2, Plus } from 'react-feather';
 import Modal from '../components/Modal';
+import DeleteModal from '../components/DeleteModal';
 import '../styles/global.css';
+import { Trash2, Edit2, Plus, ArrowLeft } from 'react-feather';
 
 export default function ManageSports() {
     const { currentUser, logout } = useAuth();
     const [sports, setSports] = useState([]);
     const [alert, setAlert] = useState(null);
     const [modal, setModal] = useState({ type: null, sport: null });
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedSport, setSelectedSport] = useState(null);
     const navigate = useNavigate();
 
     const token = localStorage.getItem('adminAccessToken');
@@ -52,9 +54,14 @@ export default function ManageSports() {
     };
 
     const handleDelete = (s) => {
-        if (!window.confirm(`Delete ${s.name}?`)) return;
+        setSelectedSport(s);
+        setShowDeleteModal(true);
+    };
 
-        fetch(`${getApiBaseUrl()}/api/Sports/${s.id}`, {
+    const confirmDelete = () => {
+        if (!selectedSport) return;
+
+        fetch(`${getApiBaseUrl()}/api/Sports/${selectedSport.id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -64,20 +71,23 @@ export default function ManageSports() {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    setSports(sports.filter(x => x.id !== s.id));
-                    showAlert(`Deleted ${s.name}`, 'success');
+                    setSports(sports.filter(x => x.id !== selectedSport.id));
+                    showAlert(`Deleted ${selectedSport.name}`, 'success');
                 } else {
                     showAlert(data.message || 'Failed to delete sport', 'error');
                 }
             })
-            .catch(() => showAlert('Error deleting sport', 'error'));
+            .catch(() => showAlert('Error deleting sport', 'error'))
+            .finally(() => {
+                setShowDeleteModal(false);
+                setSelectedSport(null);
+            });
     };
 
     const handleAdd = (form) => {
         const formData = new FormData();
         if (form.imageFile) formData.append('sportImage', form.imageFile);
 
-        // Add sportName as query param in URL
         const url = new URL(`${getApiBaseUrl()}/api/Sports/add`);
         url.searchParams.append('sportName', form.name);
 
@@ -86,7 +96,6 @@ export default function ManageSports() {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': '*/*'
-                // DON'T set Content-Type here! Let browser set it automatically for multipart/form-data
             },
             body: formData
         })
@@ -139,15 +148,26 @@ export default function ManageSports() {
     return (
         <div className="page-wrapper">
             <div className="dashboard-container">
-
                 <header className="dashboard-header">
                     <div className="header-row">
-                        <h1 className="dashboard-title">Manage Sports</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <button 
+                                onClick={() => window.history.back()} 
+                                className="change-city-btn"
+                                style={{ 
+                                    padding: '8px', 
+                                    minWidth: 'auto',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                            <h1 className="dashboard-title">Manage Sports</h1>
+                        </div>
                         <div className="dashboard-actions">
                             <ThemeToggle />
-                            <button onClick={() => navigate('/select-city')} className="change-city-btn">
-                                Return to Dashboard
-                            </button>
                             <button onClick={logout} className="logout-btn">Log Out</button>
                         </div>
                     </div>
@@ -177,57 +197,59 @@ export default function ManageSports() {
                     Add Sport
                 </button>
 
-                <div className="responsive-flex" style={{ gap: '1.5rem', flexWrap: 'wrap' }}>
+                <div className="responsive-flex" style={{ gap: '1rem', flexWrap: 'wrap' }}>
                     {sports.map(s => (
                         <div
                             key={s.id}
                             className="city-card"
                             style={{
-                                width: 240,
-                                textAlign: 'center',
                                 padding: '1rem',
-                                boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-                                borderRadius: 10,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
+                                width: 270,
+                                backgroundColor: 'var(--card-bg)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 8,
                             }}
                         >
                             <img
                                 src={s.imgUrl}
                                 alt={s.name}
                                 style={{
-                                    width: 100,
-                                    height: 100,
+                                    width: 60,
+                                    height: 60,
                                     borderRadius: '50%',
                                     objectFit: 'cover',
-                                    marginBottom: 12
+                                    marginBottom: 8
                                 }}
                             />
-                            <h3 style={{ margin: '0 0 8px' }}>{s.name}</h3>
-                            <small>ID: {s.id}</small>
-                            <div style={{ marginTop: 12 }}>
+                            <div>
+                                <strong>Name:</strong> {s.name}<br />
+                                <strong>ID:</strong> {s.id}
+                            </div>
+                            <div style={{ marginTop: 10, display: 'flex', gap: 16 }}>
                                 <Trash2
                                     size={22}
-                                    style={{ cursor: 'pointer', marginRight: 16, transition: 'all 0.2s' }}
+                                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
                                     onMouseOver={e => Object.assign(e.currentTarget.style, { color: 'red', transform: 'scale(1.3)' })}
                                     onMouseOut={e => Object.assign(e.currentTarget.style, { color: '', transform: '' })}
                                     onClick={() => handleDelete(s)}
                                 />
                                 <Edit2
                                     size={22}
-                                    style={{ cursor: 'pointer' }}
+                                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                                    onMouseOver={e => Object.assign(e.currentTarget.style, { color: '#007bff', transform: 'scale(1.3)' })}
+                                    onMouseOut={e => Object.assign(e.currentTarget.style, { color: '', transform: '' })}
                                     onClick={() => setModal({ type: 'edit', sport: s })}
                                 />
                             </div>
                         </div>
                     ))}
+                    {!sports.length && <div className="no-results-message">No sports found.</div>}
                 </div>
             </div>
 
             {/* Modal for Add/Edit */}
             {modal.type && (
-                <Modal onClose={() => setModal({ type: null, sport: null })}>
+                <Modal isOpen={modal.type !== null} onClose={() => setModal({ type: null, sport: null })}>
                     <h2>{modal.type === 'edit' ? 'Edit Sport' : 'Add Sport'}</h2>
                     <form onSubmit={e => {
                         e.preventDefault();
@@ -290,6 +312,17 @@ export default function ManageSports() {
                     </form>
                 </Modal>
             )}
+
+            {/* Delete Sport Modal */}
+            <DeleteModal
+                showDeleteModal={showDeleteModal}
+                organizerName={selectedSport ? selectedSport.name : ''}
+                onConfirm={confirmDelete}
+                onCancel={() => {
+                    setShowDeleteModal(false);
+                    setSelectedSport(null);
+                }}
+            />
         </div>
     );
 }
