@@ -82,15 +82,16 @@ export default StyleSheet.create({
     color: '#333',
   },
   googleIcon: {
-    width: 24,        
-    height: 24,        
-    marginRight: 8,    
+    width: 24,
+    height: 24,
+    marginRight: 8,
     resizeMode: 'contain',
   },
   signinContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
+    marginBottom: 50,
   },
   signinText: {
     fontSize: 14,
@@ -111,7 +112,7 @@ export default StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-    guestButton: {
+  guestButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -127,9 +128,9 @@ export default StyleSheet.create({
     color: '#333',
   },
   guestIcon: {
-    width: 30,        
-    height: 30,        
-    marginRight: 0,    
+    width: 30,
+    height: 30,
+    marginRight: 0,
     resizeMode: 'contain',
   },
 });

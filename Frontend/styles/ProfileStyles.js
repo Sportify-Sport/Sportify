@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
     profileImage: {
         width: 150,
         height: 150,
-        borderRadius: 75, // Circular image
+        borderRadius: 75,
         borderWidth: 3,
         borderColor: '#65DA84',
         backgroundColor: '#ccc',
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#65DA84',
         paddingVertical: 10,
-        width: '45%',         // Equal width for the button
+        width: '45%',         
         borderRadius: 25,
     },
     editButtonText: {
@@ -89,9 +89,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#333',
         paddingVertical: 10,
-        width: '45%',         // Equal width for the button
+        width: '45%',         
         borderRadius: 25,
-        marginLeft: 10,       // Spacing between the two buttons
+        marginLeft: 10,      
     },
     logoutButtonText: {
         color: '#fff',
@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
     },
     imageWrapper: {
         marginBottom: 10,
-        position: 'relative',      // make children positionable
-        alignSelf: 'center',   // or 'center', depending on your layout
+        position: 'relative',      
+        alignSelf: 'center', 
     },
     profileImage: {
-        width: 130,                // or whatever size you need
+        width: 130,               
         height: 130,
         borderRadius: 65,
     },

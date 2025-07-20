@@ -227,8 +227,15 @@ export default function EventDetails() {
   }
 
   if (error) {
-    return <ErrorState message={error} />;
-  }
+     return (
+       <View className="flex-1 justify-center items-center p-4 bg-gray-50">
+         <Text className="text-red-500 mb-4">Event has been deleted</Text>
+         <TouchableOpacity onPress={() => router.back()} className="bg-white px-4 py-2 rounded-full shadow">
+           <Text className="text-gray-800 font-medium">Go Back</Text>
+         </TouchableOpacity>
+       </View>
+     );
+   }
 
   const isLoading =
     refreshing || membersLoading || requestsLoading || groupsLoading;
