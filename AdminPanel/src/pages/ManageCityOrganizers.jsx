@@ -1,12 +1,13 @@
-// src/pages/ManageCityOrganizers.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
 import getApiBaseUrl from '../config/apiConfig';
 import Modal from '../components/Modal';
+import DeleteModal from '../components/DeleteModal';
 import '../styles/global.css';
-import { Trash2, Plus, RefreshCw } from 'react-feather';
+import { Trash2, Plus, RefreshCw, ArrowLeft } from 'react-feather';
+import CityOrganizerCard from '../components/CityOrganizerCard';
 
 export default function ManageCityOrganizers() {
   const { currentUser, logout } = useAuth();
@@ -19,7 +20,7 @@ export default function ManageCityOrganizers() {
   const [loading, setLoading] = useState(false);
 
   // Filters
-  const [filters, setFilters] = useState({ query: '', cityId: '' });
+  const [filters, setFilters] = useState({ query: '', city: '', cityId: '' });
 
   // City search suggestions
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -34,6 +35,10 @@ export default function ManageCityOrganizers() {
   const [userQuery, setUserQuery] = useState('');
   const [userResults, setUserResults] = useState([]);
   const [userSearchLoading, setUserSearchLoading] = useState(false);
+
+  // Delete modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedOrganizer, setSelectedOrganizer] = useState(null);
 
   const abortRef = useRef(null);
   const userAbortRef = useRef(null);
@@ -140,7 +145,12 @@ export default function ManageCityOrganizers() {
 
   // Remove organizer
   const handleRemove = async (o) => {
-    if (!window.confirm(`Remove ${o.firstName} ${o.lastName} from this city?`)) return;
+    setSelectedOrganizer(o);
+    setShowDeleteModal(true);
+  };
+
+  const confirmRemove = async () => {
+    if (!selectedOrganizer) return;
     try {
       const token = localStorage.getItem('adminAccessToken');
       await fetch(
@@ -152,13 +162,16 @@ export default function ManageCityOrganizers() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ userId: o.userId, cityId: o.city.cityId })
+          body: JSON.stringify({ userId: selectedOrganizer.userId, cityId: selectedOrganizer.city.cityId })
         }
       );
-      setOrgs(prev => prev.filter(x => x.userId !== o.userId || x.city.cityId !== o.city.cityId));
-      showAlert(`Removed ${o.firstName} ${o.lastName}`, 'error');
+      setOrgs(prev => prev.filter(x => x.userId !== selectedOrganizer.userId || x.city.cityId !== selectedOrganizer.city.cityId));
+      showAlert(`Removed ${selectedOrganizer.firstName} ${selectedOrganizer.lastName}`, 'error');
     } catch (err) {
       console.error(err);
+    } finally {
+      setShowDeleteModal(false);
+      setSelectedOrganizer(null);
     }
   };
 
@@ -218,10 +231,24 @@ export default function ManageCityOrganizers() {
       <div className="dashboard-container">
         <header className="dashboard-header">
           <div className="header-row">
-            <h1 className="dashboard-title">Manage City Organizers</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button 
+                onClick={() => window.history.back()} 
+                className="change-city-btn"
+                style={{ 
+                  padding: '8px', 
+                  minWidth: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h1 className="dashboard-title">Manage City Organizers</h1>
+            </div>
             <div className="dashboard-actions">
               <ThemeToggle />
-              <button onClick={() => navigate('/select-city')} className="change-city-btn">Return to Dashboard</button>
               <button onClick={logout} className="logout-btn">Log Out</button>
             </div>
           </div>
@@ -235,15 +262,35 @@ export default function ManageCityOrganizers() {
         {/* Filters */}
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'flex-start' }}>
           <input
-            className="search-input1"
+            className="search-box"
             type="text"
             placeholder="Search email…"
             value={filters.query}
             onChange={e => setFilters(f => ({ ...f, query: e.target.value }))}
+            style={{
+              padding: '12px 16px',
+              border: '2px solid var(--border-color)',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              background: 'var(--card-bg)',
+              color: 'var(--text-color)',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+              outline: 'none'
+            }}
+            onFocus={e => {
+              e.target.style.borderColor = '#4f46e5';
+              e.target.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1), 0 4px 8px rgba(0,0,0,0.1)';
+            }}
+            onBlur={e => {
+              e.target.style.borderColor = 'var(--border-color)';
+              e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            }}
           />
           <div style={{ position: 'relative' }}>
             <input
-              className="search-input1"
+              className="search-box"
               type="text"
               placeholder="Search city by name or ID…"
               value={filters.city}
@@ -252,34 +299,57 @@ export default function ManageCityOrganizers() {
                 setFilters(f => ({ ...f, city: q }));
                 if (q.length >= 2) searchCities(q);
               }}
+              style={{
+                padding: '12px 16px',
+                border: '2px solid var(--border-color)',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '500',
+                background: 'var(--card-bg)',
+                color: 'var(--text-color)',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                outline: 'none'
+              }}
+              onFocus={e => {
+                e.target.style.borderColor = '#4f46e5';
+                e.target.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1), 0 4px 8px rgba(0,0,0,0.1)';
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = 'var(--border-color)';
+                e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+              }}
             />
             {citySuggestions.length > 0 && (
               <ul className="dropdown-list">
                 {citySuggestions.map((city, i) => (
-                  <li key={i} onClick={() => { setFilters(f => ({ ...f, cityId: city.id.toString() })); setCitySuggestions([]); }}>
+                  <li key={i} onClick={() => { 
+                    setFilters(f => ({ ...f, city: city.name, cityId: city.id.toString() })); 
+                    setCitySuggestions([]); 
+                  }}>
                     {city.name} (ID: {city.id})
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <button className="auth-button" onClick={() => setModalOpen(true)}><Plus size={16} style={{ marginRight: 6 }} /> Add Organizer</button>
+          <button 
+            className="change-city-btn" 
+            onClick={() => setModalOpen(true)}
+          >
+            <Plus size={16} style={{ marginRight: 6 }} /> Add Organizer
+          </button>
         </div>
 
         {/* Organizer Cards */}
         <div className="responsive-flex" style={{ gap: '1rem', flexWrap: 'wrap' }}>
           {orgs.map(o => (
-            <div key={`${o.userId}-${o.city.cityId}`} className="city-card" style={{ padding: '1rem', width: 270 }}>
-              <img src={`${getApiBaseUrl()}/Images/${o.profileImage}`} alt={`${o.firstName} ${o.lastName}`} style={{ width: 60, height: 60, borderRadius: '50%', marginBottom: 8 }} />
-              <div>
-                <strong>Name:</strong> {o.firstName} {o.lastName}<br />
-                <strong>UserID:</strong> {o.userId}<br />
-                <strong>Email:</strong> {o.email}<br />
-                <strong>City:</strong> {o.city.englishName} (ID: {o.city.cityId})
-              </div>
-              <button className="text-button" onClick={() => handleRemove(o)} style={{ color: '#c62828', marginTop: 10 }}><Trash2 size={14} style={{ marginRight: 4 }} />Remove organizer from this city
-              </button>
-            </div>
+            <CityOrganizerCard
+              key={`${o.userId}-${o.city.cityId}`}
+              organizer={o}
+              cityNames={cityNames}
+              handleRemove={() => handleRemove(o)}
+            />
           ))}
           {!orgs.length && !loading && <div className="no-results-message">No organizers found.</div>}
         </div>
@@ -287,7 +357,7 @@ export default function ManageCityOrganizers() {
 
       {/* Add Organizer Modal */}
       {modalOpen && (
-        <Modal onClose={() => setModalOpen(false)}>
+        <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
           <h2>Add Organizer</h2>
           <form onSubmit={e => {
             e.preventDefault();
@@ -350,7 +420,6 @@ export default function ManageCityOrganizers() {
                           : `ID: ${user.cityId}`}
                       </div>
                     </div>
-
                   </div>
                 ))}
               </div>
@@ -384,7 +453,17 @@ export default function ManageCityOrganizers() {
           </form>
         </Modal>
       )}
+
+      {/* Delete Organizer Modal */}
+      <DeleteModal
+        showDeleteModal={showDeleteModal}
+        organizerName={selectedOrganizer ? `${selectedOrganizer.firstName} ${selectedOrganizer.lastName}` : ''}
+        onConfirm={confirmRemove}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setSelectedOrganizer(null);
+        }}
+      />
     </div>
   );
 }
-
