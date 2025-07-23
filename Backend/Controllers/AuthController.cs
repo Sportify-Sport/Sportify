@@ -725,7 +725,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "User")]
+        [Authorize]
         [HttpPost("revoke-token")]
         public IActionResult RevokeToken([FromHeader(Name = "X-Refresh-Token")] string token)
         {
