@@ -25,6 +25,21 @@ namespace Backend.Services
 
                 var dbServices = new DBservices();
 
+                // Determine RelatedEntityType
+                string relatedEntityType = null;
+                int? relatedEntityId = null;
+
+                if (request.EventId.HasValue)
+                {
+                    relatedEntityType = "Event";
+                    relatedEntityId = request.EventId.Value;
+                }
+                else if (request.GroupId.HasValue)
+                {
+                    relatedEntityType = "Group";
+                    relatedEntityId = request.GroupId.Value;
+                }
+
                 // Save notification history
                 foreach (var userId in request.UserIds)
                 {
@@ -33,9 +48,9 @@ namespace Backend.Services
                         request.Title,
                         request.Body,
                         JsonConvert.SerializeObject(request.Data),
-                        request.NotificationType,
-                        request.EventId ?? request.GroupId,
-                        request.EventId != null ? "Event" : request.GroupId != null ? "Group" : null
+                        request.NotificationType ?? "general",
+                        relatedEntityId,
+                        relatedEntityType
                     );
                 }
 
@@ -69,11 +84,11 @@ namespace Backend.Services
                         {
                             message.data["type"] = request.NotificationType;
                         }
-                        if (request.EventId.HasValue)
+                        if (request.EventId.HasValue && !message.data.ContainsKey("eventId"))
                         {
                             message.data["eventId"] = request.EventId.Value;
                         }
-                        if (request.GroupId.HasValue)
+                        if (request.GroupId.HasValue && !message.data.ContainsKey("groupId"))
                         {
                             message.data["groupId"] = request.GroupId.Value;
                         }
@@ -83,7 +98,7 @@ namespace Backend.Services
                     if (batchSuccess) successCount += batch.Count();
                 }
 
-                return true; // Always return true if we saved to history
+                return true;
             }
             catch (Exception ex)
             {

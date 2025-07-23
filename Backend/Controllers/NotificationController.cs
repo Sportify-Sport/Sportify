@@ -125,7 +125,12 @@ namespace Backend.Controllers
 
                 int currentUserId = int.Parse(userIdClaim.Value);
 
-                // Check admin permissions
+                // Get entity names
+                var dbServices = new DBservices();
+                string entityName = "";
+                string notificationTitle = "";
+
+                // Check admin permissions and get entity name
                 if (request.EventId.HasValue)
                 {
                     bool isEventAdmin = Event.IsUserEventAdmin(request.EventId.Value, currentUserId);
@@ -133,6 +138,9 @@ namespace Backend.Controllers
                     {
                         return StatusCode(403, new { success = false, message = "You are not authorized to send notifications for this event" });
                     }
+
+                    entityName = dbServices.GetEventName(request.EventId.Value);
+                    notificationTitle = $"Event Announcement: {entityName}";
                 }
 
                 if (request.GroupId.HasValue)
@@ -142,6 +150,9 @@ namespace Backend.Controllers
                     {
                         return StatusCode(403, new { success = false, message = "You are not authorized to send notifications for this group" });
                     }
+
+                    entityName = dbServices.GetGroupName(request.GroupId.Value);
+                    notificationTitle = $"Group Announcement: {entityName}";
                 }
 
                 // Get recipients
@@ -167,7 +178,7 @@ namespace Backend.Controllers
                 // Send notification
                 var notificationRequest = new PushNotificationRequest
                 {
-                    Title = request.EventId.HasValue ? "Event Announcement" : "Group Announcement",
+                    Title = notificationTitle,
                     Body = request.Message,
                     UserIds = recipients,
                     EventId = request.EventId,
@@ -176,11 +187,21 @@ namespace Backend.Controllers
                     Data = new Dictionary<string, object>
                     {
                         { "type", "admin_message" },
-                        { "eventId", request.EventId },
-                        { "groupId", request.GroupId },
                         { "senderId", currentUserId }
                     }
                 };
+
+                // Add entity-specific data
+                if (request.EventId.HasValue)
+                {
+                    notificationRequest.Data["eventId"] = request.EventId.Value;
+                    notificationRequest.Data["eventName"] = entityName;
+                }
+                else if (request.GroupId.HasValue)
+                {
+                    notificationRequest.Data["groupId"] = request.GroupId.Value;
+                    notificationRequest.Data["groupName"] = entityName;
+                }
 
                 var success = await _pushNotificationService.SendNotificationAsync(notificationRequest);
 
@@ -196,30 +217,6 @@ namespace Backend.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
-
-        //[Authorize(Roles = "User")]
-        //[HttpGet("history")]
-        //public async Task<IActionResult> GetNotificationHistory()
-        //{
-        //    try
-        //    {
-        //        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        //        if (userIdClaim == null)
-        //        {
-        //            return Unauthorized();
-        //        }
-
-        //        int userId = int.Parse(userIdClaim.Value);
-
-        //        var notifications = await _pushNotificationService.GetUserNotificationHistoryAsync(userId);
-
-        //        return Ok(new { success = true, notifications });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { success = false, message = "An error occurred" });
-        //    }
-        //}
 
         [Authorize(Roles = "User")]
         [HttpGet("history")]

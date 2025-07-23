@@ -156,7 +156,14 @@ namespace Backend.Controllers
                     groupId,
                     "Removed from Event",
                     $"Your group '{groupName}' has been removed from the event '{eventName}'.",
-                    "group_removed_from_event"
+                    "group_removed_from_event",
+                    new Dictionary<string, object>
+                    {
+                        { "eventId", eventId },
+                        { "eventName", eventName },
+                        { "groupId", groupId },
+                        { "groupName", groupName }
+                    }
                 );
 
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully removed group {GroupId} from event {EventId}",
@@ -204,7 +211,14 @@ namespace Backend.Controllers
                     groupId,
                     "Added to Event! 🎉",
                     $"Your group '{groupName}' has been added to the event '{eventName}'. Check it out!",
-                    "group_added_to_event"
+                    "group_added_to_event",
+                    new Dictionary<string, object>
+                    {
+                        { "eventId", eventId },
+                        { "eventName", eventName },
+                        { "groupId", groupId },
+                        { "groupName", groupName }
+                    }
                 );
 
                 _logger.LogInformation("Admin {AdminName} (ID: {AdminId}) successfully added group {GroupId} to event {EventId}",

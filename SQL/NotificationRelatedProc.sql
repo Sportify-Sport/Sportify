@@ -1,8 +1,3 @@
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to register or update push token>
--- =============================================
 CREATE PROCEDURE SP_RegisterOrUpdateUserPushNotificationToken
     @UserId INT,
     @PushToken NVARCHAR(500),
@@ -37,11 +32,7 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to get active tokens for users>
--- =============================================
+
 CREATE PROCEDURE SP_GetActiveUserPushNotificationTokens
     @UserIds NVARCHAR(MAX)
 AS
@@ -56,11 +47,7 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to get event notification recipients>
--- =============================================
+
 CREATE PROCEDURE SP_GetEventNotificationRecipients
     @EventId INT,
     @RecipientType NVARCHAR(50) = 'all'
@@ -154,11 +141,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to get group notification recipients>
--- =============================================
 CREATE PROCEDURE SP_GetGroupNotificationRecipients
     @GroupId INT
 AS
@@ -171,11 +153,7 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to save notification history>
--- =============================================
+
 CREATE PROCEDURE SP_SaveNotificationHistory
     @UserId INT,
     @Title NVARCHAR(255),
@@ -195,11 +173,7 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to mark push token as invalid>
--- =============================================
+
 CREATE PROCEDURE SP_MarkPushTokenAsInvalid
     @PushToken NVARCHAR(500)
 AS
@@ -212,11 +186,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to increment token failure count>
--- =============================================
 CREATE PROCEDURE SP_IncrementTokenFailureCount
     @PushToken NVARCHAR(500)
 AS
@@ -231,11 +200,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to get user ID from group join request>
--- =============================================
 CREATE PROCEDURE SP_GetUserIdFromGroupJoinRequest
     @RequestId INT
 AS
@@ -248,11 +212,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <7/7/2025>
--- Description:	<SP to mark notification as read>
--- =============================================
 CREATE PROCEDURE SP_MarkNotificationAsRead
     @NotificationId INT,
     @UserId INT
@@ -268,11 +227,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <16/7/2025>
--- Description:	<SP to get user notification history with pagination>
--- =============================================
 CREATE PROCEDURE SP_GetUserNotificationHistoryPaginated
     @UserId INT,
     @PageNumber INT = 1,
@@ -316,11 +270,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <13/7/2025>
--- Description:	<Get Event Name>
--- =============================================
 CREATE PROCEDURE SP_GetEventName
     @EventId INT
 AS
@@ -333,11 +282,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <13/7/2025>
--- Description:	<Get Group Name>
--- =============================================
 CREATE PROCEDURE SP_GetGroupName
     @GroupId INT
 AS
@@ -350,11 +294,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <17/7/2025>
--- Description:	<Delete the specified Notification>
--- =============================================
 CREATE PROCEDURE SP_DeleteNotification
     @NotificationId INT,
     @UserId INT
@@ -372,11 +311,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <17/7/2025>
--- Description:	<check if token actually changed>
--- =============================================
 CREATE PROCEDURE SP_GetUserPushToken
     @UserId INT,
     @DeviceId NVARCHAR(255)
@@ -390,11 +324,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <17/7/2025>
--- Description:	<cleanup procedure>
--- =============================================
 CREATE PROCEDURE SP_CleanupStaleTokens
 AS
 BEGIN
@@ -410,11 +339,6 @@ BEGIN
 END
 GO
 
--- =============================================
--- Author:		<Mohamed Abo Full>
--- Create date: <17/7/2025>
--- Description:	<update token timestamp>
--- =============================================
 CREATE PROCEDURE SP_UpdatePushTokenTimestamp
     @PushToken NVARCHAR(500)
 AS
@@ -426,3 +350,35 @@ BEGIN
     WHERE PushToken = @PushToken;
 END
 GO
+
+
+CREATE TABLE UserPushNotificationTokens (
+    TokenId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    PushToken NVARCHAR(500) NOT NULL,
+    DeviceId NVARCHAR(255) NOT NULL,
+    Platform NVARCHAR(50) NOT NULL CHECK (Platform IN ('ios', 'android')),
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    LastUsedAt DATETIME NULL,
+    FailureCount INT DEFAULT 0,
+    CONSTRAINT UQ_UserDevice UNIQUE(UserId, DeviceId)
+);
+
+CREATE TABLE NotificationHistory (
+    NotificationId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL REFERENCES Users(UserId) ON DELETE CASCADE,
+    Title NVARCHAR(255) NOT NULL,
+    Body NVARCHAR(1000) NOT NULL,
+    NotificationData NVARCHAR(MAX) NULL, -- JSON data
+    SentAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    IsRead BIT NOT NULL DEFAULT 0,
+    ReadAt DATETIME NULL,
+    NotificationType NVARCHAR(100) NULL,
+    RelatedEntityId INT NULL,
+    RelatedEntityType NVARCHAR(50) NULL
+);
+
+CREATE INDEX IX_UserPushTokens_UserId_Active ON UserPushNotificationTokens(UserId, IsActive);
+CREATE INDEX IX_NotificationHistory_UserId_SentAt ON NotificationHistory(UserId, SentAt DESC);

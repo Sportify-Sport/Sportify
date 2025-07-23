@@ -10,6 +10,7 @@ namespace Backend.Services
             string title,
             string body,
             string notificationType,
+            Dictionary<string, object> additionalData = null,
             int? excludeUserId = null,
             string recipientType = "all")
         {
@@ -27,6 +28,22 @@ namespace Backend.Services
                     var dbServices = new DBservices();
                     var eventName = dbServices.GetEventName(eventId);
 
+                    var data = new Dictionary<string, object>
+                    {
+                        { "type", notificationType },
+                        { "eventId", eventId },
+                        { "eventName", eventName }
+                    };
+
+                    // Merge additional data if provided
+                    if (additionalData != null)
+                    {
+                        foreach (var kvp in additionalData)
+                        {
+                            data[kvp.Key] = kvp.Value;
+                        }
+                    }
+
                     await pushService.SendNotificationAsync(new PushNotificationRequest
                     {
                         Title = title,
@@ -34,12 +51,7 @@ namespace Backend.Services
                         UserIds = recipients,
                         EventId = eventId,
                         NotificationType = notificationType,
-                        Data = new Dictionary<string, object>
-                        {
-                            { "type", notificationType },
-                            { "eventId", eventId },
-                            { "eventName", eventName }
-                        }
+                        Data = data
                     });
                 }
             }
@@ -54,6 +66,7 @@ namespace Backend.Services
             string title,
             string body,
             string notificationType,
+            Dictionary<string, object> additionalData = null,
             int? excludeUserId = null)
         {
             try
@@ -70,6 +83,22 @@ namespace Backend.Services
                     var dbServices = new DBservices();
                     var groupName = dbServices.GetGroupName(groupId);
 
+                    var data = new Dictionary<string, object>
+                    {
+                        { "type", notificationType },
+                        { "groupId", groupId },
+                        { "groupName", groupName }
+                    };
+
+                    // Merge additional data if provided
+                    if (additionalData != null)
+                    {
+                        foreach (var kvp in additionalData)
+                        {
+                            data[kvp.Key] = kvp.Value;
+                        }
+                    }
+
                     await pushService.SendNotificationAsync(new PushNotificationRequest
                     {
                         Title = title,
@@ -77,12 +106,7 @@ namespace Backend.Services
                         UserIds = recipients,
                         GroupId = groupId,
                         NotificationType = notificationType,
-                        Data = new Dictionary<string, object>
-                        {
-                            { "type", notificationType },
-                            { "groupId", groupId },
-                            { "groupName", groupName }
-                        }
+                        Data = data
                     });
                 }
             }
@@ -102,9 +126,35 @@ namespace Backend.Services
             try
             {
                 var notificationData = data ?? new Dictionary<string, object>();
-                notificationData["type"] = notificationType;
 
-                await pushService.SendToUserAsync(userId, title, body, notificationData);
+                // Always ensure type is set
+                notificationData["type"] = notificationType;
+                notificationData["notificationType"] = notificationType;
+
+                // Extract eventId or groupId for the request
+                int? eventId = null;
+                int? groupId = null;
+
+                if (notificationData.ContainsKey("eventId") && notificationData["eventId"] != null)
+                {
+                    eventId = Convert.ToInt32(notificationData["eventId"]);
+                }
+
+                if (notificationData.ContainsKey("groupId") && notificationData["groupId"] != null)
+                {
+                    groupId = Convert.ToInt32(notificationData["groupId"]);
+                }
+
+                await pushService.SendNotificationAsync(new PushNotificationRequest
+                {
+                    Title = title,
+                    Body = body,
+                    UserIds = new List<int> { userId },
+                    EventId = eventId,
+                    GroupId = groupId,
+                    NotificationType = notificationType,
+                    Data = notificationData
+                });
             }
             catch (Exception ex)
             {

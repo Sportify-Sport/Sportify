@@ -239,7 +239,7 @@ namespace Backend.Controllers
                         _pushNotificationService,
                         userId,
                         "Welcome to the Group! 🎉",
-                        $"Your request to join the group '{groupName}' has been approved!",
+                        $"Your request to join the group '{groupName}' has been approved! You can now participate in group events.",
                         "group_join_approved",
                         new Dictionary<string, object>
                         {
