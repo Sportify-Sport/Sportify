@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../context/AuthContext";
 
 function formatDate(dateString) {
   if (!dateString || isNaN(new Date(dateString).getTime())) {
-    return 'Not read yet';
+    return "Not read yet";
   }
   const date = new Date(dateString);
   const now = new Date();
   const diff = now - date;
   const oneDay = 24 * 60 * 60 * 1000;
-  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   if (diff < oneDay && now.getDate() === date.getDate()) {
     return `Today at ${time}`;
@@ -32,37 +35,63 @@ function formatDate(dateString) {
 
 function getNotificationIcon(type) {
   switch (type) {
-    case 'admin_message': return 'megaphone';
-    case 'event_created': return 'calendar';
-    case 'event_deleted': return 'calendar-outline';
-    case 'event_admin_assigned': return 'shield-checkmark';
-    case 'group_created': return 'people';
-    case 'group_deleted': return 'people-outline';
-    case 'group_admin_assigned': return 'shield-checkmark';
-    case 'join_request_response': return 'checkmark-circle';
-    case 'join_request_approved': return 'checkmark-circle';
-    case 'group_join_approved': return 'checkmark-circle';
-    case 'group_join_rejected': return 'close-circle';
-    case 'removed_from_event': return 'exit';
-    case 'removed_from_group': return 'exit';
-    default: return 'notifications';
+    case "admin_message":
+      return "megaphone";
+    case "event_created":
+      return "calendar";
+    case "event_deleted":
+      return "calendar-outline";
+    case "event_admin_assigned":
+      return "shield-checkmark";
+    case "group_created":
+      return "people";
+    case "group_deleted":
+      return "people-outline";
+    case "group_admin_assigned":
+      return "shield-checkmark";
+    case "join_request_response":
+      return "checkmark-circle";
+    case "join_request_approved":
+      return "checkmark-circle";
+    case "group_join_approved":
+      return "checkmark-circle";
+    case "group_join_rejected":
+      return "close-circle";
+    case "removed_from_event":
+      return "exit";
+    case "removed_from_group":
+      return "exit";
+    default:
+      return "notifications";
   }
 }
 
 function getNotificationColor(type) {
   switch (type) {
-    case 'admin_message': return '#FF6B6B';
-    case 'event_created': return '#4ECDC4';
-    case 'event_deleted': return '#E74C3C';
-    case 'group_created': return '#45B7D1';
-    case 'group_deleted': return '#E74C3C';
-    case 'join_request_response': return '#96CEB4';
-    case 'join_request_approved': return '#96CEB4';
-    case 'group_join_approved': return '#96CEB4';
-    case 'group_join_rejected': return '#FF6B6B';
-    case 'removed_from_event': return '#E74C3C';
-    case 'removed_from_group': return '#E74C3C';
-    default: return '#BDC3C7';
+    case "admin_message":
+      return "#FF6B6B";
+    case "event_created":
+      return "#4ECDC4";
+    case "event_deleted":
+      return "#E74C3C";
+    case "group_created":
+      return "#45B7D1";
+    case "group_deleted":
+      return "#E74C3C";
+    case "join_request_response":
+      return "#96CEB4";
+    case "join_request_approved":
+      return "#96CEB4";
+    case "group_join_approved":
+      return "#96CEB4";
+    case "group_join_rejected":
+      return "#FF6B6B";
+    case "removed_from_event":
+      return "#E74C3C";
+    case "removed_from_group":
+      return "#E74C3C";
+    default:
+      return "#BDC3C7";
   }
 }
 
@@ -70,7 +99,7 @@ export default function NotificationDetails() {
   const router = useRouter();
   const { notification: rawNotification } = useLocalSearchParams();
   const { token, NotificationService, setUnreadCount } = useAuth();
-  const notification = JSON.parse(rawNotification || '{}');
+  const notification = JSON.parse(rawNotification || "{}");
   const {
     notificationId,
     title,
@@ -87,14 +116,17 @@ export default function NotificationDetails() {
     const markAsReadOnFirstView = async () => {
       if (!isRead && token && !readAt) {
         try {
-          const result = await NotificationService.markNotificationAsRead(notificationId, token);
+          const result = await NotificationService.markNotificationAsRead(
+            notificationId,
+            token
+          );
           if (result.success) {
             setReadAt(new Date().toISOString());
-            setUnreadCount(prev => Math.max(0, prev - 1));
+            setUnreadCount((prev) => Math.max(0, prev - 1));
           }
         } catch (error) {
-          console.error('Error marking notification as read:', error);
-          Alert.alert('Error', 'Failed to mark notification as read');
+          console.error("Error marking notification as read:", error);
+          Alert.alert("Error", "Failed to mark notification as read");
         }
       }
     };
@@ -104,16 +136,19 @@ export default function NotificationDetails() {
   const markAsRead = async () => {
     if (!isRead && token && !readAt) {
       try {
-        const result = await NotificationService.markNotificationAsRead(notificationId, token);
+        const result = await NotificationService.markNotificationAsRead(
+          notificationId,
+          token
+        );
         if (result.success) {
           setReadAt(new Date().toISOString());
-          setUnreadCount(prev => Math.max(0, prev - 1));
+          setUnreadCount((prev) => Math.max(0, prev - 1));
         } else {
-          Alert.alert('Error', 'Failed to mark notification as read');
+          Alert.alert("Error", "Failed to mark notification as read");
         }
       } catch (error) {
-        console.error('Error marking notification as read:', error);
-        Alert.alert('Error', 'Failed to mark notification as read');
+        console.error("Error marking notification as read:", error);
+        Alert.alert("Error", "Failed to mark notification as read");
       }
     }
   };
@@ -129,29 +164,39 @@ export default function NotificationDetails() {
     }
   } catch {}
 
-  const removalTypes = ['removed_from_event', 'removed_from_group', 'event_deleted', 'group_deleted'];
+  const removalTypes = [
+    "removed_from_event",
+    "removed_from_group",
+    "event_deleted",
+    "group_deleted",
+  ];
   const showButton = !removalTypes.includes(type);
-  const isEvent = ['event_created', 'event_admin_assigned', 'event_deleted', 'removed_from_event', 'join_request_response', 'join_request_approved']
-    .includes(type);
-  const targetId = isEvent ? data.eventId : data.groupId;
-  const targetScreen = isEvent ? './EventDetails' : './GroupDetails';
+  const isEvent = [
+    "event_created",
+    "event_admin_assigned",
+    "event_deleted",
+    "removed_from_event",
+    "join_request_response",
+    "join_request_approved",
+  ].includes(type);
+  const isGroup = data.groupId;
+  const targetId = data.eventId ? data.eventId : data.groupId;
+  const targetScreen = data.eventId ? "./EventDetails" : "./GroupDetails";
   const icon = getNotificationIcon(type);
   const color = getNotificationColor(type);
 
   const handleGoToEntity = async () => {
     try {
-      if (!targetId) throw new Error('Missing ID');
+      if (!targetId) throw new Error("Missing ID");
       router.push({
         pathname: targetScreen,
-        params: { [`${isEvent ? 'eventId' : 'groupId'}`]: targetId },
+        params: { [`${data.eventId ? "eventId" : "groupId"}`]: targetId },
       });
     } catch (error) {
       Alert.alert(
-        'Error',
-        `There was an error loading the ${isEvent ? 'event' : 'group'}.`,
-        [
-          { text: 'Back', onPress: () => router.back(), style: 'cancel' }
-        ]
+        "Error",
+        `There was an error loading the ${data.eventId ? "event" : "group"}.`,
+        [{ text: "Back", onPress: () => router.back(), style: "cancel" }]
       );
     }
   };
@@ -174,7 +219,7 @@ export default function NotificationDetails() {
       </View>
 
       <View style={styles.messageBox}>
-        {type === 'admin_message' && (
+        {type === "admin_message" && (
           <Text style={styles.adminLabel}>Message from Admin:</Text>
         )}
         <Text style={styles.body}>{body}</Text>
@@ -187,7 +232,9 @@ export default function NotificationDetails() {
 
       {showButton && targetId && (
         <TouchableOpacity style={styles.goButton} onPress={handleGoToEntity}>
-          <Text style={styles.goButtonText}>Go to {isEvent ? 'Event' : 'Group'}</Text>
+          <Text style={styles.goButtonText}>
+            Go to {isGroup ? "Group" : "Event"}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -198,22 +245,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   backText: {
     marginLeft: 8,
     fontSize: 18,
-    color: '#3CCF4E',
-    fontWeight: '500',
+    color: "#3CCF4E",
+    fontWeight: "500",
   },
   iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   icon: {
@@ -221,26 +268,26 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   messageBox: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: "#F8F9FF",
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   adminLabel: {
     fontSize: 14,
-    color: '#000',
-    fontWeight: '600',
+    color: "#000",
+    fontWeight: "600",
     marginBottom: 8,
   },
   body: {
     fontSize: 16,
-    color: '#555',
+    color: "#555",
     lineHeight: 22,
   },
   dates: {
@@ -248,18 +295,18 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 14,
-    color: '#999',
+    color: "#999",
     marginBottom: 4,
   },
   goButton: {
-    backgroundColor: '#3CCF4E',
+    backgroundColor: "#3CCF4E",
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   goButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
