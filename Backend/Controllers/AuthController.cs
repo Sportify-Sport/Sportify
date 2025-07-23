@@ -428,9 +428,10 @@ namespace Backend.Controllers
                     return Ok(new { success = true, message = "If the email exists, a reset code has been sent" });
                 }
 
-                if (!dbServices.IsUserEligibleForAuth(user.UserId))
+                // Check if email is verified
+                if (!user.IsEmailVerified)
                 {
-                    // Still return success to prevent enumeration
+                    // Don't send reset code for unverified accounts, but still return success to prevent enumeration
                     return Ok(new { success = true, message = "If the email exists, a reset code has been sent" });
                 }
 
@@ -542,7 +543,7 @@ namespace Backend.Controllers
             }
         }
 
-        [Authorize] // User must be logged in, but doesn't need email verification
+        [Authorize(Roles = "User")]
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
         {
