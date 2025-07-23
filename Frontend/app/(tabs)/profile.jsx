@@ -535,8 +535,17 @@ export default function Profile() {
 
       <View style={styles.infoContainer}>
         <Text style={styles.label}>Password:</Text>
-        <TouchableOpacity onPress={() => setIsPassModalVisible(true)} style={styles.changePassButton}>
-          <Text style={styles.changePassText}>Change Password</Text>
+        <TouchableOpacity
+          onPress={() => isEmailVerified && setIsPassModalVisible(true)}
+          style={[
+            styles.changePassButton,
+            !isEmailVerified && { backgroundColor: '' }
+          ]}
+          disabled={!isEmailVerified}
+        >
+          <Text style={[styles.changePassText, !isEmailVerified && { color: '#666' }]}>
+            {isEmailVerified ? 'Change Password' : 'Verify email to change password'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -579,22 +588,23 @@ export default function Profile() {
               onBlur={handleCityBlur}
             />
             {citySuggestions.length > 0 && (
-              <FlatList
-                data={citySuggestions}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setCity(item.name);
-                      setCityId(item.id);
-                      setCitySuggestions([]);
-                    }}
-                    style={styles.suggestionItem}
-                  >
-                    <Text style={styles.suggestionText}>{item.name}</Text>
-                  </TouchableOpacity>
-                )}
-              />
+              <View style={{ maxHeight: 150 }}>
+                <ScrollView keyboardShouldPersistTaps="handled">
+                  {citySuggestions.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        setCity(item.name);
+                        setCityId(item.id);
+                        setCitySuggestions([]);
+                      }}
+                      style={styles.suggestionItem}
+                    >
+                      <Text style={styles.suggestionText}>{item.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
             )}
           </>
         ) : (

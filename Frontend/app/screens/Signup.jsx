@@ -16,12 +16,15 @@ import { useAuth } from "../context/AuthContext";
 import EmailVerificationModal from "../components/modals/EmailVerificationModal";
 import styles from "../../styles/SignupStyles";
 import guestIcon from "../../assets/images/guest-icon-design-vector.jpg";
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+
 
 const Signup = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [birthdate, setBirthdate] = useState("");
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,39 +38,113 @@ const Signup = () => {
   const router = useRouter();
   const { register, continueAsGuest } = useAuth();
 
+  const showDatePicker = () => setDatePickerVisibility(true);
+  const hideDatePicker = () => setDatePickerVisibility(false);
+
   const handleContinue = async () => {
-    // Validation
+    const now = new Date();
+    const minBirthDate = new Date(now.getFullYear() - 120, now.getMonth(), now.getDate());
+    const maxBirthDate = new Date(now.getFullYear() - 13, now.getMonth(), now.getDate());
+
+    if (!firstName?.trim()) {
+      Alert.alert("Error", "First name is required");
+      return;
+    }
+    if (firstName.length > 50) {
+      Alert.alert("Error", "First name cannot exceed 50 characters");
+      return;
+    }
+    if (!/^[a-zA-Z\s\-']+$/.test(firstName)) {
+      Alert.alert("Error", "First name contains invalid characters");
+      return;
+    }
+
+    if (!lastName?.trim()) {
+      Alert.alert("Error", "Last name is required");
+      return;
+    }
+    if (lastName.length > 50) {
+      Alert.alert("Error", "Last name cannot exceed 50 characters");
+      return;
+    }
+    if (!/^[a-zA-Z\s\-']+$/.test(lastName)) {
+      Alert.alert("Error", "Last name contains invalid characters");
+      return;
+    }
+
+    if (!birthdate) {
+      Alert.alert("Error", "Birthdate is required");
+      return;
+    }
+    // Validate date format yyyy-mm-dd (keep this)
     const datePattern = /^\d{4}\-(0[1-9]|1[0-2])\-(0[1-9]|[12][0-9]|3[01])$/;
     if (!datePattern.test(birthdate)) {
       Alert.alert("Error", "Please enter a valid birthdate in the format yyyy-mm-dd.");
       return;
     }
-
-    const passwordPattern =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,12}$/;
-    if (!passwordPattern.test(password)) {
-      Alert.alert(
-        "Error",
-        "Password must be 5-12 characters long and include one uppercase letter, one lowercase letter, one number, and one special character."
-      );
+    // Validate birthdate range
+    const bd = new Date(birthdate);
+    if (bd < minBirthDate || bd > maxBirthDate) {
+      Alert.alert("Error", "Birth date must be between 13 and 120 years ago");
       return;
     }
 
+    if (!email?.trim()) {
+      Alert.alert("Error", "Email is required");
+      return;
+    }
+    if (email.length > 100) {
+      Alert.alert("Error", "Email cannot exceed 100 characters");
+      return;
+    }
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
-      Alert.alert("Error", "Please enter a valid email address.");
+      Alert.alert("Error", "Invalid email format");
       return;
     }
 
-    if (!firstName || !lastName || !gender || !birthdate || !email || !password || !confirmPassword || !favoriteSport || !cityId) {
-      Alert.alert("Error", "Please fill in all fields.");
+    if (!password) {
+      Alert.alert("Error", "Password is required");
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters long");
+      return;
+    }
+    if (password.length > 100) {
+      Alert.alert("Error", "Password cannot exceed 100 characters");
+      return;
+    }
+    // Password complexity: at least one uppercase, one lowercase, one digit
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      Alert.alert("Error", "Password must contain at least one uppercase letter, one lowercase letter, and one number");
       return;
     }
 
+    if (!gender) {
+      Alert.alert("Error", "Gender is required");
+      return;
+    }
+
+    if (!confirmPassword) {
+      Alert.alert("Error", "Please confirm your password");
+      return;
+    }
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
+
+    if (!favoriteSport) {
+      Alert.alert("Error", "Favorite sport is required");
+      return;
+    }
+
+    if (!cityId) {
+      Alert.alert("Error", "City is required");
+      return;
+    }
+
 
     let sportId;
     if (favoriteSport === "Football") sportId = 1;
@@ -183,11 +260,27 @@ const Signup = () => {
         </Picker>
 
         <Text style={styles.label}>Birthdate</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="yyyy-mm-dd"
-          value={birthdate}
-          onChangeText={setBirthdate}
+        <TouchableOpacity onPress={showDatePicker}>
+          <TextInput
+            style={styles.input}
+            placeholder="yyyy-mm-dd"
+            value={birthdate}
+            editable={false} // Prevent manual editing
+            pointerEvents="none" // Prevents focus
+          />
+        </TouchableOpacity>
+
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 13))} // At least 13 years old
+          minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 120))} // At most 120 years old
+          onConfirm={(date) => {
+            const formatted = date.toISOString().split("T")[0];
+            setBirthdate(formatted);
+            hideDatePicker();
+          }}
+          onCancel={hideDatePicker}
         />
 
         <Text style={styles.label}>Your Email</Text>
@@ -242,22 +335,23 @@ const Signup = () => {
           onBlur={handleCityBlur}
         />
         {citySuggestions.length > 0 && (
-          <FlatList
-            data={citySuggestions}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  setCity(item.name);
-                  setCityId(item.id);
-                  setCitySuggestions([]);
-                }}
-                style={styles.suggestionItem}
-              >
-                <Text style={styles.suggestionText}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
+          <View style={{ maxHeight: 150 }}>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {citySuggestions.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    setCity(item.name);
+                    setCityId(item.id);
+                    setCitySuggestions([]);
+                  }}
+                  style={styles.suggestionItem}
+                >
+                  <Text style={styles.suggestionText}>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
 
         <TouchableOpacity

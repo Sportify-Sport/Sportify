@@ -44,7 +44,6 @@ const SearchFilter = () => {
 
   // Sync local state with filters from context when the screen mounts or filters change
   useEffect(() => {
-    console.log("Filters updated:", filters);
     setSport(filters.sport || null);
     setCity(filters.city || null);
     setCityName(filters.cityName || "");
@@ -77,7 +76,6 @@ const SearchFilter = () => {
             id: record._id,
             name: record["city_name_en"],
           }));
-        console.log("City suggestions:", suggestions);
         setCitySuggestions(suggestions);
         setShowCitySuggestions(true);
       } else {
@@ -92,7 +90,6 @@ const SearchFilter = () => {
   };
 
   const handleCitySelect = (selectedCity) => {
-    console.log("Selected city:", selectedCity);
     setCity(selectedCity.id);
     setCityName(selectedCity.name);
     setCityQuery(selectedCity.name);
@@ -101,7 +98,6 @@ const SearchFilter = () => {
   };
 
   const handleCityBlur = () => {
-    console.log("City blur - cityName:", cityName, "cityQuery:", cityQuery);
     if (!cityName) {
       setCity(null);
       setCityQuery("");
@@ -282,7 +278,6 @@ const SearchFilter = () => {
                 placeholderTextColor="#9CA3AF"
                 value={cityQuery}
                 onChangeText={(text) => {
-                  console.log("City query changed:", text);
                   setCityQuery(text);
                   searchCities(text);
                 }}
@@ -290,7 +285,6 @@ const SearchFilter = () => {
               />
               {Boolean(cityQuery) && (
                 <TouchableOpacity onPress={() => {
-                  console.log("Clearing city input");
                   setCityQuery("");
                   setCity(null);
                   setCityName("");

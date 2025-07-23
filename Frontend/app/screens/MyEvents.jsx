@@ -4,12 +4,14 @@ import { useRouter, useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import getApiBaseUrl from '../config/apiConfig';
+import { useAuth } from '../context/AuthContext';
 
 const apiUrl = getApiBaseUrl();
 
 export default function MyEventsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { isEmailVerified } = useAuth();
   const [token, setToken] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,18 +30,23 @@ export default function MyEventsScreen() {
         return;
       }
       setToken(storedToken);
-      
+
       const storedSports = await AsyncStorage.getItem('sportsMap');
       if (storedSports) {
         setSportsMap(JSON.parse(storedSports));
       }
-      
+
+      // If email not verified, stop loading and don’t call the API
+      if (!isEmailVerified) {
+        setLoading(false);
+        return;
+      }
       fetchEvents(storedToken);
     };
 
     checkAuth();
-  }, []);
- 	
+  }, [isEmailVerified]);
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       if (token) {
@@ -77,7 +84,7 @@ export default function MyEventsScreen() {
         if (Array.isArray(result.data)) {
           setEvents(prev => loadMore ? [...prev, ...result.data] : result.data);
           setHasMore(result.hasMore ?? false);
-          
+
           if (result.data.length > 0) {
             const lastEvent = result.data[result.data.length - 1];
             setLastEventId(lastEvent.eventId);
@@ -113,7 +120,7 @@ export default function MyEventsScreen() {
     >
       <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
         <Image
-          source={{ uri: item.eventImage ? `${apiUrl}/Images/${item.eventImage}`: `${apiUrl}/Images/default_event.png` }}
+          source={{ uri: item.eventImage ? `${apiUrl}/Images/${item.eventImage}` : `${apiUrl}/Images/default_event.png` }}
           className="w-10 h-10 rounded-full"
         />
       </View>
@@ -143,7 +150,7 @@ export default function MyEventsScreen() {
     <View className="flex-1 bg-white p-4">
       {/* Header with Back Button and Title */}
       <View className="flex-row items-center mb-6">
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleGoBack}
           className="p-2 -ml-2"
         >
@@ -164,7 +171,11 @@ export default function MyEventsScreen() {
         </View>
       ) : events.length === 0 ? (
         <View className="flex-1 justify-center items-center">
-          <Text className="text-green-600 mb-4">You haven't joined any events yet</Text>
+          <Text className="text-green-600 mb-4">
+            {isEmailVerified
+              ? "You haven't joined any events yet"
+              : "You must verify your email to join events"}
+          </Text>
           <TouchableOpacity
             className="bg-green-100 px-6 py-2 rounded-full border border-green-200"
             onPress={handleGoBack}

@@ -4,12 +4,14 @@ import { useRouter, useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import getApiBaseUrl from '../config/apiConfig';
+import { useAuth } from '../context/AuthContext';
 
 const apiUrl = getApiBaseUrl();
 
 export default function MyGroupsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { isEmailVerified } = useAuth();
   const [token, setToken] = useState(null);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +31,11 @@ export default function MyGroupsScreen() {
         `https://data.gov.il/api/3/action/datastore_search?resource_id=8f714b6f-c35c-4b40-a0e7-547b675eee0e&filters={"_id":${cityId}}`
       );
       const json = await resp.json();
-      
+
       if (json.success && json.result.records.length) {
-        const name = json.result.records[0]['city_name_en'] || 
-                     json.result.records[0]['שם_ישוב'] || 
-                     `City ${cityId}`;
+        const name = json.result.records[0]['city_name_en'] ||
+          json.result.records[0]['שם_ישוב'] ||
+          `City ${cityId}`;
         setCitiesMap(m => ({ ...m, [cityId]: name }));
         return name;
       }
@@ -70,7 +72,7 @@ export default function MyGroupsScreen() {
             return { ...group, cityName };
           })
         );
-        
+
         setGroups(updatedGroups);
       } else {
         setError('Failed to fetch groups');
@@ -90,11 +92,16 @@ export default function MyGroupsScreen() {
         return;
       }
       setToken(storedToken);
+      // If user isn’t verified, stop loading
+      if (!isEmailVerified) {
+        setLoading(false);
+        return;
+      }
       fetchGroups(storedToken);
     };
 
     checkAuth();
-  }, [fetchGroups]);
+  }, [fetchGroups, isEmailVerified]);
 
   // Add focus listener to refetch groups when screen is revisited
   useEffect(() => {
@@ -122,7 +129,7 @@ export default function MyGroupsScreen() {
     >
       <View className="w-12 h-12 rounded-full bg-green-300 justify-center items-center">
         <Image
-          source={{ uri: item.groupImage ? `${apiUrl}/Images/${item.groupImage}` : `${apiUrl}/Images/default_group.png`}}
+          source={{ uri: item.groupImage ? `${apiUrl}/Images/${item.groupImage}` : `${apiUrl}/Images/default_group.png` }}
           className="w-10 h-10 rounded-full"
         />
       </View>
@@ -148,7 +155,7 @@ export default function MyGroupsScreen() {
     <View className="flex-1 bg-white p-4">
       {/* Header with Back Button and Title */}
       <View className="flex-row items-center mb-6">
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleGoBack}
           className="p-2 -ml-2"
         >
@@ -169,12 +176,16 @@ export default function MyGroupsScreen() {
         </View>
       ) : groups.length === 0 ? (
         <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-500 mb-4">You haven't joined any groups yet</Text>
+          <Text className="text-green-600 mb-4">
+            {isEmailVerified
+              ? "You haven't joined any groups yet"
+              : "You must verify your email to join groups"}
+          </Text>
           <TouchableOpacity
-            className="bg-gray-200 px-6 py-2 rounded-full"
+            className="bg-green-100 px-6 py-2 rounded-full border border-green-200"
             onPress={handleGoBack}
           >
-            <Text className="text-gray-800 font-medium">Go Back</Text>
+            <Text className="text-green-500 font-medium">Go Back</Text>
           </TouchableOpacity>
         </View>
       ) : (

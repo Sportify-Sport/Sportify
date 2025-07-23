@@ -50,7 +50,6 @@ export default function AddToCalendarButton({ event }) {
         location: event.locationName,
         timeZone: Calendar.TimeZone || undefined,
       });
-      console.log('Event added to calendar, id:', createdId);
       Alert.alert('Success', 'Event added to your calendar!');
     } catch (error) {
       console.error('Error creating event:', error);

@@ -14,6 +14,7 @@ import LeaveGroupButton from '../components/group/LeaveGroupButton';
 import EditGroupModal from '../components/group/EditGroupModal';
 import UserDetailsModal from '../components/group/UserDetailsModal';
 import AdminNotificationModal from '../components/AdminNotificationModal';
+import { useAuth } from '../context/AuthContext';
 
 const apiUrl = getApiBaseUrl();
 const PAGE_SIZE = 3;
@@ -21,6 +22,7 @@ const PAGE_SIZE = 3;
 export default function GroupDetails() {
   const { groupId } = useLocalSearchParams();
   const router = useRouter();
+  const { isEmailVerified } = useAuth();
 
   // State
   const [group, setGroup] = useState(null);
@@ -552,6 +554,7 @@ export default function GroupDetails() {
             hasPending={group.hasPendingRequest}
             onRequest={handleRequestToJoin}
             onCancel={handleCancelRequestToJoin}
+            isEmailVerified={isEmailVerified}
           />
 
           {isLoggedIn && group.isAdmin && (

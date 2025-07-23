@@ -32,8 +32,8 @@ const Login = () => {
     }
 
     // Password validation
-    if (password.length < 5 || password.length > 12) {
-      Alert.alert("Error", "Password must be between 5 and 12 characters.");
+    if (password.length < 8 || password.length > 100) {
+      Alert.alert("Error", "Password must be between 8 and 100 characters.");
       return;
     }
     

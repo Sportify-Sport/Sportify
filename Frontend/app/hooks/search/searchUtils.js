@@ -5,10 +5,8 @@ import { getCityNameById } from "../../services/locationService";
 const apiUrl = getApiBaseUrl();
 
 export const fetchItemsFromApi = async (itemType, searchQuery, currentPage, pageSize, filters, abortControllerRef) => {
-  console.log(`Starting fetch for ${itemType} - page ${currentPage}`);
   if (abortControllerRef.current) {
     abortControllerRef.current.abort(); // Cancel previous request
-    console.log(`Aborted previous fetch for ${itemType}`);
   }
   abortControllerRef.current = new AbortController();
 
@@ -34,7 +32,6 @@ export const fetchItemsFromApi = async (itemType, searchQuery, currentPage, page
     }
 
     const endpoint = `${apiUrl}/api/Search${query}`;
-    console.log(`Fetching from: ${endpoint}`);
     const response = await fetch(endpoint, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -67,7 +64,6 @@ export const fetchItemsFromApi = async (itemType, searchQuery, currentPage, page
       })
     );
 
-    console.log(`Fetched ${items.length} ${itemType}s for page ${currentPage}`);
     return {
       items,
       hasMore: result.pagination?.hasMore ?? false,
@@ -79,7 +75,6 @@ export const fetchItemsFromApi = async (itemType, searchQuery, currentPage, page
     return { items: [], hasMore: false };
   } finally {
     if (abortControllerRef.current.signal.aborted) {
-      console.log(`Fetch completed but was aborted for ${itemType}`);
     }
   }
 };

@@ -118,7 +118,6 @@ export default function ExploreScreen() {
       });
       if (!response.ok) {
         if (response.status === 401 && !token) {
-          console.log("loadGroups: Unauthorized - redirecting to login");
           router.replace("/screens/Login");
           return;
         }
@@ -239,7 +238,6 @@ export default function ExploreScreen() {
             source={{ uri: `${apiUrl}/Images/${item.groupImage}` }}
             className="w-full h-full"
             resizeMode="cover"
-            onError={() => console.log("Image failed to load")}
           />
         ) : (
           <View className="flex-1 justify-center items-center bg-green-200">
@@ -288,7 +286,6 @@ export default function ExploreScreen() {
             source={{ uri: `${apiUrl}/Images/${item.profileImage}` }}
             className="w-full h-full"
             resizeMode="cover"
-            onError={() => console.log("Image failed to load")}
           />
         ) : (
           <View className="flex-1 justify-center items-center bg-green-200">

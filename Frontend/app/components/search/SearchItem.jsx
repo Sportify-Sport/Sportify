@@ -54,7 +54,6 @@ export const SearchItem = ({ item, onPress }) => {
             }}
             className="w-full h-full"
             resizeMode="cover"
-            onError={() => console.log("Image failed to load")}
           />
         ) : (
           <View className="flex-1 justify-center items-center bg-green-200">

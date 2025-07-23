@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 // Import our hooks
-import useAuth from "../hooks/useAuth";
 import useSports from "../hooks/useSports";
 import useEventDetails from "../hooks/useEventDetails";
 import useEventMembers from "../hooks/useEventMembers";
@@ -28,6 +27,7 @@ import UserDetailsModal from "../components/modals/UserDetailsModal";
 import AlertNotification from "../components/common/AlertNotification";
 import AddToCalendarButton from '../components/event/AddToCalendarButton';
 import AdminNotificationModal from '../components/AdminNotificationModal';
+import { useAuth } from '../context/AuthContext';
 
 const EditEventCard = ({ onEdit, onNotification }) => (
   <View className="bg-white p-4 rounded-xl shadow mb-6">
@@ -66,7 +66,7 @@ export default function EventDetails() {
   const groupSearchInputRef = useRef(null);
 
   // Use our existing hooks
-  const { token } = useAuth();
+  const { token, isEmailVerified } = useAuth();
   const isLoggedIn = !!token;
   const { sportsMap } = useSports(token);
 
@@ -227,15 +227,15 @@ export default function EventDetails() {
   }
 
   if (error) {
-     return (
-       <View className="flex-1 justify-center items-center p-4 bg-gray-50">
-         <Text className="text-red-500 mb-4">Event has been deleted</Text>
-         <TouchableOpacity onPress={() => router.back()} className="bg-white px-4 py-2 rounded-full shadow">
-           <Text className="text-gray-800 font-medium">Go Back</Text>
-         </TouchableOpacity>
-       </View>
-     );
-   }
+    return (
+      <View className="flex-1 justify-center items-center p-4 bg-gray-50">
+        <Text className="text-red-500 mb-4">Event has been deleted</Text>
+        <TouchableOpacity onPress={() => router.back()} className="bg-white px-4 py-2 rounded-full shadow">
+          <Text className="text-gray-800 font-medium">Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const isLoading =
     refreshing || membersLoading || requestsLoading || groupsLoading;
@@ -264,7 +264,7 @@ export default function EventDetails() {
           <ScrollView
             className="p-4"
             contentContainerStyle={{
-              paddingBottom: keyboardVisible ? 20 : 0 // Minimal padding to eliminate gap
+              paddingBottom: keyboardVisible ? 20 : 0 
             }}
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
@@ -303,6 +303,7 @@ export default function EventDetails() {
                 onCancelRequest={cancelRequest}
                 onLeaveEvent={leaveEvent}
                 onCancelSpectating={cancelSpectating}
+                isEmailVerified={isEmailVerified}
               />
             )}
 
