@@ -18,6 +18,10 @@ export default function TeamMembers({
   onRemove,
   events,
 }) {
+  // Find the main admin (first admin or the one with specific criteria)
+  const mainAdmin = members.find(m => m.isAdmin);
+  const mainAdminId = mainAdmin ? mainAdmin.userId : null;
+
   return (
     <View className="bg-white p-4 rounded-xl shadow mb-4">
       <Text className="text-lg font-semibold text-gray-800 mb-2">Team Members</Text>
@@ -43,12 +47,14 @@ export default function TeamMembers({
                 <TouchableOpacity onPress={() => onShowDetails(m)}>
                   <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
                 </TouchableOpacity>
-                {!m.isAdmin ? (
+                {/* Show green dot only for the main admin (first admin found) */}
+                {m.userId === mainAdminId ? (
+                  <View className="w-5 h-5 bg-green-400 rounded-full" />
+                ) : (
+                  /* Show trash icon for all other members (including other admins if any) */
                   <TouchableOpacity onPress={() => onRemove(m)}>
                     <Ionicons name="trash" size={20} color="#E53E3E" />
                   </TouchableOpacity>
-                ) : (
-                  <View className="w-5 h-5 bg-green-400 rounded-full" />
                 )}
               </View>
             )}
