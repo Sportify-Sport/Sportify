@@ -320,23 +320,40 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Get tokens before removing them
+      const refreshToken = await AsyncStorage.getItem("refreshToken");
+      const accessToken = await AsyncStorage.getItem("token");
+
+      // Revoke refresh token if both tokens are available
+      if (refreshToken && accessToken) {
+        await fetch(`${apiUrl}/api/Auth/revoke-token`, {
+          method: "POST",
+          headers: {
+            "accept": "*/*",
+            "X-Refresh-Token": refreshToken,
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
+      }
+
+      // Clear tokens and other storage
       await AsyncStorage.removeItem("token");
       await AsyncStorage.removeItem("refreshToken");
       await AsyncStorage.removeItem("guestMode");
+      await AsyncStorage.removeItem("pushToken");
+      await AsyncStorage.removeItem("lastTokenRegistration");
+      await AsyncStorage.removeItem("lastTokenUpdate");
+
+      // Reset app state
       setUser(null);
       setIsAuthenticated(false);
       setIsEmailVerified(false);
       setIsGuest(false);
       setToken(null);
-      setUnreadCount(0); // Reset unread count on logout
+      setUnreadCount(0);
 
       // Cleanup notifications
       NotificationService.cleanup();
-
-      // Clear notification-related storage
-      await AsyncStorage.removeItem("pushToken");
-      await AsyncStorage.removeItem("lastTokenRegistration");
-      await AsyncStorage.removeItem("lastTokenUpdate");
     } catch (error) {
       console.error("Error logging out:", error);
     }
