@@ -742,11 +742,6 @@ namespace Backend.Controllers
                 int userId = int.Parse(userIdClaim.Value);
 
                 DBservices dbServices = new DBservices();
-                // Check if user is eligible
-                if (!dbServices.IsUserEligibleForAuth(userId))
-                {
-                    return Unauthorized("Your account verification has expired. Please register again.");
-                }
 
                 if (string.IsNullOrEmpty(token))
                 {
