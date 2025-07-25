@@ -260,7 +260,7 @@ if (isGuest) {
       <View style={[styles.infoContainer, { marginTop: 20 }]}>
         <Text style={styles.label}>🚀 Ready to join?</Text>
         <Text style={styles.infoText}>
-          Sign up to create your profile, join events, and connect with other sports enthusiasts!
+          Sign up to see your notifications!
         </Text>
       </View>
 
