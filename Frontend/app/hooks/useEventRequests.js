@@ -1,5 +1,6 @@
 // hooks/useEventRequests.js
 import { useState, useEffect, useCallback } from 'react';
+import { Alert } from 'react-native';
 import getApiBaseUrl from '../config/apiConfig';
 import useAlertNotification from './useAlertNotification';
 import { getCityNameById } from '../services/locationService';

@@ -374,6 +374,7 @@ export default function EventDetails() {
                 event={event}
                 token={token}
                 sportsMap={sportsMap}
+                groups={groups}
                 onAddGroup={refreshGroups}
                 inputRef={groupSearchInputRef}
                 onInputFocus={handleInputFocus}

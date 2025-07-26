@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Platform, Image, FlatList, ActivityIndicator, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Platform, Image, FlatList, ActivityIndicator, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import getApiBaseUrl from '../../config/apiConfig';
 import useAlertNotification from '../../hooks/useAlertNotification';
 
-export default function GroupSearch({ event, token, sportsMap, onAddGroup, inputRef, onInputFocus }) {
+export default function GroupSearch({ event, token, sportsMap, groups, onAddGroup, inputRef, onInputFocus }) {
   const router = useRouter();
   const apiUrl = getApiBaseUrl();
   const [searchText, setSearchText] = useState('');
@@ -112,6 +112,11 @@ export default function GroupSearch({ event, token, sportsMap, onAddGroup, input
   };
 
   const handleAddGroup = async (groupId) => {
+    const alreadyExists = groups?.some(g => g.groupId === groupId);
+    if (alreadyExists) {
+      Alert.alert('Notice', 'This group is already added to the event.');
+      return { success: false, message: 'Group already added' };
+    }
     try {
       const response = await fetch(`${apiUrl}/api/EventTeams/team-events/${event.eventId}/groups/${groupId}`, {
         method: 'POST',
@@ -128,11 +133,11 @@ export default function GroupSearch({ event, token, sportsMap, onAddGroup, input
         // Clear search results after adding
         setSearchText('');
         setResults([]);
-        showAlert(result.message || 'Successfully added the group', 'success');
+        Alert.alert('Success', result.message || 'Successfully added the group');
       }
       return result;
     } catch (error) {
-      showAlert(result.message || 'Failed to add group');
+      Alert.alert('Error', result.message || 'Failed to add group');
       return { success: false, message: 'Network error while adding group' };
     }
   };
