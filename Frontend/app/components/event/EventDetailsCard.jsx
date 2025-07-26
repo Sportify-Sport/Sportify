@@ -77,8 +77,9 @@ export default function EventDetailsCard({ event, sportsMap, handleLocationPress
 
       <View className="flex-row justify-between mb-2">
         <Text className="text-base text-gray-900 font-medium">Spectators</Text>
-        <Text className="text-base text-gray-900">{event.viewerCount || 'Any'}</Text>
-
+        <Text className="text-base text-gray-900">
+          {event.viewerCount != null ? event.viewerCount : 'N/A'}
+        </Text>
       </View>
 
       <View className="items-center mb-4 mt-4">
