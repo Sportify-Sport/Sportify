@@ -6,7 +6,6 @@ import AdminSearch from '../actionComponents/AdminSearch';
 import ConfirmationDialog from '../actionComponents/ConfirmationDialog';
 import useForm from '../../hooks/useForm';
 import useEventCreate from '../../hooks/createEventHooks/useEventCreate';
-
 const validate = (formData) => {
   const newErrors = {};
   if (!formData.eventName.trim()) newErrors.eventName = 'Event Name is required';
@@ -19,17 +18,28 @@ const validate = (formData) => {
   if (formData.startDatetime && formData.endDatetime && new Date(formData.startDatetime) >= new Date(formData.endDatetime)) {
     newErrors.endDatetime = 'End date must be after start date';
   }
-  if (!formData.maxParticipants || formData.maxParticipants <= 0) newErrors.maxParticipants = 'Valid maximum participants required';
   if (!formData.minAge || formData.minAge <= 0) newErrors.minAge = 'Valid minimum age required';
   if (!formData.gender) newErrors.gender = 'Gender is required';
   if (!formData.adminId) newErrors.adminId = 'Admin is required';
-  if (formData.requiresTeams === '') newErrors.requiresTeams = 'Requires Teams selection is required';
-  if (formData.isPublic === '') newErrors.isPublic = 'Public Event selection is required';
-  if (formData.requiresTeams === 'true' && (!formData.maxTeams || formData.maxTeams <= 0)) {
-    newErrors.maxTeams = 'Valid maximum teams required when teams are required';
+  if (formData.requiresTeams === '') newErrors.requiresTeams = 'Event type selection is required';
+  if (formData.isPublic === '') newErrors.isPublic = 'Event visibility selection is required';
+  
+  // Conditional validation based on event type
+  if (formData.requiresTeams === 'true') {
+    // Team event: requires maxTeams
+    if (!formData.maxTeams || formData.maxTeams <= 0) {
+      newErrors.maxTeams = 'Valid maximum teams required for team events';
+    }
+  } else if (formData.requiresTeams === 'false') {
+    // Individual event: requires maxParticipants
+    if (!formData.maxParticipants || formData.maxParticipants <= 0) {
+      newErrors.maxParticipants = 'Valid maximum participants required for individual events';
+    }
   }
+  
   return newErrors;
 };
+
 
 const CreateEventForm = ({
   onSuccess,
