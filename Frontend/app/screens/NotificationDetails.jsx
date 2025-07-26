@@ -162,7 +162,7 @@ export default function NotificationDetails() {
         type = data.type;
       }
     }
-  } catch {}
+  } catch { }
 
   const removalTypes = [
     "removed_from_event",
@@ -171,40 +171,41 @@ export default function NotificationDetails() {
     "group_deleted",
   ];
   const showButton = !removalTypes.includes(type);
-  const isEvent = [
-    "event_created",
-    "event_admin_assigned",
-    "event_deleted",
-    "removed_from_event",
-    "join_request_response",
-    "join_request_approved",
-  ].includes(type);
-  const isGroup = data.groupId;
-  const targetId = data.eventId ? data.eventId : data.groupId;
-  const targetScreen = data.eventId ? "./EventDetails" : "./GroupDetails";
-  const icon = getNotificationIcon(type);
-  const color = getNotificationColor(type);
 
-  const handleGoToEntity = async () => {
-    try {
-      if (!targetId) throw new Error("Missing ID");
-      router.push({
-        pathname: targetScreen,
-        params: { [`${data.eventId ? "eventId" : "groupId"}`]: targetId },
-      });
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        `There was an error loading the ${data.eventId ? "event" : "group"}.`,
-        [{ text: "Back", onPress: () => router.back(), style: "cancel" }]
-      );
+  // Check existence of groupId and eventId
+  const hasGroup = !!data.groupId;
+  const hasEvent = !!data.eventId;
+
+  // Handlers for buttons
+  const handleGoToGroup = () => {
+    if (!data.groupId) {
+      Alert.alert("Error", "Missing Group ID");
+      return;
     }
+    router.push({
+      pathname: "./GroupDetails",
+      params: { groupId: data.groupId },
+    });
+  };
+
+  const handleGoToEvent = () => {
+    if (!data.eventId) {
+      Alert.alert("Error", "Missing Event ID");
+      return;
+    }
+    router.push({
+      pathname: "./EventDetails",
+      params: { eventId: data.eventId },
+    });
   };
 
   const handleBackPress = async () => {
     await markAsRead(); // Mark as read when pressing back
     router.back();
   };
+
+  const icon = getNotificationIcon(type);
+  const color = getNotificationColor(type);
 
   return (
     <View style={styles.container}>
@@ -230,12 +231,32 @@ export default function NotificationDetails() {
         <Text style={styles.dateText}>Read: {formatDate(readAt)}</Text>
       </View>
 
-      {showButton && targetId && (
-        <TouchableOpacity style={styles.goButton} onPress={handleGoToEntity}>
-          <Text style={styles.goButtonText}>
-            Go to {isGroup ? "Group" : "Event"}
-          </Text>
-        </TouchableOpacity>
+      {showButton && (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          {hasGroup && (
+            <TouchableOpacity
+              style={[styles.goButton, { flex: 1 }]}
+              onPress={handleGoToGroup}
+            >
+              <Text style={styles.goButtonText}>Go to Group</Text>
+            </TouchableOpacity>
+          )}
+
+          {hasEvent && (
+            <TouchableOpacity
+              style={[styles.goButton, { flex: 1 }]}
+              onPress={handleGoToEvent}
+            >
+              <Text style={styles.goButtonText}>Go to Event</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </View>
   );
