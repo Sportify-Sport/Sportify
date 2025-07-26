@@ -51,7 +51,7 @@ export default function EventActions({
                 ? "Processing..."
                 : isEmailVerified
                 ? "Join as Spectator"
-                : "Verify your email to join group as spectator"}
+                : "Verify your email to join event as spectator"}
             </Text>
           </TouchableOpacity>
         )}
@@ -102,7 +102,7 @@ export default function EventActions({
                 ? "Processing..."
                 : isEmailVerified
                 ? "Request to Join as Player"
-                : "Verify your email to join group as player"}
+                : "Verify your email to join event as player"}
             </Text>
           </TouchableOpacity>
 
@@ -118,7 +118,7 @@ export default function EventActions({
                 ? "Processing..."
                 : isEmailVerified
                 ? "Join as Spectator"
-                : "Verify your email to join group as spectator"}
+                : "Verify your email to join event as spectator"}
             </Text>
           </TouchableOpacity>
         </>
