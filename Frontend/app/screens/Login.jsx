@@ -36,7 +36,7 @@ const Login = () => {
       Alert.alert("Error", "Password must be between 8 and 100 characters.");
       return;
     }
-    
+
     // Attempt login
     setLoading(true);
     const result = await login(email, password);
@@ -49,7 +49,8 @@ const Login = () => {
         router.replace("../(tabs)");
       }
     } else {
-      Alert.alert("Login Failed", result.error);
+      const errorMessage = result.message || result.error || "An unknown error occurred.";
+      Alert.alert("Login Failed", errorMessage);
     }
   };
 

@@ -165,8 +165,17 @@ export const AuthProvider = ({ children }) => {
           return { success: true, isEmailVerified: userData.isEmailVerified };
         }
       } else {
-        const errorData = await response.json();
-        return { success: false, error: errorData.message || "Login failed" };
+        const contentType = response.headers.get("content-type");
+
+        let errorMessage;
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || "Login failed";
+        } else {
+          errorMessage = await response.text(); 
+        }
+
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       return { success: false, error: "Network error. Please try again." };
