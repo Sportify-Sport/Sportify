@@ -5,6 +5,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 import { FilterProvider } from "./context/FilterContext";
 import { AuthProvider } from "./context/AuthContext";
+import { LogBox } from 'react-native';
+
+LogBox.ignoreAllLogs();
 
 export default function RootLayout() {
   return (
