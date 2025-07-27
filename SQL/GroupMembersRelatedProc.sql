@@ -20,7 +20,14 @@ BEGIN
         u.FirstName + ' ' + u.LastName AS GroupMemberName,
         u.ProfileImage AS GroupMemberImage,
         YEAR(gm.JoinedAt) AS JoinYear,
-        CASE WHEN u.IsGroupAdmin = 1 THEN 1 ELSE 0 END AS IsAdmin
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM GroupAdmins ga 
+                WHERE ga.GroupId = gm.GroupId AND ga.UserId = u.UserId
+            )
+            THEN 1 ELSE 0 
+        END AS IsAdmin
     FROM GroupMembers gm
     INNER JOIN Users u ON gm.UserId = u.UserId
     WHERE gm.GroupId = @groupId
@@ -30,9 +37,6 @@ BEGIN
     FETCH NEXT @pageSize + 1 ROWS ONLY;
 END
 GO
-
-
-
 
 -- =============================================
 -- Author:		<Mohamed Abo Full>
