@@ -19,7 +19,7 @@ BEGIN
         u.UserId,
         u.FirstName + ' ' + u.LastName AS GroupMemberName,
         u.ProfileImage AS GroupMemberImage,
-        YEAR(gm.JoinedAt) AS JoinYear,
+		CONVERT(VARCHAR(10), gm.JoinedAt, 23) AS JoinDate,
         CASE 
             WHEN EXISTS (
                 SELECT 1 

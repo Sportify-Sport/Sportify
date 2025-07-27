@@ -1769,7 +1769,7 @@ public class DBservices
                     UserId = Convert.ToInt32(dataReader["UserId"]),
                     GroupMemberName = dataReader["GroupMemberName"].ToString(),
                     GroupMemberImage = dataReader["GroupMemberImage"].ToString(),
-                    JoinYear = Convert.ToInt32(dataReader["JoinYear"]),
+                    JoinDate = Convert.ToDateTime(dataReader["JoinDate"]).ToString("yyyy-MM-dd"),
                     IsAdmin = Convert.ToBoolean(dataReader["IsAdmin"])
                 };
 
