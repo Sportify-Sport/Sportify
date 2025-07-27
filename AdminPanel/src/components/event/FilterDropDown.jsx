@@ -4,8 +4,8 @@ const FilterDropdown = ({ filterBy, handleFilterChange, disabled }) => {
   const options = [
     { value: 'name', label: 'Name' },
     { value: 'sport', label: 'Sport' },
-    { value: 'requiresteamstrue', label: 'Include Teams' },
-    { value: 'requiresteamsfalse', label: 'Exclude Teams' },
+    { value: 'requiresteamstrue', label: 'Team Events' },
+    { value: 'requiresteamsfalse', label: 'None-Team Events' },
   ];
 
   return (
