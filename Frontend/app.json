@@ -56,11 +56,13 @@
     "experiments": {
       "typedRoutes": true
     },
+    
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "58b42cf8-05f8-474f-a0a4-9e05433415ea"
+        "projectId": "a1323524-0a1c-44ce-94e4-1bd87059d735"
       }
-    }
+    },
+    "owner": "alaayehya"
   }
 }
