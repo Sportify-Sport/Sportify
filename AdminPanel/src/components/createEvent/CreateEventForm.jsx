@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react';
+// src/components/createEvent/CreateEventForm.jsx
+import React, { useEffect, useState } from 'react';
 import EventDetailsFields from './EventDetailsFields';
 import DateTimeFields from './DateTimeFields';
 import EventSettingsFields from './EventSettingsFields';
 import AdminSearch from '../actionComponents/AdminSearch';
 import ConfirmationDialog from '../actionComponents/ConfirmationDialog';
+import ErrorDialog from '../actionComponents/ErrorDialog';
 import useForm from '../../hooks/useForm';
 import useEventCreate from '../../hooks/createEventHooks/useEventCreate';
+
 const validate = (formData) => {
   const newErrors = {};
   if (!formData.eventName.trim()) newErrors.eventName = 'Event Name is required';
@@ -24,14 +27,11 @@ const validate = (formData) => {
   if (formData.requiresTeams === '') newErrors.requiresTeams = 'Event type selection is required';
   if (formData.isPublic === '') newErrors.isPublic = 'Event visibility selection is required';
   
-  // Conditional validation based on event type
   if (formData.requiresTeams === 'true') {
-    // Team event: requires maxTeams
     if (!formData.maxTeams || formData.maxTeams <= 0) {
       newErrors.maxTeams = 'Valid maximum teams required for team events';
     }
   } else if (formData.requiresTeams === 'false') {
-    // Individual event: requires maxParticipants
     if (!formData.maxParticipants || formData.maxParticipants <= 0) {
       newErrors.maxParticipants = 'Valid maximum participants required for individual events';
     }
@@ -39,7 +39,6 @@ const validate = (formData) => {
   
   return newErrors;
 };
-
 
 const CreateEventForm = ({
   onSuccess,
@@ -72,6 +71,8 @@ const CreateEventForm = ({
     validate
   );
 
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+
   useEffect(() => {
     if (selectedCity?.cityId) {
       setFormData((prev) => ({ ...prev, cityId: selectedCity.cityId }));
@@ -82,7 +83,8 @@ const CreateEventForm = ({
     formData,
     validateForm,
     onSuccess,
-    setErrors
+    setErrors,
+    setShowErrorDialog
   );
 
   const handleAdminSearch = (value) => {
@@ -92,16 +94,23 @@ const CreateEventForm = ({
 
   const handleAdminSelect = (userId) => {
     setFormData((prev) => ({
-        ...prev,
-        adminId: prev.adminId === userId ? null : userId
-      }));
+      ...prev,
+      adminId: prev.adminId === userId ? null : userId
+    }));
     setErrors((prevErrors) => ({ ...prevErrors, adminId: '' }));
   };
+
+  const handleCloseErrorDialog = () => {
+    setShowErrorDialog(false);
+    // Optionally keep errors for user to correct
+  };
+
+  // Additional safety check: only show confirmation dialog if no validation errors exist
+  const shouldShowConfirmationDialog = showDialog && Object.keys(errors).length === 0;
 
   return (
     <div className="create-form">
       <h2>Create New Event Form</h2>
-      {errors.general && <span className="error-text">{errors.general}</span>}
       <form onSubmit={handleSubmit}>
         <EventDetailsFields
           formData={formData}
@@ -131,11 +140,18 @@ const CreateEventForm = ({
         />
         <button type="submit" className="create-submit-button">Create Event</button>
       </form>
-      {showDialog && (
+      {shouldShowConfirmationDialog && (
         <ConfirmationDialog
           message="Are you sure you want to create this event?"
           onConfirm={handleConfirm}
           onCancel={handleCancel}
+        />
+      )}
+      {showErrorDialog && (
+        <ErrorDialog
+          errors={errors}
+          message={errors.general}
+          onClose={handleCloseErrorDialog}
         />
       )}
     </div>

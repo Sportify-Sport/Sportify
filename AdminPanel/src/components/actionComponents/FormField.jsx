@@ -1,8 +1,22 @@
 import React from 'react';
 
-const FormField = ({ type = 'text', id, name, label, value, onChange, onClick, error, options, placeholder, isTextarea = false,
-  inputRef, min, step,
- }) => {
+const FormField = ({ 
+  type = 'text', 
+  id, 
+  name, 
+  label, 
+  value, 
+  onChange, 
+  onClick, 
+  error, 
+  options, 
+  placeholder, 
+  isTextarea = false,
+  inputRef, 
+  min, 
+  step,
+  disabled = false
+}) => {
   const Component = isTextarea ? 'textarea' : type === 'select' ? 'select' : 'input';
 
   return (
@@ -15,6 +29,7 @@ const FormField = ({ type = 'text', id, name, label, value, onChange, onClick, e
           value={value}
           onChange={onChange}
           className={error ? 'error' : ''}
+          disabled={disabled}
         >
           <option value="">{placeholder || `Select ${label}`}</option>
           {options.map((option) => (
@@ -36,6 +51,7 @@ const FormField = ({ type = 'text', id, name, label, value, onChange, onClick, e
           ref={inputRef}
           min={min}
           step={step}
+          disabled={disabled}
         />
       )}
       {error && <span className="error-text">{error}</span>}
