@@ -455,7 +455,24 @@ export default function GroupDetails() {
       }
       const json = await resp.json();
       if (json.success) {
+        // 1️ remove from pending requests
         setRequests(r => r.filter(x => x.requestId !== req.requestId));
+
+        // 2️ compute today's date
+        const today = new Date().toLocaleDateString('en-CA'); 
+
+        // 3️ push into members list with the same keys TeamMembers expects:
+        setMembers(prev => [
+          ...prev,
+          {
+            userId: req.userId,
+            groupMemberName: req.fullName,
+            groupMemberImage: req.userPicture,
+            joinDate: today,
+            isAdmin: false,       
+          }
+        ]);
+
         Alert.alert('Accepted', json.message || 'Join request approved');
       } else {
         Alert.alert('Error', json.message || 'Failed to approve request');

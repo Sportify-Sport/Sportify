@@ -3,6 +3,9 @@ import React from 'react';
 import { View, Text } from 'react-native';
 
 export default function DetailsCard({ group, sportsMap }) {
+  const formattedGender =
+    group.gender === 'M' ? 'Male' :
+      group.gender === 'F' ? 'Female' : group.gender || '—';
   return (
     <View>
       <View className="h-px bg-green-400 mb-4" />

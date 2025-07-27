@@ -6,6 +6,10 @@ import getApiBaseUrl from "../../config/apiConfig";
 
 export default function UserDetailsModal({ visible, user, onClose }) {
   const apiUrl = getApiBaseUrl();
+  const formattedGender =
+    user?.gender === 'M' ? 'Male' :
+      user?.gender === 'F' ? 'Female' :
+        user?.gender || '—';
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -24,7 +28,7 @@ export default function UserDetailsModal({ visible, user, onClose }) {
                 <Text className="text-gray-700"><Text className="font-semibold">Email:</Text> {user.email}</Text>
                 <Text className="text-gray-700"><Text className="font-semibold">City:</Text> {user.cityName}</Text>
                 <Text className="text-gray-700"><Text className="font-semibold">Bio:</Text> {user.bio}</Text>
-                <Text className="text-gray-700"><Text className="font-semibold">Gender:</Text> {user.gender}</Text>
+                <Text className="text-gray-700"><Text className="font-semibold">Gender:</Text> {formattedGender}</Text>
               </View>
             </>
           )}

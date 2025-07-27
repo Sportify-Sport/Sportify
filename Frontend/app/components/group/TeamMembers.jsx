@@ -18,13 +18,10 @@ export default function TeamMembers({
   onRemove,
   events,
 }) {
-  // Find the main admin (first admin or the one with specific criteria)
-  const mainAdmin = members.find(m => m.isAdmin);
-  const mainAdminId = mainAdmin ? mainAdmin.userId : null;
-
   return (
     <View className="bg-white p-4 rounded-xl shadow mb-4">
       <Text className="text-lg font-semibold text-gray-800 mb-2">Team Members</Text>
+
       {members.length === 0 ? (
         <Text className="text-gray-600">There are no team members in this group.</Text>
       ) : (
@@ -39,19 +36,19 @@ export default function TeamMembers({
               </View>
               <View>
                 <Text className="text-gray-800 text-base font-medium">{m.groupMemberName}</Text>
-                <Text className="text-gray-500 text-sm">Since {m.joinYear}</Text>
+                <Text className="text-gray-500 text-sm">Since {m.joinDate}</Text>
               </View>
             </View>
+
             {isAdmin && m.userId !== currentUserId && (
               <View className="flex-row items-center" style={{ gap: 10 }}>
                 <TouchableOpacity onPress={() => onShowDetails(m)}>
                   <Text className="text-blue-600 border border-blue-600 px-4 py-1 rounded-full">Details</Text>
                 </TouchableOpacity>
-                {/* Show green dot only for the main admin (first admin found) */}
-                {m.userId === mainAdminId ? (
-                  <View className="w-5 h-5 bg-green-400 rounded-full" />
+
+                {m.isAdmin ? (
+                  <View className="w-5 h-5 bg-green-500 rounded-full" />
                 ) : (
-                  /* Show trash icon for all other members (including other admins if any) */
                   <TouchableOpacity onPress={() => onRemove(m)}>
                     <Ionicons name="trash" size={20} color="#E53E3E" />
                   </TouchableOpacity>
@@ -61,6 +58,7 @@ export default function TeamMembers({
           </View>
         ))
       )}
+
       {(displayCount > pageSize || hasMore) && (
         <TouchableOpacity onPress={onToggle} className="mt-2 py-2">
           <Text className="text-blue-600 text-center">
@@ -77,7 +75,9 @@ export default function TeamMembers({
           events.map(ev => (
             <View key={ev.eventId} className="flex-row justify-between py-2">
               <Text className="text-gray-700 text-lg">{ev.eventName}</Text>
-              <Text className="text-gray-700 text-lg">{new Date(ev.startDatetime).toLocaleDateString('en-CA')}</Text>
+              <Text className="text-gray-700 text-lg">
+                {new Date(ev.startDatetime).toLocaleDateString('en-CA')}
+              </Text>
             </View>
           ))
         )}
