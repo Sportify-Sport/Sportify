@@ -273,8 +273,8 @@ export default function EventDetails() {
             contentContainerStyle={{
               // base bottom padding plus space for keyboard when visible
               paddingBottom: keyboardVisible
-                ? keyboardHeight + 20
-                : 20,
+                ? keyboardHeight
+                : 0,
             }}
             keyboardDismissMode="interactive"
             automaticallyAdjustContentInsets={false}
