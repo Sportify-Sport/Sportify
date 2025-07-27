@@ -31,7 +31,7 @@ const EventCard = memo(({ event, cityName }) => {
         <p><strong>Sport:</strong> {SPORT_TYPES[event.sportId] || 'Unknown'}</p>
         <p><strong>Gender:</strong> {event.gender || 'N/A'}</p>
         <p>
-          <strong>Teams Required:</strong>{' '}
+          <strong>Teams Event:</strong>{' '}
           <span className={event.requiresTeams ? 'icon-true' : 'icon-false'}>
             {event.requiresTeams ? '✔' : '✘'}
           </span>
