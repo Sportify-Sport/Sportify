@@ -1,5 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import getApiBaseUrl from '../../config/apiConfig';
@@ -78,11 +88,11 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             groupName: group.groupName,
-            description: group.description
+            description: group.description,
           }),
         });
 
@@ -104,7 +114,7 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
         const imageResponse = await fetch(`${apiUrl}/api/Groups/${group.groupId}/image`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: formDataImage,
         });
@@ -114,9 +124,9 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
           throw new Error(errorData.message || 'Failed to update group image');
         }
 
-        // Attempt to get the server-returned image URL
         const imageData = await imageResponse.json();
-        const newImageUrl = imageData.data?.imageUrl || `${apiUrl}/Images/${imageFile.uri.split('/').pop()}?t=${Date.now()}`;
+        const newImageUrl =
+          imageData.data?.imageUrl || `${apiUrl}/Images/${imageFile.uri.split('/').pop()}?t=${Date.now()}`;
         updatedGroup.groupImage = newImageUrl;
       }
 
@@ -135,83 +145,92 @@ export default function EditGroupModal({ visible, group, setGroup, onClose, onSa
   }, [group, imageFile, isFormChanged, token, onSave, onClose, setGroup, onGroupUpdated]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      statusBarTranslucent
-    >
+    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
       <BlurView
         intensity={100}
         tint="light"
-        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 10 }}
       >
-        <View className="bg-white w-11/12 p-6 rounded-2xl shadow-lg">
-          {/* Header */}
-          <View className="bg-green-500 rounded-xl px-4 py-3 mb-4">
-            <Text className="text-xl font-bold text-white text-center">Edit Group Details</Text>
-          </View>
-
-          {/* Content */}
-          <Text className="text-base font-semibold mb-2 text-gray-800">Group Name</Text>
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
-            value={group.groupName}
-            onChangeText={(t) => {
-              setGroup((g) => ({ ...g, groupName: t }));
-              setIsFormChanged(true);
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={{ width: '100%', maxWidth: '100%' }}
+        >
+          <View
+            style={{
+              backgroundColor: 'white',
+              borderRadius: 20,
+              maxHeight: '100%',
+              overflow: 'hidden',
             }}
-            placeholder="Group Name"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
-            value={group.description}
-            onChangeText={(t) => {
-              setGroup((g) => ({ ...g, description: t }));
-              setIsFormChanged(true);
-            }}
-            placeholder="Description"
-            placeholderTextColor="#9CA3AF"
-            multiline
-          />
-
-          <Text className="text-base font-semibold mb-2 text-gray-800">Group Image</Text>
-          <TouchableOpacity
-            className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
-            onPress={handleImageChange}
           >
-            <Text className="text-gray-600">
-              {imageFile ? 'Image Selected' : 'Select Image'}
-            </Text>
-          </TouchableOpacity>
+            {/* Header */}
+            <View className="bg-green-500 py-4 px-6">
+              <Text className="text-xl font-bold text-white">Edit Group Details</Text>
+            </View>
 
-          {error && (
-            <Text className="text-red-500 mb-4 text-center">{error.message}</Text>
-          )}
+            {/* Scrollable content */}
+            <ScrollView
+              contentContainerStyle={{ padding: 24 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Content */}
+              <Text className="text-base font-semibold mb-2 text-gray-800">Group Name</Text>
+              <TextInput
+                className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
+                value={group.groupName}
+                onChangeText={(t) => {
+                  setGroup((g) => ({ ...g, groupName: t }));
+                  setIsFormChanged(true);
+                }}
+                placeholder="Group Name"
+                placeholderTextColor="#9CA3AF"
+              />
 
-          {/* Footer Buttons */}
-          <View className="flex-row justify-between mt-2">
-            <TouchableOpacity
-              className="bg-gray-200 py-3 px-6 rounded-lg flex-1 mr-2 items-center"
-              onPress={onClose}
-              disabled={isLoading}
-            >
-              <Text className="text-gray-800 font-medium">Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="bg-green-500 py-3 px-6 rounded-lg flex-1 ml-2 items-center"
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
-              <Text className="text-white font-medium">
-                {isLoading ? 'Saving...' : 'Save Changes'}
-              </Text>
-            </TouchableOpacity>
+              <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
+              <TextInput
+                className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
+                value={group.description}
+                onChangeText={(t) => {
+                  setGroup((g) => ({ ...g, description: t }));
+                  setIsFormChanged(true);
+                }}
+                placeholder="Description"
+                placeholderTextColor="#9CA3AF"
+                multiline
+              />
+
+              <Text className="text-base font-semibold mb-2 text-gray-800">Group Image</Text>
+              <TouchableOpacity
+                className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
+                onPress={handleImageChange}
+              >
+                <Text className="text-gray-600">{imageFile ? 'Image Selected' : 'Select Image'}</Text>
+              </TouchableOpacity>
+
+              {error && <Text className="text-red-500 mb-4 text-center">{error.message}</Text>}
+
+              {/* Footer Buttons */}
+              <View className="flex-row justify-between mt-2">
+                <TouchableOpacity
+                  className="bg-gray-200 py-3 px-6 rounded-lg flex-1 mr-2 items-center"
+                  onPress={onClose}
+                  disabled={isLoading}
+                >
+                  <Text className="text-gray-800 font-medium">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-green-500 py-3 px-6 rounded-lg flex-1 ml-2 items-center"
+                  onPress={handleSubmit}
+                  disabled={isLoading}
+                >
+                  <Text className="text-white font-medium">{isLoading ? 'Saving...' : 'Save Changes'}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </BlurView>
     </Modal>
   );

@@ -205,8 +205,14 @@ export default function EventDetails() {
       (e) => {
         setKeyboardVisible(true);
         setKeyboardHeight(e.endCoordinates.height);
+
+
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 10);
       }
     );
+
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
@@ -263,26 +269,16 @@ export default function EventDetails() {
         >
           <ScrollView
             className="p-4"
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
-              paddingBottom: keyboardVisible ? 20 : 0 
+              // base bottom padding plus space for keyboard when visible
+              paddingBottom: keyboardVisible
+                ? keyboardHeight + 20
+                : 20,
             }}
             keyboardDismissMode="interactive"
-            keyboardShouldPersistTaps="handled"
             automaticallyAdjustContentInsets={false}
             ref={scrollViewRef}
-            onContentSizeChange={() => {
-              if (keyboardVisible && !groupSearchInputRef.current) {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-              }
-            }}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={onRefresh}
-                colors={["#65DA84"]}
-                tintColor="#65DA84"
-              />
-            }
           >
             <EventHeader event={event} />
             <View className="h-px bg-green-400 mb-4" />
@@ -388,27 +384,27 @@ export default function EventDetails() {
                 onNotification={() => setNotificationModalVisible(true)}
               />
             )}
+            {/* Edit Event Modal */}
+            <EditEventModal
+              visible={editModalVisible}
+              event={event}
+              onClose={() => setEditModalVisible(false)}
+              onSave={() => {
+                onRefresh();
+                setEditModalVisible(false);
+              }}
+              token={token}
+            />
+
+            <AdminNotificationModal
+              visible={notificationModalVisible}
+              onClose={() => setNotificationModalVisible(false)}
+              eventId={eventId}
+              requiresTeams={event?.requiresTeams}
+              isPublic={event?.isPublic}
+            />
           </ScrollView>
         </KeyboardAvoidingView>
-        {/* Edit Event Modal */}
-        <EditEventModal
-          visible={editModalVisible}
-          event={event}
-          onClose={() => setEditModalVisible(false)}
-          onSave={() => {
-            onRefresh();
-            setEditModalVisible(false);
-          }}
-          token={token}
-        />
-
-        <AdminNotificationModal
-          visible={notificationModalVisible}
-          onClose={() => setNotificationModalVisible(false)}
-          eventId={eventId}
-          requiresTeams={event?.requiresTeams}
-          isPublic={event?.isPublic}
-        />
       </View>
     </SafeAreaView>
   );

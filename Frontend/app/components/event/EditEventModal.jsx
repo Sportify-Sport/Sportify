@@ -1,5 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import getApiBaseUrl from '../../config/apiConfig';
 import { BlurView } from 'expo-blur';
@@ -32,13 +42,13 @@ export default function EditEventModal({ visible, event, onClose, onSave, token,
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
-        
+
         if (!validTypes.includes(file.mimeType)) {
           setError({ message: 'Invalid file type. Please upload PNG, JPG, or WebP.' });
           setImageFile(null);
           return;
         }
-        
+
         setImageFile(file);
         setIsFormChanged(true);
         setError(null);
@@ -72,12 +82,12 @@ export default function EditEventModal({ visible, event, onClose, onSave, token,
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ 
-            eventName: localEvent.eventName, 
+          body: JSON.stringify({
+            eventName: localEvent.eventName,
             description: localEvent.description,
-            locationName: localEvent.locationName
+            locationName: localEvent.locationName,
           }),
         });
 
@@ -99,7 +109,7 @@ export default function EditEventModal({ visible, event, onClose, onSave, token,
         const imageResponse = await fetch(`${apiUrl}/api/Events/${event.eventId}/image`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: formDataImage,
         });
@@ -109,15 +119,16 @@ export default function EditEventModal({ visible, event, onClose, onSave, token,
           throw new Error(errorData.message || 'Failed to update event image');
         }
 
-        // Attempt to get server-returned image URL
         const imageData = await imageResponse.json();
-        updatedEvent.eventImage = imageData.data?.imageUrl || `${apiUrl}/Images/${imageFile.uri.split('/').pop()}?t=${Date.now()}`;
+        updatedEvent.eventImage =
+          imageData.data?.imageUrl || `${apiUrl}/Images/${imageFile.uri.split('/').pop()}?t=${Date.now()}`;
       }
 
       if (typeof onEventUpdated === 'function') {
         onEventUpdated(updatedEvent);
       }
       onSave();
+      Alert.alert('Success', 'Event details saved successfully!');
       onClose();
     } catch (err) {
       setError({ message: err.message });
@@ -128,96 +139,112 @@ export default function EditEventModal({ visible, event, onClose, onSave, token,
   }, [localEvent, imageFile, isFormChanged, token, onSave, onClose, onEventUpdated, event.eventId]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      statusBarTranslucent={true}
-    >
-      <BlurView
-        intensity={100}
-        tint="light"
-        className="flex-1 justify-center items-center"
-      >
-        <View className="w-11/12 bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Header */}
-          <View className="bg-green-500 py-4 px-6">
-            <Text className="text-xl font-bold text-white">Edit Event Details</Text>
-          </View>
-          
-          {/* Content */}
-          <View className="p-6">
-            <Text className="text-base font-semibold mb-2 text-gray-800">Event Name</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
-              value={localEvent.eventName}
-              onChangeText={t => {
-                setLocalEvent(e => ({ ...e, eventName: t }));
-                setIsFormChanged(true);
-              }}
-              placeholder="Event Name"
-              placeholderTextColor="#9CA3AF"
-            />
-            
-            <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
-              value={localEvent.description}
-              onChangeText={t => {
-                setLocalEvent(e => ({ ...e, description: t }));
-                setIsFormChanged(true);
-              }}
-              placeholder="Description"
-              placeholderTextColor="#9CA3AF"
-              multiline
-            />
-            
-            <Text className="text-base font-semibold mb-2 text-gray-800">Location</Text>
-            <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
-              value={localEvent.locationName}
-              onChangeText={t => {
-                setLocalEvent(e => ({ ...e, locationName: t }));
-                setIsFormChanged(true);
-              }}
-              placeholder="Location Name"
-              placeholderTextColor="#9CA3AF"
-            />
-            
-            <Text className="text-base font-semibold mb-2 text-gray-800">Event Image</Text>
-            <TouchableOpacity 
-              className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
-              onPress={handleImageChange}
-            >
-              <Text className="text-gray-600">
-                {imageFile ? 'Image Selected' : 'Select Image'}
-              </Text>
-            </TouchableOpacity>
-
-            {error && (
-              <Text className="text-red-500 mb-4 text-center">{error.message}</Text>
-            )}
-
-            <View className="flex-row justify-between mt-4">
-              <TouchableOpacity 
-                className="bg-gray-200 py-3 px-6 rounded-lg flex-1 mr-2 items-center"
-                onPress={onClose}
-                disabled={isLoading}
-              >
-                <Text className="text-gray-800 font-medium">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                className="bg-green-500 py-3 px-6 rounded-lg flex-1 ml-2 items-center"
-                onPress={handleSubmit}
-                disabled={isLoading}
-              >
-                <Text className="text-white font-medium">
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </Text>
-              </TouchableOpacity>
+    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
+      <BlurView intensity={100} tint="light" className="flex-1 justify-center items-center">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: 10,
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxHeight: '100%',
+              backgroundColor: 'white',
+              borderRadius: 20,
+              overflow: 'hidden',
+              justifyContent: 'center',
+              alignItems: 'stretch',
+            }}
+          >
+            {/* Header */}
+            <View className="bg-green-500 py-4 px-6">
+              <Text className="text-xl font-bold text-white">Edit Event Details</Text>
             </View>
+
+            {/* Scrollable content */}
+            <ScrollView
+              contentContainerStyle={{ padding: 24 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Event Name */}
+              <Text className="text-base font-semibold mb-2 text-gray-800">Event Name</Text>
+              <TextInput
+                className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
+                value={localEvent.eventName}
+                onChangeText={t => {
+                  setLocalEvent(e => ({ ...e, eventName: t }));
+                  setIsFormChanged(true);
+                }}
+                placeholder="Event Name"
+                placeholderTextColor="#9CA3AF"
+              />
+
+              {/* Description */}
+              <Text className="text-base font-semibold mb-2 text-gray-800">Description</Text>
+              <TextInput
+                className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800 h-24"
+                value={localEvent.description}
+                onChangeText={t => {
+                  setLocalEvent(e => ({ ...e, description: t }));
+                  setIsFormChanged(true);
+                }}
+                placeholder="Description"
+                placeholderTextColor="#9CA3AF"
+                multiline
+              />
+
+              {/* Location */}
+              <Text className="text-base font-semibold mb-2 text-gray-800">Location</Text>
+              <TextInput
+                className="border border-gray-300 rounded-lg p-3 mb-4 text-gray-800"
+                value={localEvent.locationName}
+                onChangeText={t => {
+                  setLocalEvent(e => ({ ...e, locationName: t }));
+                  setIsFormChanged(true);
+                }}
+                placeholder="Location Name"
+                placeholderTextColor="#9CA3AF"
+              />
+
+              {/* Image */}
+              <Text className="text-base font-semibold mb-2 text-gray-800">Event Image</Text>
+              <TouchableOpacity
+                className="border border-gray-300 rounded-lg p-3 mb-4 bg-gray-50 items-center"
+                onPress={handleImageChange}
+              >
+                <Text className="text-gray-600">{imageFile ? 'Image Selected' : 'Select Image'}</Text>
+              </TouchableOpacity>
+
+              {/* Error Message */}
+              {error && <Text className="text-red-500 mb-4 text-center">{error.message}</Text>}
+
+              {/* Buttons */}
+              <View className="flex-row justify-between mt-4">
+                <TouchableOpacity
+                  className="bg-gray-200 py-3 px-6 rounded-lg flex-1 mr-2 items-center"
+                  onPress={onClose}
+                  disabled={isLoading}
+                >
+                  <Text className="text-gray-800 font-medium">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-green-500 py-3 px-6 rounded-lg flex-1 ml-2 items-center"
+                  onPress={handleSubmit}
+                  disabled={isLoading}
+                >
+                  <Text className="text-white font-medium">{isLoading ? 'Saving...' : 'Save Changes'}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </BlurView>
     </Modal>
   );

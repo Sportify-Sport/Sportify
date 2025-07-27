@@ -554,26 +554,7 @@ export default function Profile() {
         onClose={() => setIsPassModalVisible(false)}
       />
 
-      <View style={styles.infoRow}>
-        <View style={[styles.infoContainer, styles.halfWidth]}>
-          <Text style={styles.label}>Birthdate:</Text>
-          {isEditing ? (
-            <TextInput
-              style={[styles.input, { backgroundColor: '#f0f0f0' }]}
-              value={birthdate}
-              editable={false}
-            />
-          ) : (
-            <Text style={styles.infoText}>{birthdate}</Text>
-          )}
-        </View>
-        <View style={[styles.infoContainer, styles.halfWidth]}>
-          <Text style={styles.label}>Age:</Text>
-          <Text style={styles.infoText}>{age}</Text>
-        </View>
-      </View>
-
-      <View style={styles.infoContainer}>
+            <View style={styles.infoContainer}>
         <Text style={styles.label}>City:</Text>
         {isEditing ? (
           <>
@@ -610,6 +591,25 @@ export default function Profile() {
         ) : (
           <Text style={styles.infoText}>{city || "Not set"}</Text>
         )}
+      </View>
+
+      <View style={styles.infoRow}>
+        <View style={[styles.infoContainer, styles.halfWidth]}>
+          <Text style={styles.label}>Birthdate:</Text>
+          {isEditing ? (
+            <TextInput
+              style={[styles.input, { backgroundColor: '#f0f0f0' }]}
+              value={birthdate}
+              editable={false}
+            />
+          ) : (
+            <Text style={styles.infoText}>{birthdate}</Text>
+          )}
+        </View>
+        <View style={[styles.infoContainer, styles.halfWidth]}>
+          <Text style={styles.label}>Age:</Text>
+          <Text style={styles.infoText}>{age}</Text>
+        </View>
       </View>
 
       <View style={styles.infoRow}>

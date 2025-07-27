@@ -283,6 +283,37 @@ const Signup = () => {
           onCancel={hideDatePicker}
         />
 
+        <Text style={styles.label}>City</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Start typing a city..."
+          value={city}
+          onChangeText={(text) => {
+            setCity(text);
+            searchCities(text);
+          }}
+          onBlur={handleCityBlur}
+        />
+        {citySuggestions.length > 0 && (
+          <View style={{ maxHeight: 150 }}>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {citySuggestions.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    setCity(item.name);
+                    setCityId(item.id);
+                    setCitySuggestions([]);
+                  }}
+                  style={styles.suggestionItem}
+                >
+                  <Text style={styles.suggestionText}>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <Text style={styles.label}>Your Email</Text>
         <TextInput
           style={styles.input}
@@ -322,37 +353,6 @@ const Signup = () => {
           <Picker.Item label="Basketball" value="Basketball" />
           <Picker.Item label="Marathon" value="Marathon" />
         </Picker>
-
-        <Text style={styles.label}>City</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Start typing a city..."
-          value={city}
-          onChangeText={(text) => {
-            setCity(text);
-            searchCities(text);
-          }}
-          onBlur={handleCityBlur}
-        />
-        {citySuggestions.length > 0 && (
-          <View style={{ maxHeight: 150 }}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              {citySuggestions.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    setCity(item.name);
-                    setCityId(item.id);
-                    setCitySuggestions([]);
-                  }}
-                  style={styles.suggestionItem}
-                >
-                  <Text style={styles.suggestionText}>{item.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
 
         <TouchableOpacity
           style={[styles.continueButton, loading && { opacity: 0.5 }]}

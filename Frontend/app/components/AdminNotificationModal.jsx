@@ -82,7 +82,8 @@ export default function AdminNotificationModal({
         className="flex-1 justify-center items-center"
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
           className="w-11/12"
         >
           <View className="bg-white rounded-2xl p-5 shadow-lg min-h-[400px]">
