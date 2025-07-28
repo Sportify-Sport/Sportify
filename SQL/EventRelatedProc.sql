@@ -174,6 +174,17 @@ BEGIN
                     SET @isParticipant = 1;
                     SET @playWatch = 1; -- Group participants are always players
                 END
+
+				-- Also check direct participation
+				IF EXISTS (SELECT 1 FROM EventParticipants WHERE EventId = @eventId AND UserId = @userId)
+				BEGIN
+					SET @isParticipant = 1;
+        
+					-- Get PlayWatch value for direct participation
+					SELECT @playWatch = PlayWatch
+					FROM EventParticipants
+					WHERE EventId = @eventId AND UserId = @userId;
+				END
             END
             -- For non-team events, check direct participation
             ELSE
